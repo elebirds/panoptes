@@ -99,6 +99,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color buildInvalidColor = new Color(1f, 0.3f, 0.3f, 0.92f);
         [SerializeField] private Color buildPendingColor = new Color(1f, 0.82f, 0.35f, 0.92f);
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
+        [SerializeField] private Color buildPlacedEdgeGlowColor = new Color(1f, 1f, 1f, 0.95f);
         [SerializeField] private Color territoryHighlightColor = new Color(0.28f, 0.72f, 1f, 0.72f);
         [SerializeField] private float buildPreviewRequestThrottleSeconds = 0.1f;
         [SerializeField] private bool logInvalidBuildClick = true;
@@ -230,11 +231,13 @@ namespace Panoptes.Presentation.Map
 
         private void OnEnable()
         {
+            SubscribeMapRendererRefresh();
             SubscribeStoreEvents();
         }
 
         private void OnDisable()
         {
+            UnsubscribeMapRendererRefresh();
             UnsubscribeStoreEvents();
             ClearMovePreviewState();
             ClearAllMovePreviews();
@@ -500,7 +503,14 @@ namespace Panoptes.Presentation.Map
         public void ApplyBackendBuildCommand(string buildingType, string nodeId, bool isGhost, string ownerId, int hp = 100)
         {
             ConfigureBuildPlacementSession();
-            _buildPlacement.ApplyBackendBuildCommand(buildingType, nodeId, isGhost, ownerId, hp, buildPlacedGhostColor);
+            _buildPlacement.ApplyBackendBuildCommand(
+                buildingType,
+                nodeId,
+                isGhost,
+                ownerId,
+                hp,
+                buildPlacedGhostColor,
+                buildPlacedEdgeGlowColor);
         }
         #endregion
 
@@ -1618,6 +1628,11 @@ namespace Panoptes.Presentation.Map
             }
 
             var nodeId = node.NodeId;
+            if (_buildPlacement.TryRestorePendingBuildHighlight(nodeId, node, buildPlacedEdgeGlowColor))
+            {
+                return;
+            }
+
             if (_territoryHighlights.TryRestore(nodeId, node, territoryHighlightColor))
             {
                 return;
@@ -1891,6 +1906,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            var appliedAnySnapshot = false;
             foreach (var pair in current.Nodes)
             {
                 var nodeId = pair.Key;
@@ -1908,6 +1924,12 @@ namespace Panoptes.Presentation.Map
                 }
 
                 ApplyNodeSnapshotFromStore(map, nodeId, node);
+                appliedAnySnapshot = true;
+            }
+
+            if (appliedAnySnapshot)
+            {
+                RestorePendingBuildGhosts();
             }
         }
 
@@ -2111,7 +2133,11 @@ namespace Panoptes.Presentation.Map
 
         private void ConfigureMapRenderer(MapRenderer mapRenderer)
         {
+            UnsubscribeMapRendererRefresh();
+
             _mapRenderer = mapRenderer;
+            SubscribeMapRendererRefresh();
+
             if (_selectionSurface is MapSelectionSurface selectionSurface)
             {
                 selectionSurface.SetMapRenderer(mapRenderer);
@@ -2123,6 +2149,39 @@ namespace Panoptes.Presentation.Map
             _pendingDeployGhosts.SetMapRenderer(mapRenderer);
             _territoryHighlights.SetMapRenderer(mapRenderer);
             ConfigureBuildPlacementSession();
+            RestorePendingBuildGhosts();
+        }
+
+        private void OnMapRendererStatePresentationRefreshed()
+        {
+            RestorePendingBuildGhosts();
+        }
+
+        private void RestorePendingBuildGhosts()
+        {
+            ConfigureBuildPlacementSession();
+            _buildPlacement.RestorePendingBuildGhosts(buildPlacedGhostColor, buildPlacedEdgeGlowColor);
+        }
+
+        private void SubscribeMapRendererRefresh()
+        {
+            if (!isActiveAndEnabled || _mapRenderer == null)
+            {
+                return;
+            }
+
+            _mapRenderer.StatePresentationRefreshed -= OnMapRendererStatePresentationRefreshed;
+            _mapRenderer.StatePresentationRefreshed += OnMapRendererStatePresentationRefreshed;
+        }
+
+        private void UnsubscribeMapRendererRefresh()
+        {
+            if (_mapRenderer == null)
+            {
+                return;
+            }
+
+            _mapRenderer.StatePresentationRefreshed -= OnMapRendererStatePresentationRefreshed;
         }
 
         public static void SetPlaybackInputLocked(bool locked)
@@ -2176,6 +2235,7 @@ namespace Panoptes.Presentation.Map
                 buildInvalidColor,
                 buildPendingColor,
                 buildPlacedGhostColor,
+                buildPlacedEdgeGlowColor,
                 buildPreviewRequestThrottleSeconds,
                 disallowManualCityCorePlacement,
                 manualPlacementBlockedBuildingTypes);

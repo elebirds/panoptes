@@ -135,6 +135,26 @@ compatibility Composition Root that wraps old singleton caches as the new module
 API. Existing singleton caches may remain for legacy modules until those modules
 migrate.
 
+### Presentation-Owned Transient Map Visuals
+
+- Pending map ghosts, hover ghosts, and similar transient visuals remain
+  presentation-owned state even when the underlying map mesh is rebound from
+  authoritative `GameStateStore` snapshots.
+- `MapRenderer` refresh/rebuild paths may clear node visuals back to the latest
+  authoritative node snapshot. Do not mutate authoritative store snapshots to
+  keep temporary visuals alive.
+- When a transient visual must survive renderer refreshes, restore it from the
+  owning presentation/session state after renderer presentation refresh
+  completes. Current example: pending build ghosts are replayed from
+  `MapBuildPlacementSession` after `MapRenderer.StatePresentationRefreshed`.
+- Do not normalize map node ids with catalog/command token helpers such as
+  `MapInputTokens.Normalize`, because protocol node ids are case-sensitive
+  display keys like `V22`. Trim node ids only; reserve lowercase normalization
+  for building/action/catalog tokens.
+- Pending build visuals are a pair: the building ghost and the tile edge glow.
+  Any restore path that replays a pending build must reapply both visual parts
+  before returning control to hover/highlight cleanup.
+
 ### Composition Scope Ownership
 
 - `ProjectLifetimeScope` is owned by the startup/bootstrap path that creates the
@@ -173,3 +193,6 @@ migrate.
   runtime bootstrap already creates one.
 - Exposing legacy cache nested JSON types from Store state; map catalog data
   into standalone Core DTOs before Store publication.
+- Assuming authoritative map rebinds will preserve transient presentation
+  visuals such as pending build ghosts. Reapply those visuals from
+  presentation-owned pending state after renderer refresh instead.

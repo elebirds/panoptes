@@ -111,6 +111,7 @@ namespace Panoptes.Presentation.Map
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
         public float TileSize => tileSize;
         public event Action<MapCameraContext> CameraContextReady;
+        public event Action StatePresentationRefreshed;
 
         public bool TryGetCameraContext(out MapCameraContext context)
         {
@@ -389,6 +390,7 @@ namespace Panoptes.Presentation.Map
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
             RebuildUnitsForCurrentSource();
             PublishCameraContext();
+            StatePresentationRefreshed?.Invoke();
         }
 
         private bool HasMissingRenderedNode(GameStateStoreState state)
@@ -998,6 +1000,7 @@ namespace Panoptes.Presentation.Map
 
             RebuildUnitsForCurrentSource();
             PublishCameraContext();
+            StatePresentationRefreshed?.Invoke();
         }
 
         private void PublishCameraContext()

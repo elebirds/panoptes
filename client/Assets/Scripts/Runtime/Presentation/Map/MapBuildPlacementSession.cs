@@ -17,6 +17,7 @@ namespace Panoptes.Presentation.Map
             Color invalidColor,
             Color pendingColor,
             Color placedGhostColor,
+            Color placedEdgeGlowColor,
             float previewRequestThrottleSeconds,
             bool disallowManualCityCorePlacement,
             string[] manualPlacementBlockedBuildingTypes)
@@ -25,6 +26,7 @@ namespace Panoptes.Presentation.Map
             InvalidColor = invalidColor;
             PendingColor = pendingColor;
             PlacedGhostColor = placedGhostColor;
+            PlacedEdgeGlowColor = placedEdgeGlowColor;
             PreviewRequestThrottleSeconds = previewRequestThrottleSeconds;
             DisallowManualCityCorePlacement = disallowManualCityCorePlacement;
             ManualPlacementBlockedBuildingTypes = manualPlacementBlockedBuildingTypes;
@@ -34,6 +36,7 @@ namespace Panoptes.Presentation.Map
         public Color InvalidColor { get; }
         public Color PendingColor { get; }
         public Color PlacedGhostColor { get; }
+        public Color PlacedEdgeGlowColor { get; }
         public float PreviewRequestThrottleSeconds { get; }
         public bool DisallowManualCityCorePlacement { get; }
         public string[] ManualPlacementBlockedBuildingTypes { get; }
@@ -267,36 +270,55 @@ namespace Panoptes.Presentation.Map
             }
 
             var ownerId = ResolveLocalOwnerId();
-            if (!_mapRenderer.ApplyBuildingPlacement(
-                    node.NodeId,
-                    backendBuildingType,
-                    ownerId,
-                    true,
-                    100,
-                    settings.PlacedGhostColor))
-            {
-                Debug.LogWarning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
-            }
-
-            _pendingBuildState.Add(new MapPlanningInputController.PendingBuildRecord
+            RememberPendingBuild(new MapPlanningInputController.PendingBuildRecord
             {
                 buildingType = backendBuildingType,
                 nodeId = node.NodeId,
                 ownerId = ownerId,
                 isGhost = true
             });
+
+            if (!ApplyPendingBuildVisual(
+                    node.NodeId,
+                    backendBuildingType,
+                    ownerId,
+                    settings.PlacedGhostColor,
+                    settings.PlacedEdgeGlowColor))
+            {
+                Debug.LogWarning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
+            }
+
             ExitBuildMode();
             return true;
         }
 
-        public void ApplyBackendBuildCommand(string buildingType, string nodeId, bool isGhost, string ownerId, int hp, Color placedGhostColor)
+        public void ApplyBackendBuildCommand(
+            string buildingType,
+            string nodeId,
+            bool isGhost,
+            string ownerId,
+            int hp,
+            Color placedGhostColor,
+            Color placedEdgeGlowColor)
         {
             if (_mapRenderer == null)
             {
                 return;
             }
 
-            _mapRenderer.ApplyBuildingPlacement(nodeId, buildingType, ownerId, isGhost, hp, placedGhostColor);
+            if (isGhost)
+            {
+                ApplyPendingBuildVisual(
+                    nodeId,
+                    buildingType,
+                    ownerId,
+                    placedGhostColor,
+                    placedEdgeGlowColor);
+            }
+            else
+            {
+                _mapRenderer.ApplyBuildingPlacement(nodeId, buildingType, ownerId, false, hp, placedGhostColor);
+            }
 
             if (!isGhost)
             {
@@ -308,7 +330,65 @@ namespace Panoptes.Presentation.Map
         {
             if (!string.IsNullOrEmpty(nodeId))
             {
-                _pendingBuildState.RemoveNode(nodeId);
+                var normalizedNodeId = NormalizeNodeId(nodeId);
+                _pendingBuildState.RemoveNode(normalizedNodeId);
+                RestoreNodeHighlight(normalizedNodeId);
+            }
+        }
+
+        public void RestorePendingBuildGhosts(Color placedGhostColor)
+        {
+            RestorePendingBuildGhosts(placedGhostColor, placedGhostColor);
+        }
+
+        public void RestorePendingBuildGhosts(Color placedGhostColor, Color placedEdgeGlowColor)
+        {
+            if (_mapRenderer == null || _pendingBuildState.Records.Count == 0)
+            {
+                return;
+            }
+
+            List<string> committedNodeIds = null;
+            for (var i = 0; i < _pendingBuildState.Records.Count; i++)
+            {
+                var record = _pendingBuildState.Records[i];
+                var nodeId = NormalizeNodeId(record.nodeId);
+                if (string.IsNullOrEmpty(nodeId))
+                {
+                    continue;
+                }
+
+                if (_mapRenderer.TryGetNodeState(nodeId, out var nodeState) &&
+                    nodeState != null &&
+                    !string.IsNullOrWhiteSpace(nodeState.BuildingType))
+                {
+                    committedNodeIds ??= new List<string>();
+                    committedNodeIds.Add(nodeId);
+                    continue;
+                }
+
+                var buildingType = ResolveBackendBuildingType(record.buildingType);
+                if (string.IsNullOrWhiteSpace(buildingType))
+                {
+                    continue;
+                }
+
+                ApplyPendingBuildVisual(
+                    nodeId,
+                    buildingType,
+                    record.ownerId,
+                    placedGhostColor,
+                    placedEdgeGlowColor);
+            }
+
+            if (committedNodeIds == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < committedNodeIds.Count; i++)
+            {
+                RemovePendingBuild(committedNodeIds[i]);
             }
         }
 
@@ -319,6 +399,8 @@ namespace Panoptes.Presentation.Map
 
         public void RememberPendingBuild(MapPlanningInputController.PendingBuildRecord record)
         {
+            record.nodeId = NormalizeNodeId(record.nodeId);
+            record.buildingType = ResolveBackendBuildingType(record.buildingType);
             _pendingBuildState.Add(record);
         }
 
@@ -352,11 +434,23 @@ namespace Panoptes.Presentation.Map
             }
 
             _mapRenderer.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
+            RestoreNodeHighlight(nodeId);
         }
 
         public bool HasPendingBuild(string nodeId)
         {
-            return !string.IsNullOrWhiteSpace(nodeId) && _pendingBuildState.HasNode(nodeId);
+            return !string.IsNullOrWhiteSpace(nodeId) && _pendingBuildState.HasNode(NormalizeNodeId(nodeId));
+        }
+
+        public bool TryRestorePendingBuildHighlight(string nodeId, NodeView node, Color placedEdgeGlowColor)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(nodeId) || !HasPendingBuild(nodeId))
+            {
+                return false;
+            }
+
+            node.SetHighlight(true, placedEdgeGlowColor);
+            return true;
         }
 
         public void ClearBuildPreviewState()
@@ -385,6 +479,47 @@ namespace Panoptes.Presentation.Map
         private void ClearHoverGhost()
         {
             _ghostPresenter.Clear();
+        }
+
+        private bool ApplyPendingBuildVisual(
+            string nodeId,
+            string buildingType,
+            string ownerId,
+            Color placedGhostColor,
+            Color placedEdgeGlowColor)
+        {
+            if (_mapRenderer == null || string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var applied = _mapRenderer.ApplyBuildingPlacement(
+                nodeId,
+                buildingType,
+                ownerId,
+                true,
+                100,
+                placedGhostColor);
+
+            if (_mapRenderer.TryGetNodeView(nodeId, out var nodeView) && nodeView != null)
+            {
+                nodeView.SetHighlight(true, placedEdgeGlowColor);
+            }
+
+            return applied;
+        }
+
+        private void RestoreNodeHighlight(string nodeId)
+        {
+            if (_mapRenderer == null || string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            if (_mapRenderer.TryGetNodeView(nodeId, out var nodeView) && nodeView != null)
+            {
+                _restoreNodeHighlight?.Invoke(nodeView);
+            }
         }
 
         private bool SendBuildCommand(
@@ -480,6 +615,11 @@ namespace Panoptes.Presentation.Map
         private static string Normalize(string value)
         {
             return MapInputTokens.Normalize(value);
+        }
+
+        private static string NormalizeNodeId(string value)
+        {
+            return (value ?? string.Empty).Trim();
         }
     }
 }
