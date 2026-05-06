@@ -51,7 +51,7 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 				Outcome:    "generated",
 				PlayerResp: "pending",
 			})
-			if r.ministerEngine == nil || draft.MinisterRole != domesticMinisterRole {
+			if r.ministerEngine == nil {
 				continue
 			}
 			jobs = append(jobs, preparedMinisterDraftPolishJob{

@@ -29,6 +29,7 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	t.Setenv("MINISTER_LLM_PROVIDER", "qwen")
 	t.Setenv("MINISTER_LLM_MODEL", "qwen-plus")
 	t.Setenv("MINISTER_LLM_TIMEOUT_MS", "4200")
+	t.Setenv("MINISTER_LLM_ENABLED_ROLES", "domestic,military")
 
 	cfg, err := Load()
 	if err != nil {
@@ -52,6 +53,9 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	}
 	if cfg.MinisterLLMTimeoutMs != 4200 {
 		t.Fatalf("MinisterLLMTimeoutMs = %d", cfg.MinisterLLMTimeoutMs)
+	}
+	if cfg.MinisterLLMRoles != "domestic,military" {
+		t.Fatalf("MinisterLLMRoles = %q", cfg.MinisterLLMRoles)
 	}
 	if staticdata.Default() == nil {
 		t.Fatalf("static data default catalog not loaded")

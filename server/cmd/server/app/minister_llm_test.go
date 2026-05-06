@@ -38,3 +38,19 @@ func TestBuildMinisterChatClientDisabledReturnsNil(t *testing.T) {
 		t.Fatalf("buildMinisterChatClient() = %T, want nil when disabled", client)
 	}
 }
+
+func TestParseMinisterEnabledRoles(t *testing.T) {
+	got := parseMinisterEnabledRoles(" domestic, Military,domestic ,, ")
+	want := []string{"domestic", "military"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("parseMinisterEnabledRoles() = %#v, want %#v", got, want)
+	}
+}
+
+func TestParseMinisterEnabledRolesDefaultsWhenBlank(t *testing.T) {
+	got := parseMinisterEnabledRoles("  ")
+	want := []string{"domestic", "military"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("parseMinisterEnabledRoles() = %#v, want %#v", got, want)
+	}
+}

@@ -39,4 +39,5 @@ type Config struct {
 	MinisterLLMProvider  string `env:"MINISTER_LLM_PROVIDER" envDefault:"qwen"`
 	MinisterLLMModel     string `env:"MINISTER_LLM_MODEL" envDefault:""`
 	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"50000"`
+	MinisterLLMRoles     string `env:"MINISTER_LLM_ENABLED_ROLES" envDefault:"domestic,military"`
 }

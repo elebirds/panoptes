@@ -64,9 +64,30 @@ func buildMinisterEngineFactory(cfg *config.Config) func() *ministerengine.Minis
 
 	return func() *ministerengine.MinisterEngine {
 		engine := ministerengine.NewMinisterEngine(llmClient)
-		engine.SetEnabledRoles([]string{"domestic"})
+		engine.SetEnabledRoles(parseMinisterEnabledRoles(cfg.MinisterLLMRoles))
 		engine.SetTimeout(timeout)
 		engine.SetModel(model)
 		return engine
 	}
+}
+
+func parseMinisterEnabledRoles(raw string) []string {
+	parts := strings.Split(raw, ",")
+	roles := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		role := strings.ToLower(strings.TrimSpace(part))
+		if role == "" {
+			continue
+		}
+		if _, ok := seen[role]; ok {
+			continue
+		}
+		seen[role] = struct{}{}
+		roles = append(roles, role)
+	}
+	if len(roles) == 0 {
+		return []string{"domestic", "military"}
+	}
+	return roles
 }
