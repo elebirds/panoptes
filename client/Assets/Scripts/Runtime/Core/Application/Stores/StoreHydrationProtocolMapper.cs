@@ -332,15 +332,22 @@ namespace Panoptes.Core.Application.Stores
                 return previous.Clone();
             }
 
+            var nextTurn = msg.Turn > 0 ? msg.Turn : previous.Turn;
+            var nextPhase = string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase;
+            var isInteractive = GamePhases.IsPlanning(nextPhase) && !previous.IsGameOver;
+            var timeoutSeconds = isInteractive && nextTurn == previous.Turn
+                ? previous.TimeoutSeconds
+                : 0;
+
             return new TurnState(
-                msg.Turn > 0 ? msg.Turn : previous.Turn,
-                string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase,
+                nextTurn,
+                nextPhase,
                 msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : previous.TokensLeft,
                 previous.PlanningStartEvents,
                 previous.IsGameOver,
-                0,
+                timeoutSeconds,
                 msg.NextPhase,
-                GamePhases.IsPlanning(msg.Phase) && !previous.IsGameOver);
+                isInteractive);
         }
 
         public static TurnState MergeTurn(TurnState current, MsgTokenResult msg)

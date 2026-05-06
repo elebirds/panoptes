@@ -32,7 +32,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private RectTransform externalTurnPanelRoot;
         [SerializeField] private TextMeshProUGUI externalTurnNumText;
         [SerializeField] private TextMeshProUGUI externalPhaseText;
-        [SerializeField] private string externalTurnTextFormat = "当前回合数：{0}\n当前回合倒计时：{1}";
+        [SerializeField] private string externalTurnTextFormat = "当前回合数：{0}\n本回合剩余：{1}";
         [SerializeField] private string turnPanelBackgroundSpriteResource = "Textures/UI/turn_panel_parchment_bg";
 
         [Header("Submit Button")]
@@ -47,6 +47,7 @@ namespace Panoptes.Presentation.UI.HUD
         private string _currentPhase = string.Empty;
         private string _nextPhase = string.Empty;
         private int _currentTurn;
+        private int _currentTimeoutSeconds;
         private bool _isInteractive;
         private bool _gameEnded;
         private int _lastRemainingSeconds = int.MinValue;
@@ -115,14 +116,31 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            _currentTurn = state.Turn;
-            _currentPhase = state.Phase ?? string.Empty;
+            var nextTurn = state.Turn;
+            var nextPhase = state.Phase ?? string.Empty;
+            var nextTimeoutSeconds = state.TimeoutSeconds;
+            var nextIsInteractive = state.IsInteractive && !state.IsGameOver;
+            var shouldResetDeadline =
+                nextTurn != _currentTurn ||
+                !string.Equals(nextPhase, _currentPhase, StringComparison.Ordinal) ||
+                nextTimeoutSeconds != _currentTimeoutSeconds ||
+                nextIsInteractive != _isInteractive ||
+                state.IsGameOver != _gameEnded;
+
+            _currentTurn = nextTurn;
+            _currentPhase = nextPhase;
             _nextPhase = state.NextPhase ?? string.Empty;
-            _isInteractive = state.IsInteractive && !state.IsGameOver;
+            _currentTimeoutSeconds = nextTimeoutSeconds;
+            _isInteractive = nextIsInteractive;
             _gameEnded = state.IsGameOver;
-            _deadline = _isInteractive && state.TimeoutSeconds > 0
-                ? Time.unscaledTime + state.TimeoutSeconds
-                : -1f;
+            if (!_isInteractive || _gameEnded || _currentTimeoutSeconds <= 0)
+            {
+                _deadline = -1f;
+            }
+            else if (shouldResetDeadline || _deadline <= 0f)
+            {
+                _deadline = Time.unscaledTime + _currentTimeoutSeconds;
+            }
 
             _lastRemainingSeconds = int.MinValue;
             RefreshText();
@@ -157,13 +175,14 @@ namespace Panoptes.Presentation.UI.HUD
             var turnNum = _currentTurn > 0 ? _currentTurn.ToString() : "--";
             if (externalTurnNumText != null)
             {
+                EnsureExternalCountdownTextLayout();
                 externalTurnNumText.text = string.Format(
                     externalTurnTextFormat,
                     turnNum,
                     ResolveCountdownDisplay());
             }
 
-            if (titleText != null)
+            if (titleText != null && titleText != externalTurnNumText)
             {
                 titleText.text = _currentTurn > 0
                     ? $"当前回合数：{turnNum}"
@@ -172,11 +191,11 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (_gameEnded)
             {
-                SetDetailText("当前回合倒计时：--");
+                SetDetailText("本回合剩余：--");
                 return;
             }
 
-            SetDetailText($"当前回合倒计时：{ResolveCountdownDisplay()}");
+            SetDetailText($"本回合剩余：{ResolveCountdownDisplay()}");
         }
 
         private void SetDetailText(string value)
@@ -215,7 +234,22 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var remaining = Mathf.Max(0, Mathf.CeilToInt(_deadline - Time.unscaledTime));
-            return $"{remaining}s";
+            return FormatRemainingSeconds(remaining);
+        }
+
+        private static string FormatRemainingSeconds(int remaining)
+        {
+            remaining = Mathf.Max(0, remaining);
+            var seconds = remaining % 60;
+            var totalMinutes = remaining / 60;
+            if (totalMinutes < 60)
+            {
+                return $"{totalMinutes:00}:{seconds:00}";
+            }
+
+            var hours = totalMinutes / 60;
+            var minutes = totalMinutes % 60;
+            return $"{hours}:{minutes:00}:{seconds:00}";
         }
 
         private void ResolveExternalTurnPanelReferences()
@@ -239,6 +273,43 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 externalPhaseText = FindTextByName(externalTurnPanelRoot, "phaseText");
             }
+        }
+
+        private void EnsureExternalCountdownTextLayout()
+        {
+            if (externalTurnNumText == null)
+            {
+                return;
+            }
+
+            if (externalTurnPanelRoot != null)
+            {
+                externalTurnPanelRoot.sizeDelta = new Vector2(
+                    Mathf.Max(externalTurnPanelRoot.sizeDelta.x, 320f),
+                    Mathf.Max(externalTurnPanelRoot.sizeDelta.y, 108f));
+            }
+
+            externalTurnNumText.enableAutoSizing = true;
+            externalTurnNumText.fontSize = Mathf.Min(externalTurnNumText.fontSize, 36f);
+            externalTurnNumText.fontSizeMin = Mathf.Max(externalTurnNumText.fontSizeMin, 20f);
+            externalTurnNumText.fontSizeMax = 36f;
+            externalTurnNumText.textWrappingMode = TextWrappingModes.NoWrap;
+            externalTurnNumText.overflowMode = TextOverflowModes.Overflow;
+            externalTurnNumText.alignment = TextAlignmentOptions.Center;
+            externalTurnNumText.margin = Vector4.zero;
+
+            var rect = externalTurnNumText.rectTransform;
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.sizeDelta = new Vector2(
+                Mathf.Max(rect.sizeDelta.x, 288f),
+                Mathf.Max(rect.sizeDelta.y, 72f));
+            rect.anchoredPosition = new Vector2(
+                rect.anchoredPosition.x,
+                Mathf.Min(rect.anchoredPosition.y, 18f));
         }
 
         private void BindNextStageButton()

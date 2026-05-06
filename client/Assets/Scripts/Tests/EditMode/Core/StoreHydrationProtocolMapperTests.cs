@@ -132,5 +132,43 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.PlannedNationalPolicyId, Is.EqualTo("mobilize"));
             Assert.That(mapped.PlannedInstitutionPolicyIds, Is.EqualTo(new[] { "labor" }));
         }
+
+        [Test]
+        public void MergeTurn_GameSyncDuringSamePlanningTurn_ShouldPreserveTimeout()
+        {
+            var current = new TurnState(
+                turn: 4,
+                phase: "planning",
+                timeoutSeconds: 45,
+                isInteractive: true);
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurn(current, new MsgGameSync
+            {
+                Turn = 4,
+                Phase = "planning"
+            });
+
+            Assert.That(mapped.TimeoutSeconds, Is.EqualTo(45));
+            Assert.That(mapped.IsInteractive, Is.True);
+        }
+
+        [Test]
+        public void MergeTurn_GameSyncLeavingPlanning_ShouldClearTimeout()
+        {
+            var current = new TurnState(
+                turn: 4,
+                phase: "planning",
+                timeoutSeconds: 45,
+                isInteractive: true);
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurn(current, new MsgGameSync
+            {
+                Turn = 4,
+                Phase = "settlement"
+            });
+
+            Assert.That(mapped.TimeoutSeconds, Is.Zero);
+            Assert.That(mapped.IsInteractive, Is.False);
+        }
     }
 }
