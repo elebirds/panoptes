@@ -244,6 +244,38 @@ func TestObservationStoreOmniscientViewerSeesWholeMap(t *testing.T) {
 	}
 }
 
+func TestBuildObservationUsesMinisterSkillFullMapVisionForOneTurn(t *testing.T) {
+	store, state, _ := buildReportingScenario(t)
+
+	normal := store.BuildObservation(state, "player-1")
+	if len(normal.VisibleNodes) == 4 {
+		t.Fatalf("normal visible nodes = %d, want partial visibility", len(normal.VisibleNodes))
+	}
+
+	if !domain.QueueFullMapVisionFromMinisterSkill(state, "player-1", "domestic", "stargazing", 1, 1) {
+		t.Fatalf("QueueFullMapVisionFromMinisterSkill() = false")
+	}
+	stillNormal := store.BuildObservation(state, "player-1")
+	if len(stillNormal.VisibleNodes) == 4 {
+		t.Fatalf("queued skill should not reveal map until next turn")
+	}
+
+	state.Turn++
+	fullMap := store.BuildObservation(state, "player-1")
+	if len(fullMap.VisibleNodes) != 4 {
+		t.Fatalf("visible nodes = %d, want 4 under stargazing", len(fullMap.VisibleNodes))
+	}
+	if !fullMap.DirectInspection {
+		t.Fatalf("direct inspection = false, want true while stargazing is active")
+	}
+
+	state.Turn++
+	expired := store.BuildObservation(state, "player-1")
+	if len(expired.VisibleNodes) == 4 {
+		t.Fatalf("stargazing should expire after one turn")
+	}
+}
+
 func TestBuildInformationReportTracksStandardMemoryAndUnknowns(t *testing.T) {
 	store, state, allyEntry := buildReportingScenario(t)
 	first := store.BuildObservation(state, "player-1")

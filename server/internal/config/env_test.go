@@ -152,6 +152,12 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "m001", "name": "李猛", "role": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
   ]
 }`,
+		"data/content/ministers/skill_cards.json": `{
+  "$schema": "../../schema/content/minister_skill_cards.schema.json",
+  "minister_skill_cards": [
+    { "id": "stargazing", "name": "观星", "description": "下一回合展开全图视野。", "icon_key": "skill_stargazing", "role_tags": ["military"], "rarity": "rare", "effect_key": "next_turn_full_map_vision", "trigger_timing": "activated", "delay_turns": 1, "duration_turns": 1, "sort_order": 10 }
+  ]
+}`,
 		"data/content/maps/default/definition.json": `{
   "$schema": "../../../schema/content/map_definition.schema.json",
   "meta": { "id": "default", "name": "默认地图", "width": 1, "height": 1, "default_terrain": "plain" },

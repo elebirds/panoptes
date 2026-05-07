@@ -90,6 +90,12 @@ namespace Panoptes.Tests.EditMode.Core
             var reject = (MsgSetMinisterDirective)sender.Last;
             StringAssert.Contains("\"directive_type\":\"reject\"", reject.Content);
             StringAssert.Contains("\"draft_id\":\"draft-policy-1\"", reject.Content);
+
+            Assert.That(service.ActivateSkill("military", "stargazing"), Is.True);
+            var skill = (MsgSetMinisterDirective)sender.Last;
+            Assert.That(skill.MinisterRole, Is.EqualTo("military"));
+            StringAssert.Contains("\"directive_type\":\"activate_skill\"", skill.Content);
+            StringAssert.Contains("\"skill_card_id\":\"stargazing\"", skill.Content);
         }
 
         [Test]

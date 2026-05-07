@@ -1,0 +1,86 @@
+{
+  "$id": "content/minister_skill_cards.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "minister_skill_cards": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "delay_turns": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration_turns": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "effect_key": {
+            "type": "string"
+          },
+          "icon_key": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rarity": {
+            "type": "string"
+          },
+          "role_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sort_order": {
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "trigger_timing": {
+            "enum": [
+              "activated",
+              "passive",
+              "planning_start"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "icon_key",
+          "role_tags",
+          "rarity",
+          "effect_key",
+          "trigger_timing",
+          "delay_turns",
+          "duration_turns",
+          "sort_order"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "minister_skill_cards"
+  ],
+  "type": "object"
+}

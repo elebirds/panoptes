@@ -121,7 +121,7 @@ func (s *ObservationStore) IsOmniscient(viewerID string) bool {
 
 func (s *ObservationStore) BuildObservation(state *domain.GameState, viewerID string) *ObservationSnapshot {
 	reportingMode := s.ReportingMode(viewerID)
-	directInspection := s.IsOmniscient(viewerID)
+	directInspection := s.IsOmniscient(viewerID) || domain.PlayerHasFullMapVision(state, viewerID)
 	if directInspection {
 		reportingMode = ReportingModeClear
 	}
@@ -244,7 +244,7 @@ func (s *ObservationStore) RevealNodeView(state *domain.GameState, viewerID stri
 	if view == nil {
 		return nil
 	}
-	if s != nil && s.IsOmniscient(viewerID) {
+	if (s != nil && s.IsOmniscient(viewerID)) || domain.PlayerHasFullMapVision(state, viewerID) {
 		annotateCurrentNodeView(view, int32(state.Turn))
 		return view
 	}

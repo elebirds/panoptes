@@ -35,6 +35,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.Terrains.Path, SchemaRel: filepath.Join("content", "terrains.schema.json"), Raw: data.Terrains.Raw},
 		{Path: data.Rules.Path, SchemaRel: filepath.Join("content", "rules.schema.json"), Raw: data.Rules.Raw},
 		{Path: data.Ministers.Path, SchemaRel: filepath.Join("content", "ministers.schema.json"), Raw: data.Ministers.Raw},
+		{Path: data.MinisterSkillCards.Path, SchemaRel: filepath.Join("content", "minister_skill_cards.schema.json"), Raw: data.MinisterSkillCards.Raw},
 		{Path: data.ResourceUI.Path, SchemaRel: filepath.Join("ui", "resources.schema.json"), Raw: data.ResourceUI.Raw},
 		{Path: data.PointUI.Path, SchemaRel: filepath.Join("ui", "points.schema.json"), Raw: data.PointUI.Raw},
 		{Path: data.UnitUI.Path, SchemaRel: filepath.Join("ui", "units.schema.json"), Raw: data.UnitUI.Raw},

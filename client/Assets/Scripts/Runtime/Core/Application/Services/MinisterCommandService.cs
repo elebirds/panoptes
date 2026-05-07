@@ -12,6 +12,7 @@ namespace Panoptes.Core.Application.Services
         {
             public string directive_type;
             public string draft_id;
+            public string skill_card_id;
         }
 
         private readonly IClientMessageSender _sender;
@@ -41,7 +42,17 @@ namespace Panoptes.Core.Application.Services
             return SendDirective("reject_role", string.Empty, ministerRole);
         }
 
+        public bool ActivateSkill(string ministerRole, string skillCardId)
+        {
+            return SendDirective("activate_skill", string.Empty, ministerRole, skillCardId);
+        }
+
         private bool SendDirective(string directiveType, string draftId, string ministerRole)
+        {
+            return SendDirective(directiveType, draftId, ministerRole, string.Empty);
+        }
+
+        private bool SendDirective(string directiveType, string draftId, string ministerRole, string skillCardId)
         {
             if (ActionLock.IsLocked)
             {
@@ -51,16 +62,17 @@ namespace Panoptes.Core.Application.Services
             return _sender.Send(new MsgSetMinisterDirective
             {
                 MinisterRole = ministerRole ?? string.Empty,
-                Content = BuildMinisterDirectiveContent(directiveType, draftId)
+                Content = BuildMinisterDirectiveContent(directiveType, draftId, skillCardId)
             });
         }
 
-        private static string BuildMinisterDirectiveContent(string directiveType, string draftId)
+        private static string BuildMinisterDirectiveContent(string directiveType, string draftId, string skillCardId)
         {
             var payload = new MinisterDirectivePayload
             {
                 directive_type = directiveType,
-                draft_id = draftId ?? string.Empty
+                draft_id = draftId ?? string.Empty,
+                skill_card_id = skillCardId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
         }

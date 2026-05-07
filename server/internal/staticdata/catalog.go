@@ -16,6 +16,7 @@ type Catalog struct {
 	policies        map[string]PolicyDefinition
 	recipes         map[string]RecipeDefinition
 	terrains        map[string]TerrainDefinition
+	ministerSkills  map[string]MinisterSkillCard
 	maps            map[string]*MapRuntimeBundle
 	sectionPayloads map[string][]byte
 }

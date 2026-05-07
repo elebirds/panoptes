@@ -33,6 +33,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		"data/schema/content/terrains.schema.json",
 		"data/schema/content/rules.schema.json",
 		"data/schema/content/ministers.schema.json",
+		"data/schema/content/minister_skill_cards.schema.json",
 		"data/schema/content/maps/definition.schema.json",
 		"data/schema/content/resource_amount.schema.json",
 		"data/schema/ui/resources.schema.json",
@@ -65,6 +66,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/policies.schema.json"), `"national"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/recipes.schema.json"), `"point_inputs"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"bonus_tokens_per_turn"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/minister_skill_cards.schema.json"), `"effect_key"`)
 	assertFileNotContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"`+strings.Join([]string{"tokens", "recu" + "peration", "bonus"}, "_")+`"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
@@ -76,6 +78,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"recipes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"points"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"policies"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"minister_skill_cards"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"city_core"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"infantry"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
@@ -811,6 +814,12 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
       "loyalty": 7,
       "ambition": 6
     }
+  ]
+}`,
+		"data/content/ministers/skill_cards.json": `{
+  "$schema": "../../schema/content/minister_skill_cards.schema.json",
+  "minister_skill_cards": [
+    { "id": "stargazing", "name": "观星", "description": "下一回合展开全图视野。", "icon_key": "skill_stargazing", "role_tags": ["military"], "rarity": "rare", "effect_key": "next_turn_full_map_vision", "trigger_timing": "activated", "delay_turns": 1, "duration_turns": 1, "sort_order": 10 }
   ]
 }`,
 		"data/content/maps/default/definition.json": `{

@@ -233,6 +233,19 @@ func TestAdaptCommandEnvelopeMapsEveryBatchBody(t *testing.T) {
 	}
 }
 
+func TestMinisterDirectiveIntentAcceptsSkillActivation(t *testing.T) {
+	intent, err := ministerDirectiveIntent(&pb.MsgSetMinisterDirective{
+		MinisterRole: "domestic",
+		Content:      `{"directive_type":"activate_skill","skill_card_id":"stargazing"}`,
+	})
+	if err != nil {
+		t.Fatalf("ministerDirectiveIntent() error = %v", err)
+	}
+	if intent.DirectiveType != "activate_skill" || intent.SkillCardID != "stargazing" {
+		t.Fatalf("intent = %#v, want activate stargazing", intent)
+	}
+}
+
 func TestAdaptCommandBatchRejectsInvalidEnvelope(t *testing.T) {
 	base := cmddispatch.InboundContext{PlayerID: "player-1", RequestID: "req-base"}
 	if _, ok := AdaptCommandBatch(base, nil); ok {
