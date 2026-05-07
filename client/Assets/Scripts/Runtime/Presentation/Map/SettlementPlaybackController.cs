@@ -281,6 +281,7 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
+            ApplyUnitHpAfter(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
         }
@@ -298,6 +299,7 @@ namespace Panoptes.Presentation.Map
 
             if (showDamageCue)
             {
+                ApplyUnitHpAfter(evt);
                 TryShowDamagePopup(unit.transform, evt, isBuilding: false);
                 yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             }
@@ -312,6 +314,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
+            ApplyBuildingHpAfter(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
@@ -509,6 +512,38 @@ namespace Panoptes.Presentation.Map
             damagePopupController.ShowDamage(position, damage, isBuilding: false);
         }
 
+        private void ApplyUnitHpAfter(TurnEventDto evt)
+        {
+            if (evt == null || _mapRenderer == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return;
+            }
+
+            var hpAfter = ResolveHpAfter(evt);
+            if (hpAfter < 0)
+            {
+                return;
+            }
+
+            _mapRenderer.ApplySettlementUnitHitPoints(evt.UnitId, hpAfter);
+        }
+
+        private void ApplyBuildingHpAfter(TurnEventDto evt)
+        {
+            if (evt == null || _mapRenderer == null)
+            {
+                return;
+            }
+
+            var hpAfter = ResolveHpAfter(evt);
+            if (hpAfter < 0)
+            {
+                return;
+            }
+
+            _mapRenderer.ApplySettlementBuildingHitPoints(evt, hpAfter);
+        }
+
         private bool TryResolveUnitPopupPosition(TurnEventDto evt, out Vector3 position)
         {
             position = default;
@@ -581,6 +616,39 @@ namespace Panoptes.Presentation.Map
             }
 
             return 0;
+        }
+
+        private static int ResolveHpAfter(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return -1;
+            }
+
+            if (evt.HpAfter > 0)
+            {
+                return evt.HpAfter;
+            }
+
+            if (evt.Data != null)
+            {
+                if (evt.Data.TryGetValue("hp_after", out var rawHpAfter) && int.TryParse(rawHpAfter, out var parsedHpAfter))
+                {
+                    return Mathf.Max(0, parsedHpAfter);
+                }
+
+                if (evt.Data.TryGetValue("building_hp", out var rawBuildingHp) && int.TryParse(rawBuildingHp, out var parsedBuildingHp))
+                {
+                    return Mathf.Max(0, parsedBuildingHp);
+                }
+            }
+
+            if (string.Equals(evt.Type, "unit_died", StringComparison.Ordinal))
+            {
+                return 0;
+            }
+
+            return -1;
         }
 
         private static int ReadEventInt(TurnEventDto evt, params string[] keys)

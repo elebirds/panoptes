@@ -93,6 +93,23 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
+        public void MergeGameSync_WithoutPhase_ShouldDefaultToResolving()
+        {
+            var current = new GameStateStoreState(
+                turn: 4,
+                phase: "planning",
+                tokensLeft: 3);
+
+            var mapped = StoreHydrationProtocolMapper.MergeGameSync(current, new MsgGameSync
+            {
+                Turn = 5
+            });
+
+            Assert.That(mapped.Turn, Is.EqualTo(5));
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
+        }
+
+        [Test]
         public void ToPlanningDraft_ShouldMapSnapshotWithoutProtocolTypes()
         {
             var mapped = StoreHydrationProtocolMapper.ToPlanningDraft(new MsgPlanningSnapshot
@@ -167,6 +184,25 @@ namespace Panoptes.Tests.EditMode.Core
                 Phase = "settlement"
             });
 
+            Assert.That(mapped.TimeoutSeconds, Is.Zero);
+            Assert.That(mapped.IsInteractive, Is.False);
+        }
+
+        [Test]
+        public void MergeTurn_GameSyncWithoutPhase_ShouldDefaultToResolving()
+        {
+            var current = new TurnState(
+                turn: 4,
+                phase: "planning",
+                timeoutSeconds: 45,
+                isInteractive: true);
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurn(current, new MsgGameSync
+            {
+                Turn = 5
+            });
+
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
             Assert.That(mapped.TimeoutSeconds, Is.Zero);
             Assert.That(mapped.IsInteractive, Is.False);
         }

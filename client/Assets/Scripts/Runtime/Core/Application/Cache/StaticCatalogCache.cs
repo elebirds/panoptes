@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Panoptes.Protocol.V1;
 using UnityEngine;
 
@@ -73,6 +74,8 @@ namespace Panoptes.Core.Application.Cache
             public string takeover_mode;
             public int sort_order;
             public string default_recipe_id;
+            public IntAmountEntryJson[] resource_costs;
+            public IntAmountEntryJson[] point_costs;
             public string[] recipe_ids;
             public string[] tags;
             public int max_hp;
@@ -511,7 +514,7 @@ namespace Panoptes.Core.Application.Cache
             CatalogBundleJson parsed = null;
             try
             {
-                parsed = JsonUtility.FromJson<CatalogBundleJson>(asset.text);
+                parsed = JsonUtility.FromJson<CatalogBundleJson>(NormalizeCatalogAmountMaps(asset.text));
             }
             catch (Exception ex)
             {
@@ -1062,7 +1065,7 @@ namespace Panoptes.Core.Application.Cache
                         RebuildIndex(_unitsById, JsonUtility.FromJson<UnitsSectionJson>(payload)?.units, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "buildings":
-                        RebuildIndex(_buildingsById, JsonUtility.FromJson<BuildingsSectionJson>(payload)?.buildings, entry => entry != null ? entry.id : string.Empty);
+                        RebuildIndex(_buildingsById, JsonUtility.FromJson<BuildingsSectionJson>(NormalizeAmountMapFields(payload, "resource_costs", "point_costs"))?.buildings, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "technologies":
                         RebuildIndex(_technologiesById, JsonUtility.FromJson<TechnologiesSectionJson>(payload)?.technologies, entry => entry != null ? entry.id : string.Empty);
@@ -1071,7 +1074,7 @@ namespace Panoptes.Core.Application.Cache
                         RebuildIndex(_policiesById, JsonUtility.FromJson<PoliciesSectionJson>(payload)?.policies, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "recipes":
-                        RebuildIndex(_recipesById, JsonUtility.FromJson<RecipesSectionJson>(payload)?.recipes, entry => entry != null ? entry.id : string.Empty);
+                        RebuildIndex(_recipesById, JsonUtility.FromJson<RecipesSectionJson>(NormalizeAmountMapFields(payload, "resource_inputs", "point_inputs", "resources", "point_progress", "state_changes"))?.recipes, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "terrains":
                         RebuildIndex(_terrainsById, JsonUtility.FromJson<TerrainsSectionJson>(payload)?.terrains, entry => entry != null ? entry.id : string.Empty);
@@ -1233,6 +1236,8 @@ namespace Panoptes.Core.Application.Cache
                     required_resource_type = item != null ? item.RequiredResourceType : string.Empty,
                     takeover_mode = item != null ? item.TakeoverMode : string.Empty,
                     tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
+                    resource_costs = old != null ? old.resource_costs : Array.Empty<IntAmountEntryJson>(),
+                    point_costs = old != null ? old.point_costs : Array.Empty<IntAmountEntryJson>(),
                     recipe_ids = old != null ? old.recipe_ids : Array.Empty<string>(),
                     default_recipe_id = old != null ? old.default_recipe_id : string.Empty
                 };
@@ -1364,6 +1369,167 @@ namespace Panoptes.Core.Application.Cache
         private static string Normalize(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static string NormalizeCatalogAmountMaps(string payload)
+        {
+            return NormalizeAmountMapFields(
+                payload,
+                "resource_costs",
+                "point_costs",
+                "resource_inputs",
+                "point_inputs",
+                "resources",
+                "point_progress",
+                "state_changes");
+        }
+
+        private static string NormalizeAmountMapFields(string payload, params string[] fieldNames)
+        {
+            if (string.IsNullOrWhiteSpace(payload) || fieldNames == null || fieldNames.Length == 0)
+            {
+                return payload;
+            }
+
+            var result = payload;
+            for (var i = 0; i < fieldNames.Length; i++)
+            {
+                result = NormalizeAmountMapField(result, fieldNames[i]);
+            }
+
+            return result;
+        }
+
+        private static string NormalizeAmountMapField(string payload, string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(fieldName))
+            {
+                return payload;
+            }
+
+            var search = "\"" + fieldName + "\"";
+            var builder = new StringBuilder(payload.Length);
+            var cursor = 0;
+            while (cursor < payload.Length)
+            {
+                var fieldIndex = payload.IndexOf(search, cursor, StringComparison.Ordinal);
+                if (fieldIndex < 0)
+                {
+                    builder.Append(payload, cursor, payload.Length - cursor);
+                    break;
+                }
+
+                builder.Append(payload, cursor, fieldIndex - cursor);
+                var colonIndex = payload.IndexOf(':', fieldIndex + search.Length);
+                if (colonIndex < 0)
+                {
+                    builder.Append(payload, fieldIndex, payload.Length - fieldIndex);
+                    break;
+                }
+
+                var valueStart = colonIndex + 1;
+                while (valueStart < payload.Length && char.IsWhiteSpace(payload[valueStart]))
+                {
+                    valueStart++;
+                }
+
+                if (valueStart >= payload.Length || payload[valueStart] != '{')
+                {
+                    builder.Append(payload, fieldIndex, valueStart - fieldIndex);
+                    cursor = valueStart;
+                    continue;
+                }
+
+                var valueEnd = FindMatchingBrace(payload, valueStart);
+                if (valueEnd < 0)
+                {
+                    builder.Append(payload, fieldIndex, payload.Length - fieldIndex);
+                    break;
+                }
+
+                builder.Append(payload, fieldIndex, valueStart - fieldIndex);
+                builder.Append(ConvertAmountObjectToArray(payload.Substring(valueStart + 1, valueEnd - valueStart - 1)));
+                cursor = valueEnd + 1;
+            }
+
+            return builder.ToString();
+        }
+
+        private static int FindMatchingBrace(string text, int openIndex)
+        {
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            for (var i = openIndex; i < text.Length; i++)
+            {
+                var current = text[i];
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (current == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else if (current == '"')
+                    {
+                        inString = false;
+                    }
+
+                    continue;
+                }
+
+                if (current == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (current == '{')
+                {
+                    depth++;
+                }
+                else if (current == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        private static string ConvertAmountObjectToArray(string objectBody)
+        {
+            var matches = Regex.Matches(objectBody ?? string.Empty, "\"(?<key>(?:\\\\.|[^\"\\\\])*)\"\\s*:\\s*(?<amount>-?\\d+)");
+            if (matches.Count == 0)
+            {
+                return "[]";
+            }
+
+            var builder = new StringBuilder();
+            builder.Append('[');
+            for (var i = 0; i < matches.Count; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append("{\"key\":\"");
+                builder.Append(matches[i].Groups["key"].Value);
+                builder.Append("\",\"amount\":");
+                builder.Append(matches[i].Groups["amount"].Value);
+                builder.Append('}');
+            }
+
+            builder.Append(']');
+            return builder.ToString();
         }
     }
 }

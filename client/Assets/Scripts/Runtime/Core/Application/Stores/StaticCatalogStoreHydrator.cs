@@ -89,6 +89,8 @@ namespace Panoptes.Core.Application.Stores
                 TakeoverMode = entry.takeover_mode,
                 SortOrder = entry.sort_order,
                 DefaultRecipeId = entry.default_recipe_id,
+                ResourceCosts = MapAmounts(entry.resource_costs),
+                PointCosts = MapAmounts(entry.point_costs),
                 RecipeIds = ToList(entry.recipe_ids),
                 Tags = ToList(entry.tags),
                 MaxHp = entry.max_hp

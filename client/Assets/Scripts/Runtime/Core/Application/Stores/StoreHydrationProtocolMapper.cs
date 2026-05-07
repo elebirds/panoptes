@@ -92,12 +92,13 @@ namespace Panoptes.Core.Application.Stores
                 return previous.Clone();
             }
 
+            var phase = string.IsNullOrWhiteSpace(msg.Phase) ? GamePhases.Resolving : msg.Phase;
             return new GameStateStoreState(
                 gameId: previous.GameId,
                 activeGameSessionId: previous.ActiveGameSessionId,
                 myPlayerId: previous.MyPlayerId,
                 turn: msg.Turn > 0 ? msg.Turn : previous.Turn,
-                phase: string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase,
+                phase: phase,
                 mapWidth: previous.MapWidth,
                 mapHeight: previous.MapHeight,
                 isGameOver: previous.IsGameOver,
@@ -333,7 +334,7 @@ namespace Panoptes.Core.Application.Stores
             }
 
             var nextTurn = msg.Turn > 0 ? msg.Turn : previous.Turn;
-            var nextPhase = string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase;
+            var nextPhase = string.IsNullOrWhiteSpace(msg.Phase) ? GamePhases.Resolving : msg.Phase;
             var isInteractive = GamePhases.IsPlanning(nextPhase) && !previous.IsGameOver;
             var timeoutSeconds = isInteractive && nextTurn == previous.Turn
                 ? previous.TimeoutSeconds

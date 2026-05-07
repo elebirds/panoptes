@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Map;
 using R3;
 
 namespace Panoptes.Presentation.ViewModels
@@ -14,6 +15,7 @@ namespace Panoptes.Presentation.ViewModels
         private readonly SelectionService _selectionService;
         private readonly SelectionStore _selectionStore;
         private readonly StaticCatalogStore _staticCatalogStore;
+        private readonly MapRenderer _mapRenderer;
         private readonly BehaviorSubject<UnitInfoState> _state;
         private readonly List<IDisposable> _subscriptions = new();
         private bool _actionLocked;
@@ -25,13 +27,15 @@ namespace Panoptes.Presentation.ViewModels
             SelectionStore selectionStore,
             StaticCatalogStore staticCatalogStore,
             PlanningDraftStore planningDraftStore,
-            SelectionService selectionService)
+            SelectionService selectionService,
+            MapRenderer mapRenderer = null)
         {
             _gameStateStore = gameStateStore ?? throw new ArgumentNullException(nameof(gameStateStore));
             _selectionStore = selectionStore ?? throw new ArgumentNullException(nameof(selectionStore));
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
             _selectionService = selectionService ?? throw new ArgumentNullException(nameof(selectionService));
+            _mapRenderer = mapRenderer;
             _current = Project();
             _state = new BehaviorSubject<UnitInfoState>(_current);
             SubscribeStores();
@@ -80,6 +84,11 @@ namespace Panoptes.Presentation.ViewModels
                 _subscriptions[i]?.Dispose();
             }
 
+            if (_mapRenderer != null)
+            {
+                _mapRenderer.StatePresentationRefreshed -= Publish;
+            }
+
             _subscriptions.Clear();
             _state.Dispose();
         }
@@ -90,6 +99,10 @@ namespace Panoptes.Presentation.ViewModels
             _subscriptions.Add(_selectionStore.State.Subscribe(this, static (_, self) => self.Publish()));
             _subscriptions.Add(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             _subscriptions.Add(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            if (_mapRenderer != null)
+            {
+                _mapRenderer.StatePresentationRefreshed += Publish;
+            }
         }
 
         private void Publish()
@@ -115,7 +128,7 @@ namespace Panoptes.Presentation.ViewModels
             var game = _gameStateStore.Snapshot;
             var catalog = _staticCatalogStore.Snapshot;
             var planning = _planningDraftStore.Snapshot;
-            var selected = ResolveSelectedUnit(selectedId, game, catalog);
+            var selected = ResolveSelectedUnit(selectedId, game, catalog, _mapRenderer);
             if (!selected.HasSelection)
             {
                 return new UnitInfoState(actionLocked: _actionLocked);
@@ -164,8 +177,40 @@ namespace Panoptes.Presentation.ViewModels
         private static SelectedUnitProjection ResolveSelectedUnit(
             string selectedId,
             GameStateStoreState game,
-            StaticCatalogState catalog)
+            StaticCatalogState catalog,
+            MapRenderer mapRenderer)
         {
+            if (GamePhases.IsResolving(game?.Phase) && mapRenderer != null)
+            {
+                if (mapRenderer.TryGetUnitView(selectedId, out var unitView) && unitView != null)
+                {
+                    return new SelectedUnitProjection(
+                        true,
+                        unitView.UnitId,
+                        unitView.UnitType,
+                        unitView.Faction,
+                        unitView.HitPoints,
+                        unitView.MaxHitPoints,
+                        isBuildingOrResource: false);
+                }
+
+                if (mapRenderer.TryGetNodeView(selectedId, out var nodeView) &&
+                    nodeView != null &&
+                    nodeView.BuildingInstance != null)
+                {
+                    var building = nodeView.BuildingInstance;
+                    return new SelectedUnitProjection(
+                        true,
+                        selectedId,
+                        building.BuildingType,
+                        building.OwnerId,
+                        building.HitPoints,
+                        building.MaxHitPoints,
+                        isBuildingOrResource: true,
+                        isResourcePoint: false);
+                }
+            }
+
             if (game?.Units != null &&
                 game.Units.TryGetValue(selectedId, out var unit) &&
                 unit != null)

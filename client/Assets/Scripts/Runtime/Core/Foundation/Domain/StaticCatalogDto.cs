@@ -39,6 +39,8 @@ namespace Panoptes.Core.Domain
         public string TakeoverMode;
         public int SortOrder;
         public string DefaultRecipeId;
+        public List<CatalogAmountDto> ResourceCosts;
+        public List<CatalogAmountDto> PointCosts;
         public List<string> RecipeIds;
         public List<string> Tags;
         public int MaxHp;

@@ -48,6 +48,11 @@ namespace Panoptes.Presentation.Animation
                 return;
             }
 
+            if (_mapRenderer != null && _mapRenderer.IsResolvingAuthoritativeState)
+            {
+                return;
+            }
+
             _unitMoveQueue.Enqueue(new UnitMoveCommand
             {
                 unitId = unitId,
@@ -107,6 +112,11 @@ namespace Panoptes.Presentation.Animation
                 yield break;
             }
 
+            if (map.IsResolvingAuthoritativeState)
+            {
+                yield break;
+            }
+
             if (!map.TryGetUnitView(cmd.unitId, out var unitView) || unitView == null)
             {
                 yield break;
@@ -136,9 +146,20 @@ namespace Panoptes.Presentation.Animation
             var segmentDuration = Mathf.Max(0.17f, moveDuration / Mathf.Max(1, waypoints.Count));
             for (var i = 0; i < waypoints.Count; i++)
             {
+                if (map.IsResolvingAuthoritativeState)
+                {
+                    unitView.SetSelected(false);
+                    yield break;
+                }
+
                 yield return UnitMoveAnim.Play(unitView, waypoints[i], segmentDuration, camera, follow);
             }
             unitView.SetSelected(false);
+
+            if (map.IsResolvingAuthoritativeState)
+            {
+                yield break;
+            }
 
             if (map.TryGetUnitView(cmd.unitId, out var stillAliveUnit) && stillAliveUnit != null)
             {

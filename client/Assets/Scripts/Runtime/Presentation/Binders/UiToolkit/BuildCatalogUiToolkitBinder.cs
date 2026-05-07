@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Map;
@@ -209,6 +210,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 button.Add(description);
             }
 
+            if (item?.Costs != null && item.Costs.Count > 0)
+            {
+                button.Add(CreateCostStrip(item.Costs));
+            }
+
             if (item != null && item.IsPending)
             {
                 var pending = new Label(item.PendingText) { name = "build-catalog-item-pending" };
@@ -261,6 +267,108 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             return icon;
+        }
+
+        private static VisualElement CreateCostStrip(IReadOnlyList<ManagementPanelAmountState> costs)
+        {
+            var strip = new VisualElement { name = "build-catalog-item-costs" };
+            strip.AddToClassList("build-catalog-item-costs");
+            strip.style.flexDirection = FlexDirection.Row;
+            strip.style.flexWrap = Wrap.Wrap;
+            strip.style.alignItems = Align.Center;
+            strip.style.marginTop = 8f;
+            strip.style.marginBottom = 2f;
+
+            for (var i = 0; costs != null && i < costs.Count; i++)
+            {
+                var amount = costs[i];
+                if (amount == null)
+                {
+                    continue;
+                }
+
+                strip.Add(CreateCostAmount(amount));
+            }
+
+            return strip;
+        }
+
+        private static VisualElement CreateCostAmount(ManagementPanelAmountState amount)
+        {
+            var pill = new VisualElement { name = "build-catalog-item-cost-" + SafeName(amount?.Id) };
+            pill.AddToClassList("build-catalog-item-cost");
+            pill.style.flexDirection = FlexDirection.Row;
+            pill.style.alignItems = Align.Center;
+            pill.style.marginRight = 8f;
+            pill.style.marginBottom = 6f;
+            pill.style.paddingBottom = 2f;
+            pill.style.paddingLeft = 5f;
+            pill.style.paddingRight = 7f;
+            pill.style.paddingTop = 2f;
+            pill.style.backgroundColor = new Color(0.16f, 0.10f, 0.065f, 0.96f);
+            pill.style.borderBottomColor = new Color(0.55f, 0.36f, 0.16f, 0.85f);
+            pill.style.borderLeftColor = new Color(0.55f, 0.36f, 0.16f, 0.85f);
+            pill.style.borderRightColor = new Color(0.55f, 0.36f, 0.16f, 0.85f);
+            pill.style.borderTopColor = new Color(0.55f, 0.36f, 0.16f, 0.85f);
+            pill.style.borderBottomWidth = 1f;
+            pill.style.borderLeftWidth = 1f;
+            pill.style.borderRightWidth = 1f;
+            pill.style.borderTopWidth = 1f;
+            pill.tooltip = $"{amount?.Label ?? string.Empty} x{Mathf.Max(0, amount?.Amount ?? 0)}";
+
+            var icon = CreateCostIcon(amount?.IconKey, amount?.Id);
+            if (icon != null)
+            {
+                pill.Add(icon);
+            }
+
+            var label = new Label("x" + Mathf.Max(0, amount?.Amount ?? 0)) { name = "build-catalog-item-cost-amount" };
+            label.style.color = new Color(0.98f, 0.87f, 0.64f, 1f);
+            label.style.whiteSpace = WhiteSpace.NoWrap;
+            pill.Add(label);
+            return pill;
+        }
+
+        private static VisualElement CreateCostIcon(string iconKey, string fallbackId)
+        {
+            var sprite = ManagementPanelUiToolkitRenderer.LoadIconSprite(
+                iconKey,
+                fallbackId,
+                "Icons/Resources",
+                "Icons/Points");
+            var icon = new VisualElement { name = "build-catalog-item-cost-icon" };
+            icon.style.width = 20f;
+            icon.style.height = 20f;
+            icon.style.flexShrink = 0f;
+            icon.style.marginRight = 5f;
+            if (sprite != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(sprite);
+            }
+            else
+            {
+                icon.style.backgroundColor = new Color(0.24f, 0.15f, 0.08f, 1f);
+                icon.style.borderBottomColor = new Color(0.78f, 0.55f, 0.25f, 0.9f);
+                icon.style.borderLeftColor = new Color(0.78f, 0.55f, 0.25f, 0.9f);
+                icon.style.borderRightColor = new Color(0.78f, 0.55f, 0.25f, 0.9f);
+                icon.style.borderTopColor = new Color(0.78f, 0.55f, 0.25f, 0.9f);
+                icon.style.borderBottomWidth = 1f;
+                icon.style.borderLeftWidth = 1f;
+                icon.style.borderRightWidth = 1f;
+                icon.style.borderTopWidth = 1f;
+            }
+
+            return icon;
+        }
+
+        private static string SafeName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "unknown";
+            }
+
+            return value.Trim().ToLowerInvariant().Replace(' ', '-');
         }
 
         private void RequestBuild(string buildingId, PlanningBuildPlacementRule placementRule)

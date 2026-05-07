@@ -1,3 +1,4 @@
+using Google.Protobuf;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
@@ -126,6 +127,26 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
+        public void HydrateFromCache_ShouldMapAmountObjectsFromSectionChunks()
+        {
+            var cache = EnsureCatalogCache();
+            ApplySection(cache, "resources", "{\"resources\":[{\"key\":\"food\",\"display_name\":\"Food\",\"icon_key\":\"resource_food\"},{\"key\":\"ore\",\"display_name\":\"Ore\",\"icon_key\":\"resource_ore\"},{\"key\":\"wood\",\"display_name\":\"Wood\",\"icon_key\":\"resource_wood\"}]}");
+            ApplySection(cache, "points", "{\"points\":[{\"key\":\"industry_output\",\"display_name\":\"Industry\",\"icon_key\":\"point_industry_output\"}]}");
+            ApplySection(cache, "buildings", "{\"buildings\":[{\"id\":\"barracks\",\"name\":\"Barracks\",\"placement_kind\":\"city_territory\",\"resource_costs\":{\"wood\":2,\"ore\":1},\"point_costs\":{\"industry_output\":1},\"recipe_ids\":[\"barracks_infantry\"],\"default_recipe_id\":\"barracks_infantry\"}]}");
+            ApplySection(cache, "recipes", "{\"recipes\":[{\"id\":\"barracks_infantry\",\"name\":\"Infantry\",\"building_id\":\"barracks\",\"work_amount\":2,\"base_progress\":1,\"resource_inputs\":{\"food\":1,\"ore\":1},\"point_inputs\":{\"industry_output\":1},\"outputs\":{\"units\":[\"infantry\"]}}]}");
+            Assert.That(cache.FinalizeSectionSync(new MsgStaticCatalogSyncComplete { AppliedBundleHash = "test", Success = true }), Is.True);
+
+            var store = new StaticCatalogStore();
+            new StaticCatalogStoreHydrator(store).HydrateFromCache(cache);
+
+            Assert.That(store.Snapshot.Buildings["barracks"].ResourceCosts, Has.Count.EqualTo(2));
+            Assert.That(store.Snapshot.Buildings["barracks"].PointCosts[0].Key, Is.EqualTo("industry_output"));
+            Assert.That(store.Snapshot.Recipes["barracks_infantry"].ResourceInputs, Has.Count.EqualTo(2));
+            Assert.That(store.Snapshot.Recipes["barracks_infantry"].ResourceInputs[0].Key, Is.EqualTo("food"));
+            Assert.That(store.Snapshot.Recipes["barracks_infantry"].PointInputs[0].Amount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void HydrateFromCache_ShouldClearStoreWhenCacheMissing()
         {
             var store = new StaticCatalogStore();
@@ -174,6 +195,19 @@ namespace Panoptes.Tests.EditMode.Core
             }
 
             return new GameObject("StaticCatalogCache").AddComponent<StaticCatalogCache>();
+        }
+
+        private static void ApplySection(StaticCatalogCache cache, string sectionName, string payload)
+        {
+            cache.ApplySectionChunk(new MsgStaticCatalogSectionChunk
+            {
+                SectionName = sectionName,
+                SectionHash = sectionName + "-hash",
+                ChunkIndex = 0,
+                ChunkCount = 1,
+                Compression = string.Empty,
+                Payload = ByteString.CopyFromUtf8(payload)
+            });
         }
     }
 }

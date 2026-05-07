@@ -493,6 +493,12 @@ namespace Panoptes.Presentation.Map
 
             RemoveMovePreview(unitId);
 
+            if (IsPlaybackInputLocked || GamePhases.IsResolving(_latestGameState?.Phase) ||
+                (_mapRenderer != null && _mapRenderer.IsResolvingAuthoritativeState))
+            {
+                return;
+            }
+
             if (enqueue)
             {
                 if (_animationQueue != null)

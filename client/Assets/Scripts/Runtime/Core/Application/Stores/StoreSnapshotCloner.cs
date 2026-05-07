@@ -506,9 +506,11 @@ namespace Panoptes.Core.Application.Stores
                 MaxHp = source.MaxHp,
                 Name = source.Name,
                 PlacementKind = source.PlacementKind,
+                PointCosts = CloneCatalogAmounts(source.PointCosts),
                 PrefabKey = source.PrefabKey,
                 RecipeIds = CloneStrings(source.RecipeIds),
                 RequiredResourceType = source.RequiredResourceType,
+                ResourceCosts = CloneCatalogAmounts(source.ResourceCosts),
                 SortOrder = source.SortOrder,
                 Tags = CloneStrings(source.Tags),
                 TakeoverMode = source.TakeoverMode

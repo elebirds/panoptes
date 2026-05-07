@@ -115,6 +115,7 @@ namespace Panoptes.Presentation.Map
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
         public float TileSize => tileSize;
+        public bool IsResolvingAuthoritativeState => GamePhases.IsResolving(GetGameStateSnapshot().Phase);
         public event Action<MapCameraContext> CameraContextReady;
         public event Action StatePresentationRefreshed;
 
@@ -402,12 +403,16 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                var isResolving = GamePhases.IsResolving(state.Phase);
+                var visualNode = isResolving
+                    ? CreateResolvingVisualNode(node, previousNode)
+                    : node;
                 _nodeStates[node.Id] = node;
                 if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
                 {
                     view.SetLocalPlayerId(GetLocalPlayerId());
                     view.SetBuildingCatalog(GetBuildingCatalog());
-                    view.Bind(node);
+                    view.Bind(visualNode);
                 }
 
                 _scratchChangedNodes.Add(node);
@@ -497,6 +502,56 @@ namespace Panoptes.Presentation.Map
 
             SetUnitNode(moveEvent.UnitId.Trim(), startNodeId);
             return true;
+        }
+
+        public bool ApplySettlementUnitHitPoints(string unitId, int hpAfter, int maxHp = 0)
+        {
+            if (string.IsNullOrWhiteSpace(unitId) || !_unitViews.TryGetValue(unitId.Trim(), out var unitView) || unitView == null)
+            {
+                return false;
+            }
+
+            unitView.SetHitPoints(hpAfter, maxHp);
+            StatePresentationRefreshed?.Invoke();
+            return true;
+        }
+
+        public bool ApplySettlementBuildingHitPoints(TurnEventDto evt, int hpAfter)
+        {
+            if (!TryResolveNodeForSettlementEvent(evt, out var nodeView) ||
+                nodeView == null ||
+                nodeView.BuildingInstance == null)
+            {
+                return false;
+            }
+
+            var maxHp = nodeView.BuildingInstance.MaxHitPoints;
+            if (evt != null && evt.Data != null && evt.Data.TryGetValue("building_max_hp", out var rawMaxHp) && int.TryParse(rawMaxHp, out var parsedMaxHp))
+            {
+                maxHp = parsedMaxHp;
+            }
+
+            nodeView.BuildingInstance.SetHitPoints(hpAfter, maxHp);
+            StatePresentationRefreshed?.Invoke();
+            return true;
+        }
+
+        private bool TryResolveNodeForSettlementEvent(TurnEventDto evt, out NodeView nodeView)
+        {
+            nodeView = null;
+            if (evt == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && TryGetNodeView(evt.NodeId, out nodeView))
+            {
+                return nodeView != null;
+            }
+
+            return TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId) &&
+                   TryGetNodeView(nodeId, out nodeView) &&
+                   nodeView != null;
         }
 
         private void EnsureSettlementPlaybackImpactUnit(TurnEventDto evt)
@@ -641,6 +696,65 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private static NodeDto CreateResolvingVisualNode(NodeDto current, NodeDto previous)
+        {
+            if (current == null)
+            {
+                return null;
+            }
+
+            var visual = CloneNodeDto(current);
+            if (previous != null &&
+                string.Equals(previous.BuildingType ?? string.Empty, current.BuildingType ?? string.Empty, StringComparison.Ordinal))
+            {
+                visual.BuildingHp = previous.BuildingHp;
+                visual.BuildingMaxHp = previous.BuildingMaxHp;
+            }
+
+            return visual;
+        }
+
+        private static NodeDto CloneNodeDto(NodeDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new NodeDto
+            {
+                Id = source.Id,
+                Q = source.Q,
+                R = source.R,
+                Type = source.Type,
+                Owner = source.Owner,
+                TerritoryOwner = source.TerritoryOwner,
+                BuildingType = source.BuildingType,
+                BuildingHp = source.BuildingHp,
+                BuildingMaxHp = source.BuildingMaxHp,
+                BuildingStatus = source.BuildingStatus,
+                OperationSelectedRecipeId = source.OperationSelectedRecipeId,
+                OperationCurrentProgress = source.OperationCurrentProgress,
+                OperationRequiredProgress = source.OperationRequiredProgress,
+                OperationBaseProgress = source.OperationBaseProgress,
+                OperationBlockedReason = source.OperationBlockedReason,
+                OperationBlockedMessage = source.OperationBlockedMessage,
+                CityId = source.CityId,
+                ServiceCityId = source.ServiceCityId,
+                TakeoverProgress = source.TakeoverProgress,
+                TakeoverRequired = source.TakeoverRequired,
+                IsCityCore = source.IsCityCore,
+                IsVisible = source.IsVisible,
+                IsMemory = source.IsMemory,
+                LastObservedTurn = source.LastObservedTurn,
+                HasRoad = source.HasRoad,
+                Terrain = source.Terrain,
+                IsResourcePoint = source.IsResourcePoint,
+                ResourceType = source.ResourceType,
+                IsSafeZone = source.IsSafeZone
+            };
         }
 
         private bool HasMissingRenderedNode(GameStateStoreState state)

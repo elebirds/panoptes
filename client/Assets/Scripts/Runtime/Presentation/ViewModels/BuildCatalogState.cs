@@ -44,9 +44,13 @@ namespace Panoptes.Presentation.ViewModels
             string placementKind = "",
             PlanningBuildPlacementRule placementRule = PlanningBuildPlacementRule.AnyTerrain,
             bool isPending = false,
-            string iconKey = "")
+            string iconKey = "",
+            IReadOnlyList<ManagementPanelAmountState> costs = null)
         {
             BuildingId = buildingId ?? string.Empty;
+            Costs = costs != null
+                ? new List<ManagementPanelAmountState>(costs)
+                : new List<ManagementPanelAmountState>();
             Description = description ?? string.Empty;
             IconKey = iconKey ?? string.Empty;
             IsPending = isPending;
@@ -56,6 +60,7 @@ namespace Panoptes.Presentation.ViewModels
         }
 
         public string BuildingId { get; }
+        public IReadOnlyList<ManagementPanelAmountState> Costs { get; }
         public string Description { get; }
         public string IconKey { get; }
         public bool IsPending { get; }

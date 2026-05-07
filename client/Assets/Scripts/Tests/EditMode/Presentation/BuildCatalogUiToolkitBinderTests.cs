@@ -51,6 +51,38 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void Render_ShouldShowBuildingCostIconsAndAmounts()
+        {
+            _root = new GameObject("BuildCatalogCostsTest");
+            var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
+
+            binder.Render(new BuildCatalogState(new[]
+            {
+                new BuildCatalogGroupState(
+                    "city",
+                    "City",
+                    new[]
+                    {
+                        new BuildCatalogItemState(
+                            "workshop",
+                            "Workshop",
+                            "Craft tools",
+                            "city_territory",
+                            costs: new[]
+                            {
+                                new ManagementPanelAmountState("wood", "Wood", 2, "resource_wood")
+                            })
+                    })
+            }));
+
+            var rootElement = _root.GetComponent<UIDocument>().rootVisualElement;
+            Assert.That(rootElement.Q<VisualElement>("build-catalog-item-costs"), Is.Not.Null);
+            Assert.That(rootElement.Q<VisualElement>("build-catalog-item-cost-wood"), Is.Not.Null);
+            Assert.That(rootElement.Q<VisualElement>("build-catalog-item-cost-icon"), Is.Not.Null);
+            Assert.That(rootElement.Q<Label>("build-catalog-item-cost-amount").text, Is.EqualTo("x2"));
+        }
+
+        [Test]
         public void Binder_ShouldFollowManagementPanelVisibilityStore()
         {
             _root = new GameObject("BuildCatalogVisibilityTest");

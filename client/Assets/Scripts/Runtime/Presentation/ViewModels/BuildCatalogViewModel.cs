@@ -100,7 +100,8 @@ namespace Panoptes.Presentation.ViewModels
                     building.PlacementKind,
                     ResolvePlacementRule(building.PlacementKind),
                     pendingBuildingIds.Contains(buildingId),
-                    building.IconKey));
+                    building.IconKey,
+                    BuildBuildingCosts(building, catalog)));
             }
 
             var groups = new List<BuildCatalogGroupState>(3);
@@ -175,6 +176,59 @@ namespace Panoptes.Presentation.ViewModels
             return sortCompare != 0
                 ? sortCompare
                 : string.Compare(left.Id, right.Id, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static IReadOnlyList<ManagementPanelAmountState> BuildBuildingCosts(
+            CatalogBuildingDto building,
+            StaticCatalogState catalog)
+        {
+            var result = new List<ManagementPanelAmountState>();
+            AddAmounts(result, building?.ResourceCosts, catalog?.Resources, "resource_");
+            AddAmounts(result, building?.PointCosts, catalog?.Points, "point_");
+            return result;
+        }
+
+        private static void AddAmounts(
+            List<ManagementPanelAmountState> result,
+            IReadOnlyList<CatalogAmountDto> amounts,
+            IReadOnlyDictionary<string, CatalogHudEntryDto> catalog,
+            string fallbackPrefix)
+        {
+            if (result == null || amounts == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < amounts.Count; i++)
+            {
+                var amount = amounts[i];
+                if (amount == null || string.IsNullOrWhiteSpace(amount.Key))
+                {
+                    continue;
+                }
+
+                var key = Normalize(amount.Key);
+                CatalogHudEntryDto entry = null;
+                catalog?.TryGetValue(key, out entry);
+                result.Add(new ManagementPanelAmountState(
+                    key,
+                    string.IsNullOrWhiteSpace(entry?.Name) ? LocalizeAmountName(key) : entry.Name,
+                    amount.Amount,
+                    !string.IsNullOrWhiteSpace(entry?.IconKey) ? entry.IconKey : fallbackPrefix + key));
+            }
+        }
+
+        private static string LocalizeAmountName(string key)
+        {
+            return Normalize(key) switch
+            {
+                "food" => "绮",
+                "wood" => "鏈ㄦ潗",
+                "ore" => "鐭跨煶",
+                "research_output" => "绉戠爺",
+                "industry_output" => "宸ヤ笟",
+                _ => key
+            };
         }
 
         private static string ResolveGroupId(string placementKind)

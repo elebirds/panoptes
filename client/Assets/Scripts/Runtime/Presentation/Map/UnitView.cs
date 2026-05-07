@@ -246,6 +246,21 @@ namespace Panoptes.Presentation.Map
             GridPos = gridPos;
         }
 
+        public void SetHitPoints(int currentHp, int maxHp = 0)
+        {
+            HitPoints = Mathf.Max(0, currentHp);
+            if (maxHp > 0)
+            {
+                MaxHitPoints = maxHp;
+            }
+            else if (MaxHitPoints <= 0)
+            {
+                MaxHitPoints = Mathf.Max(1, HitPoints);
+            }
+
+            selectionEdgeGlow?.Refresh();
+        }
+
         public void SetSelected(bool selected)
         {
             if (selectedRing != null)
