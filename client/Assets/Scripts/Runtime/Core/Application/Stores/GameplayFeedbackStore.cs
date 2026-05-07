@@ -11,7 +11,7 @@ namespace Panoptes.Core.Application.Stores
         {
         }
 
-        internal void PublishFeedback(
+        public void PublishFeedback(
             string source,
             string code,
             string message,
@@ -21,7 +21,7 @@ namespace Panoptes.Core.Application.Stores
             Publish(new GameplayFeedbackState(++_sequence, source, code, message, success, details));
         }
 
-        internal void Clear()
+        public void Clear()
         {
             Publish(new GameplayFeedbackState());
         }

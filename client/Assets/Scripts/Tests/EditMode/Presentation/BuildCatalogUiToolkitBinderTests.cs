@@ -79,8 +79,37 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(rootElement.Q<VisualElement>("build-catalog-item-costs"), Is.Not.Null);
             Assert.That(rootElement.Q<VisualElement>("build-catalog-item-cost-wood"), Is.Not.Null);
             Assert.That(rootElement.Q<VisualElement>("build-catalog-item-cost-icon"), Is.Not.Null);
-            Assert.That(rootElement.Q<Label>("build-catalog-item-cost-amount").text, Is.EqualTo("x2"));
+            Assert.That(rootElement.Q<Label>("build-catalog-item-cost-amount").text, Is.EqualTo("Wood x2"));
         }
+
+        [Test]
+        public void Render_ShouldShowLockMarkerForTechnologyLockedBuildings()
+        {
+            _root = new GameObject("BuildCatalogLockedTest");
+            var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
+
+            binder.Render(new BuildCatalogState(new[]
+            {
+                new BuildCatalogGroupState(
+                    "city",
+                    "City",
+                    new[]
+                    {
+                        new BuildCatalogItemState(
+                            "workshop",
+                            "Workshop",
+                            "Craft tools",
+                            "city_territory",
+                            isLocked: true,
+                            lockedText: "科技未解锁")
+                    })
+            }));
+
+            var rootElement = _root.GetComponent<UIDocument>().rootVisualElement;
+            Assert.That(rootElement.Q<VisualElement>("build-catalog-item-lock-icon"), Is.Not.Null);
+            Assert.That(rootElement.Q<Label>("build-catalog-item-locked").text, Is.EqualTo("科技未解锁"));
+        }
+
 
         [Test]
         public void Binder_ShouldFollowManagementPanelVisibilityStore()
@@ -211,10 +240,11 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[]
             {
-                new BuildCatalogViewModel(new StaticCatalogStore(), new PlanningDraftStore()),
+                new BuildCatalogViewModel(new StaticCatalogStore(), new PlanningDraftStore(), new GameStateStore()),
                 planningToolService ?? new PlanningToolService(new PlanningToolStore()),
                 visibilityStore ?? new ManagementPanelVisibilityStore(),
-                contextStore ?? new BuildCatalogContextStore()
+                contextStore ?? new BuildCatalogContextStore(),
+                new GameplayFeedbackStore()
             });
         }
 

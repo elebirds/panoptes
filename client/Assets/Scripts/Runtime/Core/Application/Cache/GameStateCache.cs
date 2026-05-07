@@ -240,7 +240,7 @@ namespace Panoptes.Core.Application.Cache
             var oldUnits = CloneUnitMap(_units);
 
             Turn = msg.Turn > 0 ? msg.Turn : Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.Resolving);
+            Phase = ResolveGameSyncPhase(msg);
 
             ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "game_sync");
             var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "game_sync");
@@ -1031,6 +1031,16 @@ namespace Panoptes.Core.Application.Cache
         private static string NormalizePhase(string phase, string fallback)
         {
             return string.IsNullOrWhiteSpace(phase) ? fallback : phase.Trim();
+        }
+
+        private static string ResolveGameSyncPhase(MsgGameSync msg)
+        {
+            if (msg?.Events != null && msg.Events.Count > 0)
+            {
+                return GamePhases.Resolving;
+            }
+
+            return NormalizePhase(msg?.Phase, GamePhases.Resolving);
         }
 
         private static IDictionary<string, UnitDto> CloneUnitMap(IDictionary<string, UnitDto> source)

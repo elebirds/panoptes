@@ -129,9 +129,12 @@ namespace Panoptes.Presentation.Map
                     yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
                 }
 
+                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(steps, 0);
                 for (var stepIndex = 0; stepIndex < steps.Count; stepIndex++)
                 {
+                    _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(steps, stepIndex);
                     yield return PlayStep(steps[stepIndex]);
+                    _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(steps, stepIndex + 1);
                 }
             }
             finally

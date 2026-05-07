@@ -42,11 +42,6 @@ func (s *Service) handleBuildRequest(delivery commandDelivery, room Session, pla
 		BuildingTypeId: buildingType,
 		CityId:         cityID,
 	}
-	if !eval.ReplacingDraft {
-		playerState.TokensLeft--
-		delivery.sendAllWithSnapshot(result, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
-		return acceptedHandleIntentResult(), nil
-	}
 	delivery.sendWithSnapshot(result)
 	return acceptedHandleIntentResult(), nil
 }

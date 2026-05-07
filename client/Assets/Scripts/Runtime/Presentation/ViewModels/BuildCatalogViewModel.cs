@@ -9,6 +9,7 @@ namespace Panoptes.Presentation.ViewModels
     public sealed class BuildCatalogViewModel : IViewModel<BuildCatalogState>, IDisposable
     {
         private readonly PlanningDraftStore _planningDraftStore;
+        private readonly GameStateStore _gameStateStore;
         private readonly BehaviorSubject<BuildCatalogState> _state;
         private readonly StaticCatalogStore _staticCatalogStore;
         private readonly List<IDisposable> _subscriptions = new();
@@ -17,14 +18,17 @@ namespace Panoptes.Presentation.ViewModels
 
         public BuildCatalogViewModel(
             StaticCatalogStore staticCatalogStore,
-            PlanningDraftStore planningDraftStore)
+            PlanningDraftStore planningDraftStore,
+            GameStateStore gameStateStore)
         {
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
+            _gameStateStore = gameStateStore ?? throw new ArgumentNullException(nameof(gameStateStore));
             _current = Project();
             _state = new BehaviorSubject<BuildCatalogState>(_current);
             _subscriptions.Add(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             _subscriptions.Add(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            _subscriptions.Add(_gameStateStore.State.Subscribe(this, static (_, self) => self.Publish()));
         }
 
         public BuildCatalogState Current => _current;
@@ -71,6 +75,7 @@ namespace Panoptes.Presentation.ViewModels
             buildings.Sort(CompareBuildings);
 
             var pendingBuildingIds = BuildPendingBuildingIds(draft);
+            var activeTechnologyIds = BuildIdSet(_gameStateStore.Snapshot?.ResearchState?.ActiveTechnologyIds);
             var groupsById = new Dictionary<string, BuildCatalogGroupStateBuilder>(StringComparer.Ordinal);
             for (var i = 0; i < buildings.Count; i++)
             {
@@ -101,7 +106,10 @@ namespace Panoptes.Presentation.ViewModels
                     ResolvePlacementRule(building.PlacementKind),
                     pendingBuildingIds.Contains(buildingId),
                     building.IconKey,
-                    BuildBuildingCosts(building, catalog)));
+                    BuildBuildingCosts(building, catalog),
+                    IsTechnologyLocked(catalog, activeTechnologyIds, "unlock_building", buildingId, out var unlockTechnologyId),
+                    "科技未解锁",
+                    unlockTechnologyId));
             }
 
             var groups = new List<BuildCatalogGroupState>(3);
@@ -153,6 +161,70 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return result;
+        }
+
+        private static HashSet<string> BuildIdSet(IReadOnlyList<string> values)
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            if (values == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                var id = Normalize(values[i]);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
+        }
+
+        private static bool IsTechnologyLocked(
+            StaticCatalogState catalog,
+            ISet<string> activeTechnologyIds,
+            string effectType,
+            string targetId,
+            out string unlockTechnologyId)
+        {
+            unlockTechnologyId = ResolveUnlockTechnologyId(catalog, effectType, targetId);
+            return !string.IsNullOrEmpty(unlockTechnologyId) &&
+                   (activeTechnologyIds == null || !activeTechnologyIds.Contains(unlockTechnologyId));
+        }
+
+        private static string ResolveUnlockTechnologyId(StaticCatalogState catalog, string effectType, string targetId)
+        {
+            if (catalog?.Technologies == null || string.IsNullOrWhiteSpace(effectType) || string.IsNullOrWhiteSpace(targetId))
+            {
+                return string.Empty;
+            }
+
+            var normalizedEffectType = Normalize(effectType);
+            var normalizedTargetId = Normalize(targetId);
+            foreach (var technology in catalog.Technologies.Values)
+            {
+                var effects = technology?.ExplicitEffects;
+                if (effects == null)
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < effects.Count; i++)
+                {
+                    var effect = effects[i];
+                    if (effect != null &&
+                        string.Equals(Normalize(effect.Type), normalizedEffectType, StringComparison.Ordinal) &&
+                        string.Equals(Normalize(effect.TargetId), normalizedTargetId, StringComparison.Ordinal))
+                    {
+                        return Normalize(technology.Id);
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static int CompareBuildings(CatalogBuildingDto left, CatalogBuildingDto right)

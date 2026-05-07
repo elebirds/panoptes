@@ -65,7 +65,7 @@ namespace Panoptes.Tests.EditMode.Presentation
                 msg => catalogHydrator.HydrateFromSnapshot(msg?.Snapshot));
 
             using var techTree = new TechTreeViewModel(catalogStore, draftStore);
-            using var buildCatalog = new BuildCatalogViewModel(catalogStore, draftStore);
+            using var buildCatalog = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
             using var overview = new NationalOverviewViewModel(
                 gameStore,
                 turnStore,

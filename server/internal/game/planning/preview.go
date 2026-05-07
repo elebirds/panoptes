@@ -33,7 +33,6 @@ type buildCommandEvaluation struct {
 	PointCost       domain.PointBag
 	FeedbackMessage string
 	FeedbackDetails []*pb.FeedbackDetail
-	ReplacingDraft  bool
 }
 
 type recipeCommandEvaluation struct {
@@ -79,20 +78,13 @@ func evaluateBuildCommand(room Session, playerID string, playerState *domain.Pla
 		CityID:         cityID,
 	}
 	eval := buildCommandEvaluation{
-		ResourceCost:   domain.NewResourceBag(),
-		PointCost:      domain.NewPointBag(),
-		ReplacingDraft: room != nil && room.State() != nil && room.State().TurnRuntime.Planning.HasBuildOrder(playerID, nodeID),
+		ResourceCost: domain.NewResourceBag(),
+		PointCost:    domain.NewPointBag(),
 	}
 
 	if room == nil || room.State() == nil || playerState == nil {
 		eval.ErrorCode = "invalid_request"
 		eval.FeedbackMessage, eval.FeedbackDetails = buildFeedback(nil, playerID, ctx, eval.ErrorCode)
-		return eval
-	}
-
-	if !eval.ReplacingDraft && playerState.TokensLeft <= 0 {
-		eval.ErrorCode = "no_tokens_left"
-		eval.FeedbackMessage, eval.FeedbackDetails = buildFeedback(room.State(), playerID, ctx, eval.ErrorCode)
 		return eval
 	}
 
@@ -125,14 +117,17 @@ func evaluateBuildCommand(room Session, playerID string, playerState *domain.Pla
 		return eval
 	}
 
-	if !room.State().CanAffordResources(playerID, eval.ResourceCost) {
-		ctx.MissingResources = missingResources(playerState.Resources, eval.ResourceCost)
+	availableResources := room.State().PlayerResourceView(playerID)
+	availablePoints := planningPointBudget(room.State(), playerID)
+	subtractQueuedBuildCosts(room.State(), playerID, nodeID, availableResources, availablePoints)
+
+	if !availableResources.CanAfford(eval.ResourceCost) {
+		ctx.MissingResources = missingResources(availableResources, eval.ResourceCost)
 		eval.ErrorCode = "insufficient_resources"
 		eval.FeedbackMessage, eval.FeedbackDetails = buildFeedback(room.State(), playerID, ctx, eval.ErrorCode)
 		return eval
 	}
 
-	availablePoints := room.State().EnsurePointBudget(playerID)
 	if !availablePoints.CanAfford(eval.PointCost) {
 		ctx.MissingPoints = missingPoints(availablePoints, eval.PointCost)
 		eval.ErrorCode = "insufficient_points"
@@ -142,6 +137,53 @@ func evaluateBuildCommand(room Session, playerID string, playerState *domain.Pla
 
 	eval.OK = true
 	return eval
+}
+
+func subtractQueuedBuildCosts(state *domain.GameState, playerID string, replacingNodeID string, resources domain.ResourceBag, points domain.PointBag) {
+	if state == nil || resources == nil || points == nil {
+		return
+	}
+	replacingNodeID = strings.TrimSpace(replacingNodeID)
+	for _, order := range state.TurnRuntime.Planning.BuildOrders {
+		if order.PlayerID != playerID || strings.TrimSpace(order.NodeID) == replacingNodeID {
+			continue
+		}
+		buildingType := strings.TrimSpace(order.BuildingType)
+		if buildingType == "" {
+			continue
+		}
+		cfg, ok := staticdata.Default().GetBuilding(buildingType)
+		if !ok {
+			continue
+		}
+		resourceCost, err := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
+		if err == nil {
+			resourceCost = state.ApplyResourceModifiers(playerID, string(staticdata.ModifierTriggerBuildingResourceCost), buildingType, resourceCost)
+			for _, key := range resourceCost.Keys() {
+				resources.AddAmount(key, -resourceCost.Get(key))
+			}
+		}
+		pointCost, err := domain.PointBagFromAmounts(cfg.PointCosts)
+		if err == nil {
+			pointCost = state.ApplyPointModifiers(playerID, string(staticdata.ModifierTriggerBuildingPointCost), buildingType, pointCost)
+			for _, key := range pointCost.Keys() {
+				points.AddAmount(key, -pointCost.Get(key))
+			}
+		}
+	}
+}
+
+func planningPointBudget(state *domain.GameState, playerID string) domain.PointBag {
+	if state == nil {
+		return domain.NewPointBag()
+	}
+	budget := state.EnsurePointBudget(playerID).Clone()
+	if len(budget) > 0 {
+		return budget
+	}
+	budget.Set(domain.PointResearchOutput, state.EffectiveResearchOutput(playerID))
+	budget.Set(domain.PointIndustryOutput, state.EffectiveIndustryOutput(playerID))
+	return budget
 }
 
 func evaluateRecipeCommand(state *domain.GameState, playerID string, nodeID string, recipeID string) recipeCommandEvaluation {

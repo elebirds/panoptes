@@ -156,5 +156,33 @@ namespace Panoptes.Tests.EditMode.Cache
             Assert.That(received.Delta.PointAmounts["logistics_capacity"], Is.EqualTo(3));
             Assert.That(received.Delta.PointAmounts["morale"], Is.EqualTo(1));
         }
+
+        [Test]
+        public void ApplyGameSync_WithSettlementEvents_ShouldUseResolvingPhaseEvenIfPhaseIsPlanning()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+            cache.ApplyGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 1,
+                Phase = "planning"
+            });
+            var msg = new MsgGameSync
+            {
+                Turn = 2,
+                Phase = "planning"
+            };
+            msg.Events.Add(new DomainEventEnvelope
+            {
+                Channel = "unit",
+                Kind = "unit_moved"
+            });
+
+            cache.ApplyGameSync(msg);
+
+            Assert.That(cache.Phase, Is.EqualTo(GamePhases.Resolving));
+        }
     }
 }

@@ -46,11 +46,15 @@ namespace Panoptes.Core.Application.Feedback
                 case "building_exists":
                     return "该位置已经有建筑";
                 case "no_tokens_left":
-                    return "本回合没有可用令牌了";
+                    return "本回合不能继续执行该操作";
+                case "building_technology_locked":
+                    return "该建筑的科技未解锁";
+                case "recipe_technology_locked":
+                    return "该配方的科技未解锁";
                 case "insufficient_resources":
                     return "资源不足";
                 case "insufficient_points":
-                    return "点数不足";
+                    return "建造点数不足";
                 case "outside_territory":
                     return "目标不在你的有效辖区内";
                 case "terrain_not_buildable":

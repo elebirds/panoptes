@@ -50,6 +50,7 @@ namespace Panoptes.Presentation.ViewModels
             var game = _gameStateStore.Snapshot;
             var selectedRecipeId = ResolveSelectedRecipeId(draft, game, contextNodeId);
             var preview = ResolvePreview(draft, contextNodeId);
+            var activeTechnologyIds = BuildIdSet(game?.ResearchState?.ActiveTechnologyIds);
             var recipes = new List<CatalogRecipeDto>(catalog.Recipes.Values);
             recipes.Sort(CompareRecipes);
 
@@ -75,13 +76,14 @@ namespace Panoptes.Presentation.ViewModels
                 }
 
                 var recipeId = Normalize(recipe.Id);
+                var locked = IsTechnologyLocked(catalog, activeTechnologyIds, "unlock_recipe", recipeId);
                 rows.Add(new ManagementPanelRowState(
                     recipeId,
                     recipe.Name,
                     ResolveRecipeSummary(recipe),
                     recipe.Description,
-                    ResolveStatus(recipeId, selectedRecipeId, preview),
-                    "选择",
+                    locked ? "科技未解锁" : ResolveStatus(recipeId, selectedRecipeId, preview),
+                    locked ? string.Empty : "选择",
                     recipe.IconKey,
                     prerequisiteIds: null,
                     costs: BuildRecipeCosts(recipe, catalog),
@@ -90,6 +92,69 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return new ManagementPanelState("配方", BuildGroups(groups));
+        }
+
+        private static HashSet<string> BuildIdSet(IReadOnlyList<string> values)
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            if (values == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                var id = Normalize(values[i]);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
+        }
+
+        private static bool IsTechnologyLocked(
+            StaticCatalogState catalog,
+            ISet<string> activeTechnologyIds,
+            string effectType,
+            string targetId)
+        {
+            var unlockTechnologyId = ResolveUnlockTechnologyId(catalog, effectType, targetId);
+            return !string.IsNullOrEmpty(unlockTechnologyId) &&
+                   (activeTechnologyIds == null || !activeTechnologyIds.Contains(unlockTechnologyId));
+        }
+
+        private static string ResolveUnlockTechnologyId(StaticCatalogState catalog, string effectType, string targetId)
+        {
+            if (catalog?.Technologies == null || string.IsNullOrWhiteSpace(effectType) || string.IsNullOrWhiteSpace(targetId))
+            {
+                return string.Empty;
+            }
+
+            var normalizedEffectType = Normalize(effectType);
+            var normalizedTargetId = Normalize(targetId);
+            foreach (var technology in catalog.Technologies.Values)
+            {
+                var effects = technology?.ExplicitEffects;
+                if (effects == null)
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < effects.Count; i++)
+                {
+                    var effect = effects[i];
+                    if (effect != null &&
+                        string.Equals(Normalize(effect.Type), normalizedEffectType, StringComparison.Ordinal) &&
+                        string.Equals(Normalize(effect.TargetId), normalizedTargetId, StringComparison.Ordinal))
+                    {
+                        return Normalize(technology.Id);
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static RecipePreviewDto ResolvePreview(PlanningDraftState draft, string contextNodeId)

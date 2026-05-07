@@ -74,6 +74,13 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (context.CombatActionMode == MapPlanningInputController.CombatActionMode.Charge)
+            {
+                context.PrepareMapCommandClick();
+                context.HandleCombatSelectionClick();
+                return;
+            }
+
             if (context.ShouldPrioritizeStructureAttackClick())
             {
                 context.PrepareMapCommandClick();

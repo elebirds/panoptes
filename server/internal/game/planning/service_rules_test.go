@@ -157,7 +157,7 @@ func TestBuildStructureRejectedInsufficientPointsIncludesFeedback(t *testing.T) 
 			TokensPerTurn:             3,
 			CityCoreMaxHP:             100,
 			BaseResearchOutputPerTurn: 1,
-			BaseIndustryOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 0,
 		},
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
@@ -212,6 +212,67 @@ func TestBuildStructureRejectedInsufficientPointsIncludesFeedback(t *testing.T) 
 	assertFeedbackDetailValue(t, result.GetFeedbackDetails(), "missing_point.industry_output", "1")
 	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
 		t.Fatalf("build order count = %d, want 0", got)
+	}
+}
+
+func TestBuildStructureCountsQueuedBuildCostsAgainstPointBudget(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "out_of_city", PointCosts: staticdata.PointAmounts{"industry_output": 1}, MaxHP: 60, TakeoverMode: "delayed"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "point-budget", NodeIndex: map[string]donburi.Entity{}}
+	for _, nodeID := range []string{"C1", "N1", "N2"} {
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: 0, R: 0, Terrain: "plain"})
+		mapData.NodeIndex[nodeID] = entity
+		entry := world.Entry(entity)
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", world.Entry(mapData.NodeIndex["C1"]))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	state.Players["player-1"].TokensLeft = 3
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.RefreshPointBudget("player-1", domain.PointIndustryOutput, 1)
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
+		{PlayerID: "player-1", NodeID: "N1", BuildingType: "farm", CityID: "C1"},
+	}
+
+	session := newPlanningSessionStub(state)
+	session.devMode = false
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "N2", BuildingTypeId: "farm", CityId: "C1"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
+	if result == nil || result.GetErrorCode() != "insufficient_points" {
+		t.Fatalf("build result = %#v, want insufficient_points", result)
+	}
+	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 1 {
+		t.Fatalf("build order count = %d, want original queued build only", got)
 	}
 }
 
@@ -411,7 +472,7 @@ func TestIssueUnitOrderRejectsInvalidStructureTargetKeepsExistingDraft(t *testin
 	}
 }
 
-func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testing.T) {
+func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingToken(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -472,8 +533,8 @@ func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testi
 
 	firstResult := firstMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
 	lastResult := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
-	if got := state.Players["player-1"].TokensLeft; got != 2 {
-		t.Fatalf("tokens left = %d, want 2 (first=%#v last=%#v build_orders=%#v)", got, firstResult, lastResult, state.TurnRuntime.Planning.BuildOrders)
+	if got := state.Players["player-1"].TokensLeft; got != 3 {
+		t.Fatalf("tokens left = %d, want unchanged 3 (first=%#v last=%#v build_orders=%#v)", got, firstResult, lastResult, state.TurnRuntime.Planning.BuildOrders)
 	}
 	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 1 {
 		t.Fatalf("build order count = %d, want 1", got)

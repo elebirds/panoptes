@@ -185,6 +185,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningToolService>(Lifetime.Singleton).AsSelf();
             builder.Register<GameIntentService>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningIntentService>(Lifetime.Singleton).AsSelf();
+            builder.Register<BuildCostReservationService>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterCommandService>(Lifetime.Singleton).AsSelf();
             builder.Register<LocalGameSessionResetService>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();

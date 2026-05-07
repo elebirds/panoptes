@@ -197,6 +197,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             header.Add(CreateLabel(row?.Title ?? "条目", "management-panel-row-title", "management-panel-row-title"));
+            if (IsLocked(row))
+            {
+                header.Add(CreateLockIcon("management-panel-row-lock-icon"));
+            }
+
             rowElement.Add(header);
 
             if (!string.IsNullOrWhiteSpace(row?.Summary))
@@ -890,6 +895,16 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var status = row.Status ?? string.Empty;
+            if (IsLocked(row))
+            {
+                ApplyRowPalette(
+                    rowElement,
+                    new Color(0.045f, 0.04f, 0.038f, 0.96f),
+                    new Color(0.20f, 0.18f, 0.16f, 0.95f));
+                rowElement.style.opacity = 0.56f;
+                return;
+            }
+
             if (ContainsAny(status, "已研究", "已完成", "已激活"))
             {
                 ApplyRowPalette(
@@ -938,6 +953,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             return false;
+        }
+
+        private static bool IsLocked(ManagementPanelRowState row)
+        {
+            return ContainsAny(row?.Status, "未解锁");
         }
 
         private static VisualElement CreateAmountStrip(
@@ -1607,6 +1627,35 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             glyph.style.unityFontStyleAndWeight = FontStyle.Bold;
             glyph.style.color = new Color(1f, 0.86f, 0.58f, 1f);
             icon.Add(glyph);
+            return icon;
+        }
+
+        private static VisualElement CreateLockIcon(string name)
+        {
+            var sprite = Resources.Load<Sprite>("Icons/UI/icon_lock");
+            var icon = new VisualElement { name = name };
+            icon.AddToClassList(name);
+            icon.style.width = 24f;
+            icon.style.height = 24f;
+            icon.style.flexShrink = 0f;
+            icon.style.marginLeft = 8f;
+            if (sprite != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(sprite);
+            }
+            else
+            {
+                icon.style.backgroundColor = new Color(0.16f, 0.15f, 0.14f, 0.98f);
+                icon.style.borderBottomColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderLeftColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderRightColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderTopColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderBottomWidth = 1f;
+                icon.style.borderLeftWidth = 1f;
+                icon.style.borderRightWidth = 1f;
+                icon.style.borderTopWidth = 1f;
+            }
+
             return icon;
         }
 

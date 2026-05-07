@@ -26,6 +26,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private IDisposable _subscription;
         private IDisposable _visibilitySubscription;
         private BuildCatalogContextStore _contextStore;
+        private GameplayFeedbackStore _feedbackStore;
         private ManagementPanelVisibilityStore _visibilityStore;
         private MapPlanningInputController _mapPlanningInputController;
         private PlanningToolService _planningToolService;
@@ -40,11 +41,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             BuildCatalogViewModel viewModel,
             PlanningToolService planningToolService,
             ManagementPanelVisibilityStore visibilityStore,
-            BuildCatalogContextStore contextStore)
+            BuildCatalogContextStore contextStore,
+            GameplayFeedbackStore feedbackStore)
         {
             _planningToolService = planningToolService;
             _visibilityStore = visibilityStore;
             _contextStore = contextStore;
+            _feedbackStore = feedbackStore;
             Bind(viewModel);
             EnsureVisibilitySubscription();
             ApplyVisibility();
@@ -186,6 +189,18 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             button.style.paddingLeft = 12f;
             button.style.paddingRight = 12f;
             button.style.paddingTop = 12f;
+            if (item != null && item.IsLocked)
+            {
+                button.AddToClassList("build-catalog-item-locked");
+                button.tooltip = "该建筑的科技未解锁";
+                button.style.opacity = 0.56f;
+                button.style.backgroundColor = new Color(0.045f, 0.04f, 0.038f, 0.96f);
+                button.style.borderBottomColor = new Color(0.20f, 0.18f, 0.16f, 0.95f);
+                button.style.borderLeftColor = new Color(0.20f, 0.18f, 0.16f, 0.95f);
+                button.style.borderRightColor = new Color(0.20f, 0.18f, 0.16f, 0.95f);
+                button.style.borderTopColor = new Color(0.20f, 0.18f, 0.16f, 0.95f);
+            }
+
             var header = new VisualElement { name = "build-catalog-item-header" };
             header.AddToClassList("build-catalog-item-header");
             header.style.flexDirection = FlexDirection.Row;
@@ -201,6 +216,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             title.style.color = new Color(0.96f, 0.88f, 0.74f, 1f);
             title.style.whiteSpace = WhiteSpace.Normal;
             header.Add(title);
+            if (item != null && item.IsLocked)
+            {
+                header.Add(CreateLockIcon());
+            }
+
             button.Add(header);
             if (!string.IsNullOrWhiteSpace(item?.Description))
             {
@@ -223,6 +243,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 button.Add(pending);
             }
 
+            if (item != null && item.IsLocked)
+            {
+                var locked = new Label(string.IsNullOrWhiteSpace(item.LockedText) ? "科技未解锁" : item.LockedText) { name = "build-catalog-item-locked" };
+                locked.AddToClassList("build-catalog-item-locked");
+                locked.style.color = new Color(0.72f, 0.70f, 0.66f, 1f);
+                locked.style.unityFontStyleAndWeight = FontStyle.Bold;
+                button.Add(locked);
+            }
+
             var captured = item;
             button.clicked += () =>
             {
@@ -231,9 +260,58 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     return;
                 }
 
+                if (captured.IsLocked)
+                {
+                    PublishLockedBuildFeedback(captured);
+                    return;
+                }
+
                 RequestBuild(captured.BuildingId, captured.PlacementRule);
             };
             return button;
+        }
+
+        private void PublishLockedBuildFeedback(BuildCatalogItemState item)
+        {
+            _feedbackStore?.PublishFeedback(
+                "build_catalog",
+                "building_technology_locked",
+                "该建筑的科技未解锁",
+                false,
+                new Dictionary<string, string>
+                {
+                    ["building_type_id"] = item?.BuildingId ?? string.Empty,
+                    ["technology_id"] = item?.UnlockTechnologyId ?? string.Empty
+                });
+        }
+
+        private static VisualElement CreateLockIcon()
+        {
+            var sprite = Resources.Load<Sprite>("Icons/UI/icon_lock");
+            var icon = new VisualElement { name = "build-catalog-item-lock-icon" };
+            icon.AddToClassList("build-catalog-item-lock-icon");
+            icon.style.width = 24f;
+            icon.style.height = 24f;
+            icon.style.flexShrink = 0f;
+            icon.style.marginLeft = 8f;
+            if (sprite != null)
+            {
+                icon.style.backgroundImage = new StyleBackground(sprite);
+            }
+            else
+            {
+                icon.style.backgroundColor = new Color(0.16f, 0.15f, 0.14f, 0.98f);
+                icon.style.borderBottomColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderLeftColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderRightColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderTopColor = new Color(0.68f, 0.62f, 0.50f, 0.9f);
+                icon.style.borderBottomWidth = 1f;
+                icon.style.borderLeftWidth = 1f;
+                icon.style.borderRightWidth = 1f;
+                icon.style.borderTopWidth = 1f;
+            }
+
+            return icon;
         }
 
         private static VisualElement CreateIcon(string iconKey, string fallbackId)
@@ -322,7 +400,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 pill.Add(icon);
             }
 
-            var label = new Label("x" + Mathf.Max(0, amount?.Amount ?? 0)) { name = "build-catalog-item-cost-amount" };
+            var label = new Label($"{amount?.Label ?? string.Empty} x{Mathf.Max(0, amount?.Amount ?? 0)}") { name = "build-catalog-item-cost-amount" };
             label.style.color = new Color(0.98f, 0.87f, 0.64f, 1f);
             label.style.whiteSpace = WhiteSpace.NoWrap;
             pill.Add(label);

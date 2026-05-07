@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
@@ -150,6 +151,7 @@ namespace Panoptes.Presentation.Map
         private readonly MapAttackRangePresenter _attackRangePresenter = new();
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
         private PlanningIntentService _planningIntentService;
+        private BuildCostReservationService _buildCostReservationService;
         private AnimationQueue _animationQueue;
         private MapRenderer _mapRenderer;
         private StaticCatalogStore _staticCatalogStore;
@@ -190,6 +192,7 @@ namespace Panoptes.Presentation.Map
         [Inject]
         private void Construct(
             PlanningIntentService planningIntentService,
+            BuildCostReservationService buildCostReservationService,
             PlanningToolService planningToolService,
             SelectionService selectionService,
             PlanningToolViewModel planningToolViewModel,
@@ -204,6 +207,7 @@ namespace Panoptes.Presentation.Map
             ErrorToast errorToast)
         {
             _planningIntentService = planningIntentService;
+            _buildCostReservationService = buildCostReservationService;
             _animationQueue = animationQueue;
             if (damagePopupController == null)
             {
@@ -379,6 +383,7 @@ namespace Panoptes.Presentation.Map
             ExitBuildMode();
             ClearMovePreviewState();
             _inputState.SetCombatActionMode(CombatActionMode.Charge);
+            RefreshPreviewVisuals();
             NotifyCombatSelectionChanged();
             BlockInputAfterModeSwitch();
         }
@@ -777,6 +782,11 @@ namespace Panoptes.Presentation.Map
                         }
                         return;
                     }
+                    if (_inputState.CombatActionMode == CombatActionMode.Charge)
+                    {
+                        TryIssueChargeTargetOrder(node.NodeId, null);
+                        return;
+                    }
                 }
             }
 
@@ -817,7 +827,8 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_inputState.CombatActionMode != CombatActionMode.Move)
+            if (_inputState.CombatActionMode != CombatActionMode.Move &&
+                _inputState.CombatActionMode != CombatActionMode.Charge)
             {
                 if (_highlightNodeIds.Count > 0)
                 {
@@ -1021,11 +1032,7 @@ namespace Panoptes.Presentation.Map
                     {
                         return false;
                     }
-                    _planningIntentService?.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
-                    PlaySelectedChargeFeedback(targetUnit);
-                    _inputState.SetCombatActionMode(CombatActionMode.None);
-                    NotifyCombatSelectionChanged();
-                    return true;
+                    return TryIssueChargeTargetOrder(targetNodeId, targetUnit);
                 default:
                     return false;
             }
@@ -1068,9 +1075,17 @@ namespace Panoptes.Presentation.Map
         {
             entry = null;
             var unitType = NormalizeToken(_selectedUnit != null ? _selectedUnit.UnitType : string.Empty);
-            return !string.IsNullOrEmpty(unitType) &&
-                   _staticCatalogStore?.Snapshot?.Units != null &&
-                   _staticCatalogStore.Snapshot.Units.TryGetValue(unitType, out entry);
+            return TryResolveCatalogUnit(unitType, out entry);
+        }
+
+        private bool TryResolveCatalogUnit(string unitType, out CatalogUnitDto entry)
+        {
+            entry = null;
+            var units = _staticCatalogStore?.Snapshot?.Units;
+            var normalized = NormalizeUnitCatalogKey(unitType);
+            return !string.IsNullOrEmpty(normalized) &&
+                   units != null &&
+                   units.TryGetValue(normalized, out entry);
         }
 
         private bool TryIssueStructureTargetOrder(string nodeId)
@@ -1086,6 +1101,24 @@ namespace Panoptes.Presentation.Map
             ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
             _planningIntentService?.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
             PlaySelectedAttackFeedback(null, nodeId);
+            _inputState.SetCombatActionMode(CombatActionMode.None);
+            NotifyCombatSelectionChanged();
+            return true;
+        }
+
+        private bool TryIssueChargeTargetOrder(string nodeId, UnitView targetUnit)
+        {
+            if (_selectedUnit == null ||
+                _inputState.CombatActionMode != CombatActionMode.Charge ||
+                string.IsNullOrWhiteSpace(nodeId) ||
+                !CanSelectedUnitCharge())
+            {
+                return false;
+            }
+
+            ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
+            _planningIntentService?.ChargeUnit(_selectedUnit.UnitId, nodeId, targetUnit != null ? targetUnit.UnitId : null);
+            PlaySelectedChargeFeedback(targetUnit, nodeId);
             _inputState.SetCombatActionMode(CombatActionMode.None);
             NotifyCombatSelectionChanged();
             return true;
@@ -1110,7 +1143,7 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void PlaySelectedChargeFeedback(UnitView targetUnit)
+        private void PlaySelectedChargeFeedback(UnitView targetUnit = null, string targetNodeId = null)
         {
             if (_selectedUnit == null)
             {
@@ -1118,7 +1151,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _selectedUnit.PlayAttackAnimation();
-            if (TryResolveCombatTargetPosition(targetUnit, null, out var targetPosition))
+            if (TryResolveCombatTargetPosition(targetUnit, targetNodeId, out var targetPosition))
             {
                 PlayCombatTracer(_selectedUnit, targetPosition, chargeTracerColor, chargeTracerArcHeight);
             }
@@ -1907,7 +1940,9 @@ namespace Panoptes.Presentation.Map
             if (string.Equals(source, "build", StringComparison.Ordinal))
             {
                 var nodeId = ReadFeedbackDetail(state, "node_id");
-                RollbackPendingBuild(string.IsNullOrWhiteSpace(nodeId) ? GetLastPendingBuildNodeId() : nodeId);
+                nodeId = string.IsNullOrWhiteSpace(nodeId) ? GetLastPendingBuildNodeId() : nodeId;
+                RefundReservedBuildCostForPlacement(nodeId);
+                RollbackPendingBuild(nodeId);
                 return;
             }
 
@@ -1928,7 +1963,9 @@ namespace Panoptes.Presentation.Map
 
             if (string.Equals(action, "build", StringComparison.Ordinal))
             {
-                RollbackPendingBuild(GetLastPendingBuildNodeId());
+                var nodeId = GetLastPendingBuildNodeId();
+                RefundReservedBuildCostForPlacement(nodeId);
+                RollbackPendingBuild(nodeId);
             }
         }
 
@@ -2387,6 +2424,8 @@ namespace Panoptes.Presentation.Map
                 () => _planningIntentService,
                 GetLocalOwnerId,
                 ResolveBackendBuildingType,
+                TryReserveBuildCostForPlacement,
+                RefundReservedBuildCostForPlacement,
                 _mapRenderer,
                 RestoreNodeHighlightAfterHover);
         }
@@ -2402,6 +2441,44 @@ namespace Panoptes.Presentation.Map
                 buildPreviewRequestThrottleSeconds,
                 disallowManualCityCorePlacement,
                 manualPlacementBlockedBuildingTypes);
+        }
+
+        private bool TryReserveBuildCostForPlacement(string buildingType, string nodeId)
+        {
+            if (!TryGetBuildingConfig(buildingType, out var building, out _))
+            {
+                return true;
+            }
+
+            if (_buildCostReservationService == null)
+            {
+                return true;
+            }
+
+            if (_buildCostReservationService.TryReserveBuildCost(nodeId, building, out var errorCode))
+            {
+                return true;
+            }
+
+            errorCode = string.IsNullOrWhiteSpace(errorCode) ? "insufficient_resources" : errorCode;
+            var message = GameplayFeedbackText.ResolveMessage(string.Empty, errorCode);
+            _feedbackStore?.PublishFeedback(
+                "build_cost",
+                errorCode,
+                message,
+                false,
+                new Dictionary<string, string>
+                {
+                    ["node_id"] = nodeId ?? string.Empty,
+                    ["building_type_id"] = buildingType ?? string.Empty
+                });
+            ShowUserError(message);
+            return false;
+        }
+
+        private void RefundReservedBuildCostForPlacement(string nodeId)
+        {
+            _buildCostReservationService?.RefundReservedBuildCost(nodeId);
         }
 
         private string GetLocalOwnerId()
@@ -2541,6 +2618,14 @@ namespace Panoptes.Presentation.Map
         private static string NormalizeToken(string value)
         {
             return MapInputTokens.Normalize(value);
+        }
+
+        private static string NormalizeUnitCatalogKey(string value)
+        {
+            var normalized = NormalizeToken(value);
+            return string.Equals(normalized, "siege", StringComparison.Ordinal)
+                ? "siege_engine"
+                : normalized;
         }
 
         private bool IsTerritoryExpansionUnitType(string unitType)

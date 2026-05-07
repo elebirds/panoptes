@@ -95,6 +95,46 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void RecipeSynthesis_ShouldDimTechnologyLockedRecipes()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            using var contextStore = new RecipeSynthesisContextStore();
+            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore, contextStore, gameStateStore);
+
+            catalogStore.Replace(new StaticCatalogState(
+                recipes: new Dictionary<string, CatalogRecipeDto>
+                {
+                    ["mine_ore"] = new CatalogRecipeDto { Id = "mine_ore", Name = "Mine Ore", BuildingId = "mine" }
+                },
+                technologies: new Dictionary<string, CatalogTechnologyDto>
+                {
+                    ["mining_survey"] = new CatalogTechnologyDto
+                    {
+                        Id = "mining_survey",
+                        ExplicitEffects = new List<CatalogTechnologyEffectDto>
+                        {
+                            new() { Type = "unlock_recipe", TargetId = "mine_ore" }
+                        }
+                    }
+                }));
+            contextStore.SetContext("n1", "mine", "player-1");
+
+            var row = viewModel.Current.Groups[0].Rows[0];
+            Assert.That(row.Status, Is.EqualTo("科技未解锁"));
+            Assert.That(row.ActionLabel, Is.Empty);
+
+            gameStateStore.Replace(new GameStateStoreState(researchState: new TechnologyDto
+            {
+                ActiveTechnologyIds = new List<string> { "mining_survey" }
+            }));
+
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.Empty);
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("选择"));
+        }
+
+        [Test]
         public void MinisterReport_ShouldProjectInteractiveDrafts()
         {
             var draftStore = new PlanningDraftStore();

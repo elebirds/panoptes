@@ -60,6 +60,42 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
+        public void GameStateStore_ShouldReserveAndRefundBuildCostsLocally()
+        {
+            var store = new GameStateStore();
+            store.Replace(new GameStateStoreState(
+                turn: 1,
+                phase: "planning",
+                myResources: new ResourceDto
+                {
+                    Wood = 5,
+                    IndustryOutput = 2,
+                    ResourceAmounts = new Dictionary<string, int> { [ResourceKeys.ResourceWood] = 5 },
+                    PointAmounts = new Dictionary<string, int> { ["industry_output"] = 2 }
+                }));
+
+            var building = new CatalogBuildingDto
+            {
+                ResourceCosts = new List<CatalogAmountDto> { new() { Key = ResourceKeys.ResourceWood, Amount = 3 } },
+                PointCosts = new List<CatalogAmountDto> { new() { Key = "industry_output", Amount = 1 } }
+            };
+
+            Assert.That(store.TryReserveBuildCost("N1", building, out var errorCode), Is.True);
+            Assert.That(errorCode, Is.Empty);
+            Assert.That(store.Snapshot.MyResources.Wood, Is.EqualTo(2));
+            Assert.That(store.Snapshot.MyResources.ResourceAmounts[ResourceKeys.ResourceWood], Is.EqualTo(2));
+            Assert.That(store.Snapshot.MyResources.IndustryOutput, Is.EqualTo(1));
+            Assert.That(store.Snapshot.MyResources.PointAmounts["industry_output"], Is.EqualTo(1));
+
+            Assert.That(store.TryReserveBuildCost("N2", building, out errorCode), Is.False);
+            Assert.That(errorCode, Is.EqualTo("insufficient_resources"));
+
+            Assert.That(store.RefundReservedBuildCost("N1"), Is.True);
+            Assert.That(store.Snapshot.MyResources.Wood, Is.EqualTo(5));
+            Assert.That(store.Snapshot.MyResources.IndustryOutput, Is.EqualTo(2));
+        }
+
+        [Test]
         public void PlanningDraftStore_ShouldPublishClonedOrderSnapshots()
         {
             var orders = new List<QueuedUnitOrderDto>

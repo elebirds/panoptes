@@ -84,7 +84,7 @@ namespace Panoptes.Tests.EditMode.Map
         {
             var session = new MapBuildPlacementSession();
             var mapRenderer = CreateMapRendererWithNode("V22", out var nodeView, out _);
-            session.Configure(null, null, null, null, null, mapRenderer, null);
+            session.Configure(null, null, null, null, null, null, null, mapRenderer, null);
             session.RememberPendingBuild(new MapPlanningInputController.PendingBuildRecord
             {
                 buildingType = "farm",
@@ -107,7 +107,7 @@ namespace Panoptes.Tests.EditMode.Map
         {
             var session = new MapBuildPlacementSession();
             var mapRenderer = CreateMapRendererWithNode("V22", out var nodeView, out _);
-            session.Configure(null, null, null, null, null, mapRenderer, null);
+            session.Configure(null, null, null, null, null, null, null, mapRenderer, null);
             nodeView.SetHighlight(true, Color.white);
 
             session.ApplyBackendBuildCommand("farm", "V22", true, "blue", 100, Color.green, Color.white);
@@ -124,7 +124,7 @@ namespace Panoptes.Tests.EditMode.Map
             var session = new MapBuildPlacementSession();
             var mapRenderer = CreateMapRendererWithNode("node-1", out _, out var nodeState);
             nodeState.BuildingType = "farm";
-            session.Configure(null, null, null, null, null, mapRenderer, null);
+            session.Configure(null, null, null, null, null, null, null, mapRenderer, null);
             session.RememberPendingBuild(new MapPlanningInputController.PendingBuildRecord
             {
                 buildingType = "farm",
@@ -144,7 +144,7 @@ namespace Panoptes.Tests.EditMode.Map
         {
             var session = new MapBuildPlacementSession();
             var mapRenderer = CreateMapRendererWithNode("V22", out var nodeView, out _);
-            session.Configure(null, null, null, null, null, mapRenderer, node => node.SetHighlightVisible(false));
+            session.Configure(null, null, null, null, null, null, null, mapRenderer, node => node.SetHighlightVisible(false));
             session.RememberPendingBuild(new MapPlanningInputController.PendingBuildRecord
             {
                 buildingType = "farm",

@@ -294,7 +294,7 @@ namespace Panoptes.Presentation.ViewModels
             displayName = string.Empty;
             description = string.Empty;
             iconKey = string.Empty;
-            var normalizedType = NormalizeToken(unitType);
+            var normalizedType = NormalizeUnitCatalogKey(unitType);
             if (string.IsNullOrWhiteSpace(normalizedType) || catalog == null)
             {
                 return;
@@ -357,7 +357,7 @@ namespace Panoptes.Presentation.ViewModels
             string unitType,
             bool isBuildingOrResource)
         {
-            var normalizedType = NormalizeToken(unitType);
+            var normalizedType = NormalizeUnitCatalogKey(unitType);
             if (string.IsNullOrWhiteSpace(normalizedType) ||
                 isBuildingOrResource ||
                 IsResourceType(normalizedType) ||
@@ -368,11 +368,18 @@ namespace Panoptes.Presentation.ViewModels
                 return default;
             }
 
-            var isMilitaryUnit = !HasTag(unit.Tags, "civilian");
+            var isCivilian = HasTag(unit.Tags, "civilian") ||
+                             string.Equals(NormalizeToken(unit.Class), "civilian", StringComparison.Ordinal);
+            var canAttack = !isCivilian &&
+                            (unit.Attack > 0 ||
+                             unit.AttackRange > 0 ||
+                             unit.Flags?.CanAttackStructures == true ||
+                             HasAnyTag(unit.Tags, "frontline", "melee", "ranged", "charge", "siege", "raider", "sabotage"));
+            var isMilitaryUnit = !isCivilian && canAttack;
             return new DirectOrderProjection(
                 canMove: true,
                 isMilitaryUnit: isMilitaryUnit,
-                canAttack: isMilitaryUnit,
+                canAttack: canAttack,
                 canCharge: isMilitaryUnit && HasTag(unit.Tags, "charge"));
         }
 
@@ -461,6 +468,24 @@ namespace Panoptes.Presentation.ViewModels
             return false;
         }
 
+        private static bool HasAnyTag(IReadOnlyList<string> tags, params string[] candidates)
+        {
+            if (candidates == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (HasTag(tags, candidates[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool IsResourceType(string normalizedType)
         {
             return string.Equals(normalizedType, "resource_point", StringComparison.Ordinal) ||
@@ -470,6 +495,14 @@ namespace Panoptes.Presentation.ViewModels
         private static string NormalizeToken(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
+        }
+
+        private static string NormalizeUnitCatalogKey(string value)
+        {
+            var normalized = NormalizeToken(value);
+            return string.Equals(normalized, "siege", StringComparison.Ordinal)
+                ? "siege_engine"
+                : normalized;
         }
 
         private readonly struct DirectOrderProjection

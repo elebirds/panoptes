@@ -124,6 +124,53 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void SelectUnit_ShouldResolveLegacySiegeTypeToSiegeEngineCatalog()
+        {
+            var gameStateStore = new GameStateStore();
+            var selectionStore = new SelectionStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var planningDraftStore = new PlanningDraftStore();
+            using var viewModel = new UnitInfoViewModel(
+                gameStateStore,
+                selectionStore,
+                staticCatalogStore,
+                planningDraftStore,
+                new SelectionService(selectionStore));
+
+            staticCatalogStore.Replace(new StaticCatalogState(
+                units: new Dictionary<string, CatalogUnitDto>
+                {
+                    ["siege_engine"] = new CatalogUnitDto
+                    {
+                        Id = "siege_engine",
+                        Name = "Siege Engine",
+                        Class = "siege",
+                        Attack = 14,
+                        AttackRange = 1,
+                        MoveRange = 3,
+                        Flags = new CatalogUnitFlagsDto { CanAttackStructures = true },
+                        Tags = new List<string> { "siege" }
+                    }
+                }));
+            gameStateStore.Replace(new GameStateStoreState(
+                myPlayerId: "p1",
+                phase: GamePhases.Planning,
+                units: new Dictionary<string, UnitDto>
+                {
+                    ["u1"] = new UnitDto { Id = "u1", Type = "siege", Owner = "p1", Hp = 20, MaxHp = 36 }
+                }));
+
+            viewModel.SelectUnit("u1");
+
+            Assert.That(viewModel.Current.DisplayName, Is.EqualTo("Siege Engine"));
+            Assert.That(viewModel.Current.ShowDirectOrderButtons, Is.True);
+            Assert.That(viewModel.Current.CanMove, Is.True);
+            Assert.That(viewModel.Current.IsMilitaryUnit, Is.True);
+            Assert.That(viewModel.Current.CanAttack, Is.True);
+            Assert.That(viewModel.Current.CanCharge, Is.False);
+        }
+
+        [Test]
         public void SelectUnit_ShouldUseCatalogBuildingMaxHp_WhenNodeSnapshotOmitsMaxHp()
         {
             var gameStateStore = new GameStateStore();

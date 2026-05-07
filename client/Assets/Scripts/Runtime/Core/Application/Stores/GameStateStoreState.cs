@@ -17,7 +17,8 @@ namespace Panoptes.Core.Application.Stores
             int tokensLeft = 0,
             IReadOnlyDictionary<string, NodeDto> nodes = null,
             IReadOnlyDictionary<string, UnitDto> units = null,
-            ResourceDto myResources = null)
+            ResourceDto myResources = null,
+            TechnologyDto researchState = null)
         {
             ActiveGameSessionId = activeGameSessionId ?? string.Empty;
             GameId = gameId ?? string.Empty;
@@ -28,6 +29,7 @@ namespace Panoptes.Core.Application.Stores
             MyResources = StoreSnapshotCloner.CloneResource(myResources);
             Nodes = StoreSnapshotCloner.CloneNodes(nodes);
             Phase = phase ?? string.Empty;
+            ResearchState = StoreSnapshotCloner.CloneTechnology(researchState);
             TokensLeft = tokensLeft;
             Turn = turn;
             Units = StoreSnapshotCloner.CloneUnits(units);
@@ -42,6 +44,7 @@ namespace Panoptes.Core.Application.Stores
         public ResourceDto MyResources { get; }
         public IReadOnlyDictionary<string, NodeDto> Nodes { get; }
         public string Phase { get; }
+        public TechnologyDto ResearchState { get; }
         public int TokensLeft { get; }
         public int Turn { get; }
         public IReadOnlyDictionary<string, UnitDto> Units { get; }
@@ -60,7 +63,8 @@ namespace Panoptes.Core.Application.Stores
                 TokensLeft,
                 Nodes,
                 Units,
-                MyResources);
+                MyResources,
+                ResearchState);
         }
     }
 }

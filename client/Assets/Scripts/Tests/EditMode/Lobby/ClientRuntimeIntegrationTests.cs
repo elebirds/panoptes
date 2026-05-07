@@ -1376,7 +1376,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "城内建筑入口应显式要求 cityId。");
             StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", buildPlacementContent,
                 "建造模式应保存显式传入的 cityId，而不是临时猜测。");
-            StringAssert.Contains("BuildToken(nodeId, buildingType, _activeBuildCityId);", buildPlacementContent,
+            StringAssert.Contains("BuildToken(nodeId, buildingType, _activeBuildCityId)", buildPlacementContent,
                 "建造消息必须透传显式 cityId。");
             Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
                 "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");

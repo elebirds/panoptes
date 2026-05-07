@@ -72,7 +72,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             _hydrator.Attach();
 
             using var techTree = new TechTreeViewModel(catalogStore, draftStore);
-            using var buildCatalog = new BuildCatalogViewModel(catalogStore, draftStore);
+            using var buildCatalog = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
             using var overview = new NationalOverviewViewModel(
                 gameStore,
                 turnStore,

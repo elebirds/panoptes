@@ -58,6 +58,14 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(attack.TargetUnitId, Is.EqualTo("unit-2"));
             Assert.That(attack.SecondaryNodeId, Is.EqualTo("node-c"));
 
+            Assert.That(service.ChargeUnit("unit-1", "node-d", "unit-3"), Is.True);
+            Assert.That(sender.Last, Is.TypeOf<MsgIssueUnitOrder>());
+            var charge = (MsgIssueUnitOrder)sender.Last;
+            Assert.That(charge.UnitId, Is.EqualTo("unit-1"));
+            Assert.That(charge.Action, Is.EqualTo("charge"));
+            Assert.That(charge.TargetNodeId, Is.EqualTo("node-d"));
+            Assert.That(charge.TargetUnitId, Is.EqualTo("unit-3"));
+
             Assert.That(service.SetBuildingRecipe("city-core", "grain_rations"), Is.True);
             Assert.That(sender.Last, Is.TypeOf<MsgSetBuildingRecipe>());
             var recipe = (MsgSetBuildingRecipe)sender.Last;

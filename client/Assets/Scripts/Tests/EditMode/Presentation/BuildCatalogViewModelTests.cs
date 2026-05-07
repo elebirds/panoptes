@@ -13,7 +13,8 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var catalogStore = new StaticCatalogStore();
             var draftStore = new PlanningDraftStore();
-            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore);
+            var gameStore = new GameStateStore();
+            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
 
             catalogStore.Replace(new StaticCatalogState(buildings: new Dictionary<string, CatalogBuildingDto>
             {
@@ -39,7 +40,8 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var catalogStore = new StaticCatalogStore();
             var draftStore = new PlanningDraftStore();
-            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore);
+            var gameStore = new GameStateStore();
+            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
 
             catalogStore.Replace(new StaticCatalogState(buildings: new Dictionary<string, CatalogBuildingDto>
             {
@@ -58,7 +60,8 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var catalogStore = new StaticCatalogStore();
             var draftStore = new PlanningDraftStore();
-            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore);
+            var gameStore = new GameStateStore();
+            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
 
             catalogStore.Replace(new StaticCatalogState(
                 resources: new Dictionary<string, CatalogHudEntryDto>
@@ -88,6 +91,43 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(costs[0].IconKey, Is.EqualTo("resource_wood"));
             Assert.That(costs[1].Id, Is.EqualTo("industry_output"));
             Assert.That(costs[1].Amount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Current_ShouldMarkTechnologyLockedBuildings()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStore = new GameStateStore();
+            using var viewModel = new BuildCatalogViewModel(catalogStore, draftStore, gameStore);
+
+            catalogStore.Replace(new StaticCatalogState(
+                buildings: new Dictionary<string, CatalogBuildingDto>
+                {
+                    ["workshop"] = new CatalogBuildingDto { Id = "workshop", Name = "Workshop", PlacementKind = "city_territory" }
+                },
+                technologies: new Dictionary<string, CatalogTechnologyDto>
+                {
+                    ["organized_labor"] = new CatalogTechnologyDto
+                    {
+                        Id = "organized_labor",
+                        ExplicitEffects = new List<CatalogTechnologyEffectDto>
+                        {
+                            new() { Type = "unlock_building", TargetId = "workshop" }
+                        }
+                    }
+                }));
+
+            var item = viewModel.Current.Groups[0].Items[0];
+            Assert.That(item.IsLocked, Is.True);
+            Assert.That(item.UnlockTechnologyId, Is.EqualTo("organized_labor"));
+
+            gameStore.Replace(new GameStateStoreState(researchState: new TechnologyDto
+            {
+                ActiveTechnologyIds = new List<string> { "organized_labor" }
+            }));
+
+            Assert.That(viewModel.Current.Groups[0].Items[0].IsLocked, Is.False);
         }
     }
 }

@@ -153,6 +153,25 @@ namespace Panoptes.Core.Application.Stores
             };
         }
 
+        public static TechnologyDto CloneTechnology(TechnologyDto source)
+        {
+            if (source == null)
+            {
+                return new TechnologyDto();
+            }
+
+            return new TechnologyDto
+            {
+                TechnologyId = source.TechnologyId,
+                CurrentProgress = source.CurrentProgress,
+                RequiredProgress = source.RequiredProgress,
+                CompletedTechnologyIds = CloneStrings(source.CompletedTechnologyIds),
+                ActiveTechnologyIds = CloneStrings(source.ActiveTechnologyIds),
+                PendingActivationTechnologyIds = CloneStrings(source.PendingActivationTechnologyIds),
+                SavedProgress = CloneList(source.SavedProgress, CloneTechnologyProgress)
+            };
+        }
+
         public static PathPreviewDto ClonePathPreview(PathPreviewDto source)
         {
             if (source == null)
@@ -491,6 +510,21 @@ namespace Panoptes.Core.Application.Stores
                 ToR = source.ToR,
                 Type = source.Type,
                 UnitId = source.UnitId
+            };
+        }
+
+        private static TechnologyProgressDto CloneTechnologyProgress(TechnologyProgressDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new TechnologyProgressDto
+            {
+                TechnologyId = source.TechnologyId,
+                CurrentProgress = source.CurrentProgress,
+                RequiredProgress = source.RequiredProgress
             };
         }
 

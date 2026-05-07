@@ -53,6 +53,11 @@ namespace Panoptes.Tests.EditMode.Core
                             new PointValue { Key = "industry_output", Amount = 4 },
                             new PointValue { Key = " logistics_capacity ", Amount = 11 }
                         }
+                    },
+                    Research = new ResearchStateView
+                    {
+                        ActiveTechnologyIds = { " organized_labor " },
+                        PendingActivationTechnologyIds = { "metallurgy" }
                     }
                 },
                 Nodes =
@@ -88,6 +93,8 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.MyResources.IndustryOutput, Is.EqualTo(4));
             Assert.That(mapped.MyResources.ResourceAmounts["coal"], Is.EqualTo(6));
             Assert.That(mapped.MyResources.PointAmounts["logistics_capacity"], Is.EqualTo(11));
+            Assert.That(mapped.ResearchState.ActiveTechnologyIds, Is.EqualTo(new[] { "organized_labor" }));
+            Assert.That(mapped.ResearchState.PendingActivationTechnologyIds, Is.EqualTo(new[] { "metallurgy" }));
             Assert.That(mapped.Nodes["n1"].BuildingMaxHp, Is.EqualTo(12));
             Assert.That(mapped.Units["u1"].MaxHp, Is.EqualTo(6));
         }
@@ -104,6 +111,30 @@ namespace Panoptes.Tests.EditMode.Core
             {
                 Turn = 5
             });
+
+            Assert.That(mapped.Turn, Is.EqualTo(5));
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
+        }
+
+        [Test]
+        public void MergeGameSync_WithSettlementEvents_ShouldDefaultToResolvingEvenIfPhaseIsPlanning()
+        {
+            var current = new GameStateStoreState(
+                turn: 4,
+                phase: "planning",
+                tokensLeft: 3);
+            var msg = new MsgGameSync
+            {
+                Turn = 5,
+                Phase = "planning"
+            };
+            msg.Events.Add(new DomainEventEnvelope
+            {
+                Channel = "unit",
+                Kind = "unit_moved"
+            });
+
+            var mapped = StoreHydrationProtocolMapper.MergeGameSync(current, msg);
 
             Assert.That(mapped.Turn, Is.EqualTo(5));
             Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
@@ -201,6 +232,32 @@ namespace Panoptes.Tests.EditMode.Core
             {
                 Turn = 5
             });
+
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
+            Assert.That(mapped.TimeoutSeconds, Is.Zero);
+            Assert.That(mapped.IsInteractive, Is.False);
+        }
+
+        [Test]
+        public void MergeTurn_GameSyncWithSettlementEvents_ShouldDefaultToResolvingEvenIfPhaseIsPlanning()
+        {
+            var current = new TurnState(
+                turn: 4,
+                phase: "planning",
+                timeoutSeconds: 45,
+                isInteractive: true);
+            var msg = new MsgGameSync
+            {
+                Turn = 5,
+                Phase = "planning"
+            };
+            msg.Events.Add(new DomainEventEnvelope
+            {
+                Channel = "unit",
+                Kind = "unit_moved"
+            });
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurn(current, msg);
 
             Assert.That(mapped.Phase, Is.EqualTo(GamePhases.Resolving));
             Assert.That(mapped.TimeoutSeconds, Is.Zero);

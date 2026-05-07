@@ -51,6 +51,23 @@ namespace Panoptes.Tests.EditMode.Map
         }
 
         [Test]
+        public void HandleLeftClick_ChargeMode_ShouldRouteToCombatSelection()
+        {
+            var coordinator = new MapPlanningInputCoordinator();
+            var context = new FakeContext
+            {
+                CombatActionMode = MapPlanningInputController.CombatActionMode.Charge
+            };
+
+            coordinator.HandleLeftClick(context);
+
+            Assert.That(context.PrepareMapCommandClickCalls, Is.EqualTo(1));
+            Assert.That(context.HandleCombatSelectionClickCalls, Is.EqualTo(1));
+            Assert.That(context.TrySelectOwnedUnitCalls, Is.Zero);
+            Assert.That(context.TryOpenBuildingInfoCalls, Is.Zero);
+        }
+
+        [Test]
         public void HandleLeftClick_DefaultMode_ShouldSelectUnitBeforeOpeningPanels()
         {
             var coordinator = new MapPlanningInputCoordinator();

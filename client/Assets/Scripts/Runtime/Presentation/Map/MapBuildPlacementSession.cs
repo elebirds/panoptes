@@ -54,6 +54,8 @@ namespace Panoptes.Presentation.Map
         private Func<PlanningIntentService> _planningIntentServiceProvider;
         private Func<string> _localOwnerIdProvider;
         private Func<string, string> _backendBuildingTypeResolver;
+        private Func<string, string, bool> _tryReserveBuildCost;
+        private Action<string> _refundReservedBuildCost;
         private Action<NodeView> _restoreNodeHighlight;
         private MapRenderer _mapRenderer;
         private NodeView _hoverNode;
@@ -76,6 +78,8 @@ namespace Panoptes.Presentation.Map
             Func<PlanningIntentService> planningIntentServiceProvider,
             Func<string> localOwnerIdProvider,
             Func<string, string> backendBuildingTypeResolver,
+            Func<string, string, bool> tryReserveBuildCost,
+            Action<string> refundReservedBuildCost,
             MapRenderer mapRenderer,
             Action<NodeView> restoreNodeHighlight)
         {
@@ -84,6 +88,8 @@ namespace Panoptes.Presentation.Map
             _planningIntentServiceProvider = planningIntentServiceProvider;
             _localOwnerIdProvider = localOwnerIdProvider;
             _backendBuildingTypeResolver = backendBuildingTypeResolver;
+            _tryReserveBuildCost = tryReserveBuildCost;
+            _refundReservedBuildCost = refundReservedBuildCost;
             _mapRenderer = mapRenderer;
             _restoreNodeHighlight = restoreNodeHighlight;
         }
@@ -534,7 +540,19 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            _planningIntentServiceProvider?.Invoke()?.BuildToken(nodeId, buildingType, _activeBuildCityId);
+            if (_tryReserveBuildCost != null && !_tryReserveBuildCost(buildingType, nodeId))
+            {
+                return false;
+            }
+
+            var sent = _planningIntentServiceProvider?.Invoke()?.BuildToken(nodeId, buildingType, _activeBuildCityId) ?? false;
+            if (!sent)
+            {
+                _refundReservedBuildCost?.Invoke(nodeId);
+                showUserError?.Invoke("无法发送建造指令。");
+                return false;
+            }
+
             buildCommandSent?.Invoke(buildingType, nodeId);
             return true;
         }

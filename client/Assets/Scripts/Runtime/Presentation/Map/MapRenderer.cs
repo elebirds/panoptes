@@ -457,6 +457,8 @@ namespace Panoptes.Presentation.Map
                 CaptureSettlementPlaybackUnitSnapshots();
             }
 
+            PlaceSettlementPlaybackUnitsAtMoveStarts(steps, 0);
+
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
@@ -465,17 +467,39 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (step.MoveEvent != null && !string.IsNullOrWhiteSpace(step.MoveEvent.UnitId))
-                {
-                    PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent);
-                }
-
                 for (var impactIndex = 0; impactIndex < step.Impacts.Count; impactIndex++)
                 {
                     var impact = step.Impacts[impactIndex];
                     EnsureSettlementPlaybackImpactUnit(impact?.DamageEvent);
                     EnsureSettlementPlaybackImpactUnit(impact?.DeathEvent);
                 }
+            }
+        }
+
+        public void PlaceSettlementPlaybackUnitsAtMoveStarts(IReadOnlyList<SettlementPlaybackStep> steps, int startStepIndex)
+        {
+            if (steps == null || steps.Count == 0)
+            {
+                return;
+            }
+
+            var seenUnitIds = new HashSet<string>();
+            var clampedStart = Mathf.Clamp(startStepIndex, 0, steps.Count);
+            for (var i = clampedStart; i < steps.Count; i++)
+            {
+                var moveEvent = steps[i]?.MoveEvent;
+                if (moveEvent == null || string.IsNullOrWhiteSpace(moveEvent.UnitId))
+                {
+                    continue;
+                }
+
+                var unitId = moveEvent.UnitId.Trim();
+                if (!seenUnitIds.Add(unitId))
+                {
+                    continue;
+                }
+
+                PlaceSettlementPlaybackUnitAtMoveStart(moveEvent);
             }
         }
 

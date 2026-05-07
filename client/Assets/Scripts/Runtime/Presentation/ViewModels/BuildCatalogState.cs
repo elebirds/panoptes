@@ -45,7 +45,10 @@ namespace Panoptes.Presentation.ViewModels
             PlanningBuildPlacementRule placementRule = PlanningBuildPlacementRule.AnyTerrain,
             bool isPending = false,
             string iconKey = "",
-            IReadOnlyList<ManagementPanelAmountState> costs = null)
+            IReadOnlyList<ManagementPanelAmountState> costs = null,
+            bool isLocked = false,
+            string lockedText = "",
+            string unlockTechnologyId = "")
         {
             BuildingId = buildingId ?? string.Empty;
             Costs = costs != null
@@ -53,20 +56,26 @@ namespace Panoptes.Presentation.ViewModels
                 : new List<ManagementPanelAmountState>();
             Description = description ?? string.Empty;
             IconKey = iconKey ?? string.Empty;
+            IsLocked = isLocked;
             IsPending = isPending;
+            LockedText = lockedText ?? string.Empty;
             PlacementKind = placementKind ?? string.Empty;
             PlacementRule = placementRule;
             Title = string.IsNullOrWhiteSpace(title) ? BuildingId : title.Trim();
+            UnlockTechnologyId = unlockTechnologyId ?? string.Empty;
         }
 
         public string BuildingId { get; }
         public IReadOnlyList<ManagementPanelAmountState> Costs { get; }
         public string Description { get; }
         public string IconKey { get; }
+        public bool IsLocked { get; }
         public bool IsPending { get; }
+        public string LockedText { get; }
         public string PendingText => IsPending ? "已规划" : string.Empty;
         public string PlacementKind { get; }
         public PlanningBuildPlacementRule PlacementRule { get; }
         public string Title { get; }
+        public string UnlockTechnologyId { get; }
     }
 }

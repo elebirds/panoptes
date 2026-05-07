@@ -42,8 +42,6 @@ func BuildReasonMessage(reason string) string {
 		return "当前不能提交这条建造指令。"
 	case "building_exists":
 		return "该节点已经有建筑，不能重复建造。"
-	case "no_tokens_left":
-		return "本回合已没有可用令牌，无法再提交建造。"
 	case "outside_territory":
 		return "该节点不在你的有效辖区内，当前不能建造。"
 	case "terrain_not_buildable":
