@@ -121,6 +121,23 @@ namespace Panoptes.Presentation.Map
         public bool IsCurrentlyVisible => _isCurrentlyVisible;
         public bool IsMemoryVisible => _isMemoryVisible;
 
+        public Vector3 ResolveUnitAnchorWorldPosition()
+        {
+            if (groundRenderer != null)
+            {
+                var center = groundRenderer.bounds.center;
+                var y = unitAnchor != null ? unitAnchor.position.y : transform.position.y + 0.2f;
+                return new Vector3(center.x, y, center.z);
+            }
+
+            if (unitAnchor != null)
+            {
+                return unitAnchor.position;
+            }
+
+            return transform.position + Vector3.up * 0.2f;
+        }
+
         private ResourcePointView _resourceInstance;
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;

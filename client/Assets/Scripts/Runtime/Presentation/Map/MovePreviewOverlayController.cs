@@ -168,7 +168,7 @@ namespace Panoptes.Presentation.Map
 
             var marker = new GameObject($"MoveTurnMarker_{nodeId}");
             marker.transform.SetParent(_hostTransform, false);
-            marker.transform.position = (node.UnitAnchor != null ? node.UnitAnchor.position : node.transform.position) + Vector3.up * turnMarkerHeight;
+            marker.transform.position = node.ResolveUnitAnchorWorldPosition() + Vector3.up * turnMarkerHeight;
             var text = marker.AddComponent<TextMesh>();
             text.text = turnIndex.ToString();
             text.characterSize = 0.18f;

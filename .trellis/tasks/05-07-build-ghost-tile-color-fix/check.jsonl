@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend review entrypoint."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify prefab-facing map component compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify transient build ghost state stays presentation-owned and survives refresh."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify client quality boundaries and testing expectations."}
+{"file": ".trellis/tasks/05-07-build-ghost-tile-color-fix/prd.md", "reason": "Acceptance criteria for the build ghost tile color fix."}

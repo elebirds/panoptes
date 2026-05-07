@@ -98,8 +98,24 @@ namespace Panoptes.Tests.EditMode.Map
             Assert.That(nodeView.BuildingInstance, Is.Not.Null);
             Assert.That(nodeView.BuildingType, Is.EqualTo("farm"));
             Assert.That(nodeView.BuildingInstance.IsGhost, Is.True);
-            Assert.That(GetPrivateField<GameObject>(nodeView, "highlight").activeSelf, Is.True);
+            Assert.That(GetPrivateField<GameObject>(nodeView, "highlight").activeSelf, Is.False);
             Assert.That(session.HasPendingBuild("V22"), Is.True);
+        }
+
+        [Test]
+        public void ApplyBackendBuildCommand_ShouldRenderGhostWithoutNodeHighlight()
+        {
+            var session = new MapBuildPlacementSession();
+            var mapRenderer = CreateMapRendererWithNode("V22", out var nodeView, out _);
+            session.Configure(null, null, null, null, null, mapRenderer, null);
+            nodeView.SetHighlight(true, Color.white);
+
+            session.ApplyBackendBuildCommand("farm", "V22", true, "blue", 100, Color.green, Color.white);
+
+            Assert.That(nodeView.BuildingInstance, Is.Not.Null);
+            Assert.That(nodeView.BuildingType, Is.EqualTo("farm"));
+            Assert.That(nodeView.BuildingInstance.IsGhost, Is.True);
+            Assert.That(GetPrivateField<GameObject>(nodeView, "highlight").activeSelf, Is.False);
         }
 
         [Test]
@@ -124,7 +140,7 @@ namespace Panoptes.Tests.EditMode.Map
         }
 
         [Test]
-        public void TryRestorePendingBuildHighlight_ShouldKeepEdgeGlow_WhenHoverHighlightRestoresAfterCommit()
+        public void TryRestorePendingBuildHighlight_ShouldClearNodeHighlight_WhenPendingBuildOwnsGhostVisual()
         {
             var session = new MapBuildPlacementSession();
             var mapRenderer = CreateMapRendererWithNode("V22", out var nodeView, out _);
@@ -136,11 +152,12 @@ namespace Panoptes.Tests.EditMode.Map
                 ownerId = "blue",
                 isGhost = true
             });
+            nodeView.SetHighlight(true, Color.white);
 
             var restored = session.TryRestorePendingBuildHighlight("V22", nodeView, Color.white);
 
             Assert.That(restored, Is.True);
-            Assert.That(GetPrivateField<GameObject>(nodeView, "highlight").activeSelf, Is.True);
+            Assert.That(GetPrivateField<GameObject>(nodeView, "highlight").activeSelf, Is.False);
         }
 
         private static MapBuildPlacementVisualSettings CreateSettings()

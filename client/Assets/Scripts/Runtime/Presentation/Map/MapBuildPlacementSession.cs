@@ -282,8 +282,7 @@ namespace Panoptes.Presentation.Map
                     node.NodeId,
                     backendBuildingType,
                     ownerId,
-                    settings.PlacedGhostColor,
-                    settings.PlacedEdgeGlowColor))
+                    settings.PlacedGhostColor))
             {
                 PanoptesLog.Warning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
             }
@@ -312,8 +311,7 @@ namespace Panoptes.Presentation.Map
                     nodeId,
                     buildingType,
                     ownerId,
-                    placedGhostColor,
-                    placedEdgeGlowColor);
+                    placedGhostColor);
             }
             else
             {
@@ -377,8 +375,7 @@ namespace Panoptes.Presentation.Map
                     nodeId,
                     buildingType,
                     record.ownerId,
-                    placedGhostColor,
-                    placedEdgeGlowColor);
+                    placedGhostColor);
             }
 
             if (committedNodeIds == null)
@@ -449,7 +446,9 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            node.SetHighlight(true, placedEdgeGlowColor);
+            // Pending builds are represented by the building ghost only; do not
+            // paint the node highlight layer over the terrain.
+            node.SetHighlightVisible(false);
             return true;
         }
 
@@ -485,8 +484,7 @@ namespace Panoptes.Presentation.Map
             string nodeId,
             string buildingType,
             string ownerId,
-            Color placedGhostColor,
-            Color placedEdgeGlowColor)
+            Color placedGhostColor)
         {
             if (_mapRenderer == null || string.IsNullOrWhiteSpace(nodeId))
             {
@@ -503,7 +501,7 @@ namespace Panoptes.Presentation.Map
 
             if (_mapRenderer.TryGetNodeView(nodeId, out var nodeView) && nodeView != null)
             {
-                nodeView.SetHighlight(true, placedEdgeGlowColor);
+                nodeView.SetHighlightVisible(false);
             }
 
             return applied;

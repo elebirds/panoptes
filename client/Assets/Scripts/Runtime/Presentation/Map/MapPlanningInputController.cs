@@ -79,6 +79,14 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color movePathArrowColor = new Color(0.35f, 1f, 0.45f, 0.92f);
         [SerializeField] private Color movePathDestinationColor = new Color(0.25f, 0.95f, 0.55f, 0.95f);
         [SerializeField] private Color attackRangeHighlightColor = new Color(1f, 0.45f, 0.25f, 0.9f);
+        [SerializeField] private bool enableCombatOrderFeedback = true;
+        [SerializeField] private Color rangedAttackTracerColor = new Color(1f, 0.83f, 0.28f, 0.95f);
+        [SerializeField] private Color chargeTracerColor = new Color(1f, 0.38f, 0.18f, 0.95f);
+        [SerializeField] private float combatTracerDuration = 0.22f;
+        [SerializeField] private float combatTracerWidth = 0.055f;
+        [SerializeField] private float rangedAttackTracerArcHeight = 0.75f;
+        [SerializeField] private float chargeTracerArcHeight = 0.12f;
+        [SerializeField] private float combatFeedbackYOffset = 0.55f;
 
         [Header("Move Preview Ghost")]
         [SerializeField] private bool enableMovePreviewGhost = true;
@@ -997,7 +1005,7 @@ namespace Panoptes.Presentation.Map
                     TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
                     ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
                     _planningIntentService?.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
-                    PlaySelectedAttackFeedback();
+                    PlaySelectedAttackFeedback(targetUnit);
                     _inputState.SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
                     return true;
@@ -1008,6 +1016,7 @@ namespace Panoptes.Presentation.Map
                         return false;
                     }
                     _planningIntentService?.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
+                    PlaySelectedChargeFeedback(targetUnit);
                     _inputState.SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
                     return true;
@@ -1070,13 +1079,13 @@ namespace Panoptes.Presentation.Map
             TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
             ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
             _planningIntentService?.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
-            PlaySelectedAttackFeedback();
+            PlaySelectedAttackFeedback(null, nodeId);
             _inputState.SetCombatActionMode(CombatActionMode.None);
             NotifyCombatSelectionChanged();
             return true;
         }
 
-        private void PlaySelectedAttackFeedback()
+        private void PlaySelectedAttackFeedback(UnitView targetUnit = null, string targetNodeId = null)
         {
             if (_selectedUnit == null)
             {
@@ -1084,6 +1093,75 @@ namespace Panoptes.Presentation.Map
             }
 
             _selectedUnit.PlayAttackAnimation();
+            if (ResolveSelectedUnitAttackRange() <= 1)
+            {
+                return;
+            }
+
+            if (TryResolveCombatTargetPosition(targetUnit, targetNodeId, out var targetPosition))
+            {
+                PlayCombatTracer(_selectedUnit, targetPosition, rangedAttackTracerColor, rangedAttackTracerArcHeight);
+            }
+        }
+
+        private void PlaySelectedChargeFeedback(UnitView targetUnit)
+        {
+            if (_selectedUnit == null)
+            {
+                return;
+            }
+
+            _selectedUnit.PlayAttackAnimation();
+            if (TryResolveCombatTargetPosition(targetUnit, null, out var targetPosition))
+            {
+                PlayCombatTracer(_selectedUnit, targetPosition, chargeTracerColor, chargeTracerArcHeight);
+            }
+        }
+
+        private bool TryResolveCombatTargetPosition(UnitView targetUnit, string targetNodeId, out Vector3 targetPosition)
+        {
+            if (targetUnit != null)
+            {
+                targetPosition = ResolveUnitFeedbackPosition(targetUnit);
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(targetNodeId) &&
+                _mapRenderer?.TileViews != null &&
+                _mapRenderer.TileViews.TryGetValue(targetNodeId.Trim(), out var nodeView) &&
+                nodeView != null)
+            {
+                targetPosition = nodeView.ResolveUnitAnchorWorldPosition();
+                return true;
+            }
+
+            targetPosition = Vector3.zero;
+            return false;
+        }
+
+        private void PlayCombatTracer(UnitView sourceUnit, Vector3 targetPosition, Color color, float arcHeight)
+        {
+            if (!enableCombatOrderFeedback || sourceUnit == null)
+            {
+                return;
+            }
+
+            var tracerRoot = new GameObject("CombatFeedbackTracer");
+            tracerRoot.transform.SetParent(transform, true);
+            tracerRoot.AddComponent<MapCombatFeedbackTracer>().Configure(
+                ResolveUnitFeedbackPosition(sourceUnit),
+                targetPosition,
+                color,
+                combatTracerWidth,
+                combatTracerDuration,
+                arcHeight);
+        }
+
+        private Vector3 ResolveUnitFeedbackPosition(UnitView unit)
+        {
+            var root = unit != null ? unit.VisualRoot : null;
+            var position = root != null ? root.position : unit.transform.position;
+            return position + Vector3.up * combatFeedbackYOffset;
         }
 
         private bool IsEnemyStructureNode(string nodeId)

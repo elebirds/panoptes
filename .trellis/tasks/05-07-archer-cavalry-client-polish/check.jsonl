@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify modified files stay in appropriate client folders."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify MonoBehaviour/prefab-facing compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client-side gameplay authority was added."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify forbidden patterns and expected Unity checks."}
+{"file": ".trellis/tasks/05-07-archer-cavalry-client-polish/prd.md", "reason": "Check implementation against agreed requirements."}

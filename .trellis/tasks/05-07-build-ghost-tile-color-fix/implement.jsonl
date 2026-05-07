@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend implementation entrypoint for client presentation guidelines."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Map MonoBehaviour changes must preserve prefab-facing serialized compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Pending build ghosts are presentation-owned transient map visuals restored after renderer refresh."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality boundaries: no generated protocol edits, no Presentation gameplay validation."}
+{"file": ".trellis/tasks/05-07-build-ghost-tile-color-fix/prd.md", "reason": "Implementation requirements for the build ghost tile color fix."}

@@ -61,6 +61,7 @@ namespace Panoptes.Presentation.UI.HUD
             public string NodeId;
             public NodeView Node;
             public BuildingView Building;
+            public UnitView Unit;
             public RectTransform Root;
             public Image Plate;
             public TextMeshProUGUI Name;
@@ -326,6 +327,7 @@ namespace Panoptes.Presentation.UI.HUD
                 var count = 0;
                 var totalHp = 0;
                 var totalMaxHp = 0;
+                UnitView trackedUnit = null;
                 for (var i = 0; i < _unitStackScratch.Count; i++)
                 {
                     var unit = _unitStackScratch[i];
@@ -334,6 +336,10 @@ namespace Panoptes.Presentation.UI.HUD
                         continue;
                     }
 
+                    if (trackedUnit == null || (!trackedUnit.IsMovingVisual && unit.IsMovingVisual))
+                    {
+                        trackedUnit = unit;
+                    }
                     count++;
                     var maxHp = Mathf.Max(1, unit.MaxHitPoints > 0 ? unit.MaxHitPoints : unit.HitPoints);
                     totalHp += Mathf.Clamp(unit.HitPoints, 0, maxHp);
@@ -359,6 +365,7 @@ namespace Panoptes.Presentation.UI.HUD
                     }
                 }
 
+                entry.Unit = trackedUnit;
                 entry.SeenVersion = _syncVersion;
                 RefreshUnitStackVisual(entry, totalHp, totalMaxHp, count);
             }
@@ -468,6 +475,7 @@ namespace Panoptes.Presentation.UI.HUD
                 NodeId = nodeId,
                 Node = node,
                 Building = building,
+                Unit = null,
                 Root = root,
                 Plate = plateImage,
                 Name = name,
@@ -541,6 +549,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 NodeId = nodeId,
                 Node = node,
+                Unit = null,
                 Root = root,
                 Fill = fill,
                 CountText = countText,
@@ -671,10 +680,15 @@ namespace Panoptes.Presentation.UI.HUD
                 return true;
             }
 
+            if (entry.Unit != null)
+            {
+                world = entry.Unit.transform.position + Vector3.up * Mathf.Max(0.1f, entry.WorldHeightOffset);
+                return true;
+            }
+
             if (entry.Node != null)
             {
-                var anchor = entry.Node.UnitAnchor != null ? entry.Node.UnitAnchor.position : entry.Node.transform.position;
-                world = anchor + Vector3.up * Mathf.Max(0.1f, entry.WorldHeightOffset);
+                world = entry.Node.ResolveUnitAnchorWorldPosition() + Vector3.up * Mathf.Max(0.1f, entry.WorldHeightOffset);
                 return true;
             }
 
@@ -719,7 +733,7 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
-            var originY = node != null && node.UnitAnchor != null ? node.UnitAnchor.position.y : (node != null ? node.transform.position.y : 0f);
+            var originY = node != null ? node.ResolveUnitAnchorWorldPosition().y : 0f;
             if (!hasBounds)
             {
                 return 0.65f;

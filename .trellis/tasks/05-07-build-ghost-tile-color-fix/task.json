@@ -1,0 +1,28 @@
+{
+  "id": "build-ghost-tile-color-fix",
+  "name": "build-ghost-tile-color-fix",
+  "title": "fix build ghost tile color",
+  "description": "Keep build placement ghosts green without turning the underlying map tile white.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "client",
+  "package": "frontend",
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-05-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "manual_task_bootstrap": "python unavailable in this environment; files created directly"
+  }
+}

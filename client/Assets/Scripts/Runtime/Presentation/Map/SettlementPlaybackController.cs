@@ -241,9 +241,7 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            var target = nodeView.UnitAnchor != null
-                ? nodeView.UnitAnchor.position
-                : nodeView.transform.position + Vector3.up * 0.2f;
+            var target = nodeView.ResolveUnitAnchorWorldPosition();
             yield return UnitMoveAnim.Play(
                 unitView,
                 target,

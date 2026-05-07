@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Client presentation and prefab/resource changes."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Preserve prefab-facing MonoBehaviour compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep client changes presentation/data only."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verification expectations for Unity client changes."}
+{"file": ".trellis/tasks/05-07-siege-scout-units/prd.md", "reason": "Task requirements and acceptance criteria."}
+{"file": "docs/2026-05-07-siege-scout-unit-integration.md", "reason": "Follow-up maintenance record for newly integrated unit assets and catalog keys."}

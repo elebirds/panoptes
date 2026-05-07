@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check prefab-facing compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check presentation-only state handling."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check verification expectations."}
+{"file": ".trellis/tasks/05-07-siege-scout-units/prd.md", "reason": "Check implementation against requirements."}
+{"command": "git diff --check", "result": "pass"}
+{"command": "node -e \"JSON.parse(...) for updated catalog JSON\"", "result": "pass: updated catalog JSON files parse"}
+{"command": "node -e \"assert unit/recipe keys resolve to Resources prefab/icon files\"", "result": "pass: siege_engine and scout catalog/resource linkage is complete"}
+{"command": "git diff --name-only -- client/Assets/Scripts/Protocol server/internal/gen/proto", "result": "pass: no generated protocol changes"}
+{"spec_update": "reviewed", "result": "no .trellis/spec update needed; task-specific maintenance details are captured in docs/2026-05-07-siege-scout-unit-integration.md"}

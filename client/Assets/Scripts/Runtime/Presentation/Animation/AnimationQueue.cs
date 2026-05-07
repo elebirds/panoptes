@@ -120,9 +120,7 @@ namespace Panoptes.Presentation.Animation
             var camera = Camera.main;
             var follow = followCameraOnMove && cmd.followCamera;
 
-            var target = nodeView.UnitAnchor != null
-                ? nodeView.UnitAnchor.position
-                : nodeView.transform.position + Vector3.up * 0.2f;
+            var target = nodeView.ResolveUnitAnchorWorldPosition();
 
             var waypoints = BuildWaypoints(map, unitView, cmd.targetNodeId, target, cmd.pathNodeIds);
             if (follow)
@@ -182,9 +180,7 @@ namespace Panoptes.Presentation.Animation
                         continue;
                     }
 
-                    var waypoint = pathNode.UnitAnchor != null
-                        ? pathNode.UnitAnchor.position
-                        : pathNode.transform.position + Vector3.up * 0.2f;
+                    var waypoint = pathNode.ResolveUnitAnchorWorldPosition();
                     if (waypoints.Count == 0 || Vector3.Distance(waypoints[waypoints.Count - 1], waypoint) > 0.001f)
                     {
                         waypoints.Add(waypoint);

@@ -151,9 +151,12 @@ migrate.
   `MapInputTokens.Normalize`, because protocol node ids are case-sensitive
   display keys like `V22`. Trim node ids only; reserve lowercase normalization
   for building/action/catalog tokens.
-- Pending build visuals are a pair: the building ghost and the tile edge glow.
-  Any restore path that replays a pending build must reapply both visual parts
-  before returning control to hover/highlight cleanup.
+- Pending build visuals are represented by the green translucent building ghost
+  only. Restore paths that replay a pending build must recreate the building
+  ghost but must not turn on the node highlight layer, because that layer paints
+  over the terrain and can make the whole tile look white. Regression tests
+  should assert both direct backend build ghost application and queued build
+  restoration leave the node highlight inactive.
 
 ### Composition Scope Ownership
 

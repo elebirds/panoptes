@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check prefab-facing compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check presentation-only state handling."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check forbidden patterns and verification expectations."}
+{"file": ".trellis/tasks/05-07-move-playback-hp-anchor-fix/prd.md", "reason": "Check implementation against movement playback requirements."}
+{"command": "git diff --check", "result": "pass"}
+{"command": "git diff --name-only -- client/Assets/Scripts/Protocol server/internal/gen/proto", "result": "pass: no generated protocol changes"}
+{"command": "rg -n \"nodeView\\.UnitAnchor|pathNode\\.UnitAnchor|targetNode\\.UnitAnchor|entry\\.Node\\.UnitAnchor|node\\.UnitAnchor\" client/Assets/Scripts/Runtime/Presentation/Map client/Assets/Scripts/Runtime/Presentation/Animation client/Assets/Scripts/Runtime/Presentation/UI/HUD -S", "result": "pass: no remaining direct animation/overlay placement use"}

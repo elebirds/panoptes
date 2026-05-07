@@ -95,6 +95,7 @@ namespace Panoptes.Presentation.Map
         public int MaxHitPoints { get; private set; }
         public Vector2Int GridPos { get; private set; }
         public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
+        public bool IsMovingVisual => _persistentIsMoving;
         private string _localPlayerId = string.Empty;
         private int _movingBoolHash;
         private int _speedFloatHash;

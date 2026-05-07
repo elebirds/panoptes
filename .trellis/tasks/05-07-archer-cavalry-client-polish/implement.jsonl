@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend package entrypoint for client implementation guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Map presentation and client asset changes must stay in the existing folder boundaries."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Map MonoBehaviour changes should preserve serialized field compatibility and facade responsibilities."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Client changes must remain presentation-only and avoid gameplay authority."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Use project quality rules for Presentation/Core boundaries and Unity verification."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Catalog data flows from authored UI data into client Resources presentation."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Prefer existing UnitView/MapRenderer/intent service patterns over new duplicate systems."}
+{"file": ".trellis/tasks/05-07-archer-cavalry-client-polish/prd.md", "reason": "Implementation requirements for archer and cavalry client polish."}

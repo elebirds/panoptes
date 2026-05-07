@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend implementation guidelines."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Map and HUD MonoBehaviour changes must preserve prefab-facing compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Movement playback and HP bars are presentation-only state."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify Presentation boundaries and Unity compatibility."}
+{"file": ".trellis/tasks/05-07-move-playback-hp-anchor-fix/prd.md", "reason": "Implementation requirements for the movement playback fix."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/NodeView.cs", "reason": "Added shared visual unit-anchor resolver based on the tile renderer center."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs", "reason": "Snaps runtime units to the shared unit-anchor resolver and marks presentation entries dirty when node mapping changes."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs", "reason": "Uses the shared unit anchor as movement playback destination."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Animation/AnimationQueue.cs", "reason": "Uses the shared unit anchor for queued movement targets and waypoints."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs", "reason": "Tracks unit-stack HP bars against the moving UnitView transform."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/UnitView.cs", "reason": "Exposed presentation moving state so HP stack anchoring can prefer moving units."}

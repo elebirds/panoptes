@@ -50,6 +50,7 @@ namespace Panoptes.Presentation.Map
         [Header("Units")]
         [SerializeField] private UnitView unitPrefab;
         [SerializeField] private Transform unitsRoot;
+        [SerializeField] private string unitPrefabResourcesRoot = "Prefabs/Units";
         [SerializeField] private bool useDedicatedBaseVehiclePrefab = true;
         [SerializeField] private string baseVehiclePrefabResourcePath = "Prefabs/Units/BaseVehicle";
         [SerializeField] private string[] baseVehicleUnitTypes = { "settler", "pioneer", "expander", "engineer" };
@@ -91,6 +92,7 @@ namespace Panoptes.Presentation.Map
         private readonly List<string> _scratchRemovedUnitIds = new();
         private readonly List<NodeDto> _scratchChangedNodes = new();
         private UnitView _baseVehiclePrefabCache;
+        private readonly Dictionary<string, GameObject> _catalogUnitPrefabCache = new(StringComparer.OrdinalIgnoreCase);
         private TerrainDecorationSpawner _terrainDecorationSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
         private MapFogOverlayController _mapFogOverlayController;
@@ -1067,8 +1069,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            var previousNodeId = string.Empty;
             if (_unitNodeById.TryGetValue(unitId, out var oldNodeId))
             {
+                previousNodeId = oldNodeId;
                 if (_unitsByNodeId.TryGetValue(oldNodeId, out var unitsAtOld))
                 {
                     unitsAtOld.Remove(unitId);
@@ -1084,11 +1088,12 @@ namespace Panoptes.Presentation.Map
             _unitNodeById[unitId] = targetNodeId;
 
             unitView.SetGridPosition(targetNode.GridPos);
-            if (targetNode.UnitAnchor != null)
-            {
-                unitView.transform.position = targetNode.UnitAnchor.position;
-            }
+            unitView.transform.position = targetNode.ResolveUnitAnchorWorldPosition();
 
+            if (!string.Equals(previousNodeId, targetNodeId, StringComparison.Ordinal))
+            {
+                StatePresentationRefreshed?.Invoke();
+            }
         }
 
         public bool TryGetGridBounds(out int minX, out int maxX, out int minY, out int maxY)
@@ -1607,9 +1612,7 @@ namespace Panoptes.Presentation.Map
             newSet.Add(unit.Id);
             _unitNodeById[unit.Id] = nodeView.NodeId;
 
-            var worldPos = nodeView.UnitAnchor != null
-                ? nodeView.UnitAnchor.position
-                : nodeView.transform.position + Vector3.up * 0.2f;
+            var worldPos = nodeView.ResolveUnitAnchorWorldPosition();
             view.SetLocalPlayerId(GetLocalPlayerId());
             view.Bind(unit, worldPos);
             return true;
@@ -1826,9 +1829,7 @@ namespace Panoptes.Presentation.Map
 
             var instance = CreateUnitInstance(unit);
             instance.transform.SetParent(EnsureUnitsRoot(), false);
-            var worldPos = nodeView.UnitAnchor != null
-                ? nodeView.UnitAnchor.position
-                : nodeView.transform.position + Vector3.up * 0.2f;
+            var worldPos = nodeView.ResolveUnitAnchorWorldPosition();
             instance.SetLocalPlayerId(GetLocalPlayerId());
             instance.Bind(unit, worldPos);
 
@@ -1915,6 +1916,12 @@ namespace Panoptes.Presentation.Map
                 return Instantiate(dedicatedPrefab);
             }
 
+            var catalogPrefab = ResolveCatalogUnitPrefab(unit);
+            if (catalogPrefab != null)
+            {
+                return InstantiateCatalogUnitPrefab(catalogPrefab);
+            }
+
             if (unitPrefab != null)
             {
                 return Instantiate(unitPrefab);
@@ -1930,6 +1937,87 @@ namespace Panoptes.Presentation.Map
                 view = go.AddComponent<UnitView>();
             }
             return view;
+        }
+
+        private UnitView InstantiateCatalogUnitPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            var instance = Instantiate(prefab);
+            var view = instance.GetComponent<UnitView>();
+            if (view == null)
+            {
+                view = instance.AddComponent<UnitView>();
+            }
+
+            return view;
+        }
+
+        private GameObject ResolveCatalogUnitPrefab(UnitDto unit)
+        {
+            if (unit == null)
+            {
+                return null;
+            }
+
+            var unitType = MapRenderTokens.Normalize(unit.Type);
+            if (string.IsNullOrEmpty(unitType) ||
+                _staticCatalogStore?.Snapshot?.Units == null ||
+                !_staticCatalogStore.Snapshot.Units.TryGetValue(unitType, out var entry) ||
+                entry == null ||
+                string.IsNullOrWhiteSpace(entry.PrefabKey))
+            {
+                return null;
+            }
+
+            return LoadCatalogUnitPrefab(entry.PrefabKey);
+        }
+
+        private GameObject LoadCatalogUnitPrefab(string prefabKey)
+        {
+            var trimmedKey = prefabKey?.Trim();
+            if (string.IsNullOrEmpty(trimmedKey))
+            {
+                return null;
+            }
+
+            if (trimmedKey.Contains("/") || trimmedKey.Contains("\\"))
+            {
+                return LoadCatalogUnitPrefabByPath(trimmedKey.Replace('\\', '/'));
+            }
+
+            if (!string.IsNullOrWhiteSpace(unitPrefabResourcesRoot))
+            {
+                var rootedPath = $"{unitPrefabResourcesRoot.Trim().TrimEnd('/')}/{trimmedKey}";
+                var rootedPrefab = LoadCatalogUnitPrefabByPath(rootedPath);
+                if (rootedPrefab != null)
+                {
+                    return rootedPrefab;
+                }
+            }
+
+            return LoadCatalogUnitPrefabByPath(trimmedKey);
+        }
+
+        private GameObject LoadCatalogUnitPrefabByPath(string resourcePath)
+        {
+            var path = resourcePath?.Trim();
+            if (string.IsNullOrEmpty(path))
+            {
+                return null;
+            }
+
+            if (_catalogUnitPrefabCache.TryGetValue(path, out var cached))
+            {
+                return cached;
+            }
+
+            var prefab = Resources.Load<GameObject>(path);
+            _catalogUnitPrefabCache[path] = prefab;
+            return prefab;
         }
 
         private UnitView ResolveDedicatedUnitPrefab(UnitDto unit)

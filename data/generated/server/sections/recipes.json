@@ -207,7 +207,7 @@
       "id": "archery_archer",
       "name": "训练弓手",
       "description": "产出远程弓手",
-      "icon_key": "recipe_barracks_infantry",
+      "icon_key": "unit_archer",
       "building_id": "archery",
       "resource_inputs": {
         "food": 1,
@@ -284,7 +284,7 @@
       "id": "stable_cavalry",
       "name": "训练骑兵",
       "description": "产出高速骑兵。",
-      "icon_key": "recipe_barracks_infantry",
+      "icon_key": "unit_cavalry",
       "building_id": "stable",
       "resource_inputs": {
         "food": 2,
@@ -336,7 +336,7 @@
       "id": "engineer_camp_siege_engine",
       "name": "组装攻城器械",
       "description": "产出用于摧毁防御设施的攻城器械。",
-      "icon_key": "recipe_barracks_infantry",
+      "icon_key": "unit_siege_engine",
       "building_id": "engineer_camp",
       "resource_inputs": {
         "ore": 2,
@@ -465,7 +465,7 @@
       "id": "watchtower_scout",
       "name": "训练斥候",
       "description": "产出高速侦察单位。",
-      "icon_key": "recipe_city_core_settler",
+      "icon_key": "unit_scout",
       "building_id": "watchtower",
       "resource_inputs": {
         "food": 1,
