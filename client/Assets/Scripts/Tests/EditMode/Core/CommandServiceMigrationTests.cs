@@ -50,6 +50,13 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(rejected!.MinisterRole, Is.EqualTo("domestic"));
             StringAssert.Contains("\"directive_type\":\"reject\"", rejected.Content);
             StringAssert.Contains("\"draft_id\":\"draft-policy-1\"", rejected.Content);
+
+            Assert.That(service.ActivateSkill("military", "stargazing"), Is.True);
+            var skill = sender.Messages[2] as MsgSetMinisterDirective;
+            Assert.That(skill, Is.Not.Null);
+            Assert.That(skill!.MinisterRole, Is.EqualTo("military"));
+            StringAssert.Contains("\"directive_type\":\"activate_skill\"", skill.Content);
+            StringAssert.Contains("\"skill_card_id\":\"stargazing\"", skill.Content);
         }
 
         [Test]

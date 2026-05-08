@@ -67,21 +67,22 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:          authored.Manifest.Value,
-		Resources:         authored.Resources.Value.Resources,
-		Points:            authored.Points.Value.Points,
-		Units:             authored.Units.Value.Units,
-		Buildings:         authored.Buildings.Value.Buildings,
-		Technologies:      authored.Technologies.Value.Technologies,
-		Policies:          authored.Policies.Value.Policies,
-		Recipes:           authored.Recipes.Value.Recipes,
-		Terrains:          authored.Terrains.Value.Terrains,
-		Rules:             authored.Rules.Value,
-		Ministers:         authored.Ministers.Value.Pool,
-		Maps:              entries,
-		UITechTreeLayout:  authored.TechnologyTreeUI.Value,
-		UIBuildMenuLayout: buildBuildMenuLayout(authored.Buildings.Value.Buildings),
-		UIRecipeLayout:    buildRecipeLayout(authored.Recipes.Value.Recipes),
+		Manifest:           authored.Manifest.Value,
+		Resources:          authored.Resources.Value.Resources,
+		Points:             authored.Points.Value.Points,
+		Units:              authored.Units.Value.Units,
+		Buildings:          authored.Buildings.Value.Buildings,
+		Technologies:       authored.Technologies.Value.Technologies,
+		Policies:           authored.Policies.Value.Policies,
+		Recipes:            authored.Recipes.Value.Recipes,
+		Terrains:           authored.Terrains.Value.Terrains,
+		Rules:              authored.Rules.Value,
+		Ministers:          authored.Ministers.Value.Pool,
+		MinisterSkillCards: authored.MinisterSkillCards.Value.MinisterSkillCards,
+		Maps:               entries,
+		UITechTreeLayout:   authored.TechnologyTreeUI.Value,
+		UIBuildMenuLayout:  buildBuildMenuLayout(authored.Buildings.Value.Buildings),
+		UIRecipeLayout:     buildRecipeLayout(authored.Recipes.Value.Recipes),
 	}
 
 	sectionPayloads, sectionHashes, err := staticdata.BuildSectionPayloads(bundle)

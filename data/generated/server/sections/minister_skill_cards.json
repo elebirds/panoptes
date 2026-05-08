@@ -1,0 +1,24 @@
+{
+  "minister_skill_cards": [
+    {
+      "id": "stargazing",
+      "name": "观星",
+      "description": "激活后在下一回合获得全图视野，持续一回合。",
+      "icon_key": "skill_stargazing",
+      "role_tags": [
+        "domestic",
+        "military"
+      ],
+      "rarity": "rare",
+      "effect_key": "next_turn_full_map_vision",
+      "trigger_timing": "activated",
+      "delay_turns": 1,
+      "duration_turns": 1,
+      "sort_order": 10,
+      "tags": [
+        "vision",
+        "map"
+      ]
+    }
+  ]
+}

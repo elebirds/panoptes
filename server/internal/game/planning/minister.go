@@ -13,6 +13,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine/economy"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	ministerskills "github.com/elebirds/panoptes/internal/engine/minister/skills"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
@@ -38,6 +39,12 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 		return s.acceptMinisterRoleDrafts(delivery, room, playerID, intent.MinisterRole)
 	case "reject_role":
 		return s.rejectMinisterRoleDrafts(delivery, room, playerID, intent.MinisterRole)
+	case "activate_skill":
+		if _, ok := ministerskills.Activate(state, playerID, intent.MinisterRole, intent.SkillCardID); !ok {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister skill activation failed")
+		}
+		delivery.snapshot()
+		return acceptedHandleIntentResult(), nil
 	case "accept":
 		draft, _, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
 		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {

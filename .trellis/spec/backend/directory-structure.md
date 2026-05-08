@@ -345,6 +345,49 @@ events := orders.BuildMapActionEvents(state)
 collector.ApplyNow(resolution.ChannelMap, state.World, state, events...)
 ```
 
+### Convention: Minister Skill Cards Split Data, Loadout, And Effects
+
+**What**: Minister skill cards are authored static catalog data, assigned to
+minister roles through runtime loadouts, and executed through
+`engine/minister/skills` handlers. A skill card must not be hard-wired to a
+specific minister identity.
+
+**Why**: The same named minister can receive different skills in different
+rounds. Keeping card metadata in static data, role/card ownership in
+`domain.PlayerState`, and executable effects in a handler registry makes new
+skills additive.
+
+**Correct**:
+
+```go
+// Add static card data under data/content/ministers/skill_cards.json.
+// Add a matching handler under engine/minister/skills.
+func (Stargazing) EffectKey() string { return "next_turn_full_map_vision" }
+```
+
+**Wrong**:
+
+```go
+// Do not branch on minister names or mutate observation state from planning.
+if minister.Name == "Li Meng" {
+	state.DebugOmniscientPlayers[playerID] = true
+}
+```
+
+New skill checklist:
+
+* Add the card to `data/content/ministers/skill_cards.json` and schema-backed
+  generated catalog flow.
+* Add or reuse a `domain` effect state helper when the effect is durable across
+  phase or turn boundaries.
+* Add a handler in `server/internal/engine/minister/skills` keyed by the
+  card's `effect_key`.
+* Route activation through `game/planning` minister directive handling and
+  return `invalid_directive` for missing card, missing loadout, or unknown
+  effect key.
+* Add tests at catalog, handler/domain, and the player-facing query/projection
+  surface affected by the effect.
+
 ### Convention: Turn Resolution Stage Order Is a Contract
 
 **What**: `game/resolution.NewTurnResolutionRunner()` owns the fixed resolving

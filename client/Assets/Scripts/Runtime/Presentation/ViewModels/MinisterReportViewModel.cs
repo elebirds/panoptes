@@ -22,6 +22,7 @@ namespace Panoptes.Presentation.ViewModels
         private readonly Dictionary<string, int> _affectionPulseSequenceByRole = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _announcedDraftIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _locallyResolvedDraftIds = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _locallyActivatedSkillKeys = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<IDisposable> _subscriptions = new();
         private readonly Random _affectionRandom = new();
         private readonly GameStateCache _gameStateCache;
@@ -142,6 +143,28 @@ namespace Panoptes.Presentation.ViewModels
 
             MarkRoleDraftsLocallyResolved(role);
             AddPlayerMessage(role, option.PlayerText);
+            _activeRole = role;
+            Publish();
+        }
+
+        public void ChooseSkill(MinisterSkillCardState skill)
+        {
+            if (skill == null || string.IsNullOrWhiteSpace(skill.Id))
+            {
+                return;
+            }
+
+            var role = NormalizeRole(skill.MinisterRole);
+            if (_ministerCommandService != null &&
+                !_ministerCommandService.ActivateSkill(role, skill.Id))
+            {
+                AddPlayerMessage(role, "技能暂时无法释放。");
+                Publish();
+                return;
+            }
+
+            _locallyActivatedSkillKeys.Add(SkillKey(role, skill.Id));
+            AddPlayerMessage(role, "释放技能：" + Clean(skill.Name, skill.Id));
             _activeRole = role;
             Publish();
         }
@@ -288,6 +311,7 @@ namespace Panoptes.Presentation.ViewModels
                 ? roleMessages.Select(CloneMessage).ToList()
                 : new List<MinisterChatMessageState>();
             var options = BuildOptions(activeRole);
+            var skills = BuildSkills(activeRole);
 
             return new MinisterReportState(
                 "大臣汇报",
@@ -295,6 +319,7 @@ namespace Panoptes.Presentation.ViewModels
                 tabs,
                 messages,
                 options,
+                skills,
                 BuildLegacyGroups());
         }
 
@@ -384,6 +409,40 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return BuildRoleBatchOptions(activeRole, drafts);
+        }
+
+        private List<MinisterSkillCardState> BuildSkills(string activeRole)
+        {
+            activeRole = NormalizeRole(activeRole);
+            var cards = _staticCatalogCache?.MinisterSkillCards;
+            if (cards == null || cards.Count == 0)
+            {
+                return new List<MinisterSkillCardState>();
+            }
+
+            var result = new List<MinisterSkillCardState>();
+            for (var i = 0; i < cards.Count; i++)
+            {
+                var card = cards[i];
+                if (card == null || string.IsNullOrWhiteSpace(card.id) || !RoleMatches(card.role_tags, activeRole))
+                {
+                    continue;
+                }
+
+                var cardId = card.id.Trim();
+                result.Add(new MinisterSkillCardState(
+                    cardId,
+                    activeRole,
+                    Clean(card.name, cardId),
+                    Clean(card.description, "暂无技能说明。"),
+                    BuildSkillTiming(card.delay_turns, card.duration_turns),
+                    !_locallyActivatedSkillKeys.Contains(SkillKey(activeRole, cardId))));
+            }
+
+            return result
+                .OrderBy(skill => skill.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(skill => skill.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private List<MinisterReplyOptionState> BuildRoleBatchOptions(string activeRole, IReadOnlyList<MinisterDraftDto> drafts)
@@ -637,6 +696,37 @@ namespace Panoptes.Presentation.ViewModels
             return string.IsNullOrWhiteSpace(role) ? DefaultRole : role.Trim().ToLowerInvariant();
         }
 
+        private static bool RoleMatches(string[] roleTags, string role)
+        {
+            if (roleTags == null || roleTags.Length == 0)
+            {
+                return false;
+            }
+
+            role = NormalizeRole(role);
+            for (var i = 0; i < roleTags.Length; i++)
+            {
+                if (string.Equals(NormalizeRole(roleTags[i]), role, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string BuildSkillTiming(int delayTurns, int durationTurns)
+        {
+            var timing = delayTurns <= 0 ? "本回合生效" : delayTurns == 1 ? "下一回合生效" : delayTurns + " 回合后生效";
+            var duration = durationTurns <= 1 ? "持续 1 回合" : "持续 " + durationTurns + " 回合";
+            return timing + "，" + duration;
+        }
+
+        private static string SkillKey(string role, string skillId)
+        {
+            return NormalizeRole(role) + ":" + (skillId ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
         private static string RoleTitle(string role)
         {
             return NormalizeRole(role) switch
@@ -704,6 +794,7 @@ namespace Panoptes.Presentation.ViewModels
             IReadOnlyList<MinisterTabState> ministers,
             IReadOnlyList<MinisterChatMessageState> messages,
             IReadOnlyList<MinisterReplyOptionState> options,
+            IReadOnlyList<MinisterSkillCardState> skills = null,
             IReadOnlyList<ManagementPanelGroupState> groups = null)
         {
             Title = string.IsNullOrWhiteSpace(title) ? "大臣汇报" : title.Trim();
@@ -712,16 +803,45 @@ namespace Panoptes.Presentation.ViewModels
             Ministers = ministers != null ? new List<MinisterTabState>(ministers) : new List<MinisterTabState>();
             Messages = messages != null ? new List<MinisterChatMessageState>(messages) : new List<MinisterChatMessageState>();
             Options = options != null ? new List<MinisterReplyOptionState>(options) : new List<MinisterReplyOptionState>();
+            Skills = skills != null ? new List<MinisterSkillCardState>(skills) : new List<MinisterSkillCardState>();
         }
 
         public string ActiveRole { get; }
         public IReadOnlyList<ManagementPanelGroupState> Groups { get; }
         public bool HasMessages => Messages.Count > 0;
         public bool HasMinisters => Ministers.Count > 0;
+        public bool HasSkills => Skills.Count > 0;
         public IReadOnlyList<MinisterChatMessageState> Messages { get; }
         public IReadOnlyList<MinisterTabState> Ministers { get; }
         public IReadOnlyList<MinisterReplyOptionState> Options { get; }
+        public IReadOnlyList<MinisterSkillCardState> Skills { get; }
         public string Title { get; }
+    }
+
+    public sealed class MinisterSkillCardState
+    {
+        public MinisterSkillCardState(
+            string id,
+            string ministerRole,
+            string name,
+            string description,
+            string timing,
+            bool isAvailable)
+        {
+            Description = description ?? string.Empty;
+            Id = id ?? string.Empty;
+            IsAvailable = isAvailable;
+            MinisterRole = ministerRole ?? string.Empty;
+            Name = name ?? string.Empty;
+            Timing = timing ?? string.Empty;
+        }
+
+        public string Description { get; }
+        public string Id { get; }
+        public bool IsAvailable { get; }
+        public string MinisterRole { get; }
+        public string Name { get; }
+        public string Timing { get; }
     }
 
     public sealed class MinisterTabState

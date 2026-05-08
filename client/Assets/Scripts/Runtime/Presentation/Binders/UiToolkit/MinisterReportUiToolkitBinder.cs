@@ -27,6 +27,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string ChatListName = "minister-report-chat";
         public const string EmptyName = "minister-report-empty";
         public const string OptionsName = "minister-report-options";
+        public const string SkillButtonName = "minister-skill-menu-button";
+        public const string SkillPanelName = "minister-skill-panel";
 
         [SerializeField] private string avatarTextureRoot = "Icons/Ministers";
 
@@ -44,6 +46,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private RectTransform _chatContent;
         private RectTransform _optionsRoot;
         private RectTransform _panelRoot;
+        private RectTransform _skillPanelRoot;
         private ScrollRect _scrollRect;
         private TextMeshProUGUI _titleText;
         private RectTransform _tabsContent;
@@ -53,7 +56,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private MinisterReportViewModel _viewModel;
         private string _lastMessagesSignature;
         private string _lastOptionsSignature;
+        private string _lastSkillsSignature;
         private string _lastTabsSignature;
+        private MinisterReportState _renderedState;
+        private bool _skillsPanelVisible;
 
         [Inject]
         private void Construct(
@@ -118,10 +124,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             EnsureCanvas();
             state ??= new MinisterReportState("大臣汇报", string.Empty, null, null, null);
+            _renderedState = state;
             SetText(_titleText, state.Title);
             RenderTabs(state);
             RenderMessages(state);
             RenderOptions(state);
+            RenderSkillPanel(state);
             ApplyVisibility();
         }
 
@@ -310,6 +318,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             ClearChildren(_optionsRoot);
             _optionButtons.Clear();
 
+            if (state.HasSkills)
+            {
+                _optionButtons.Add(CreateSkillMenuButton());
+            }
+
             if (state.Options.Count == 0)
             {
                 var empty = CreateText(_optionsRoot, "minister-report-option-empty", "暂无待回复选项", 13f, FontStyles.Normal, TextAlignmentOptions.Left);
@@ -324,6 +337,29 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 var button = CreateOptionButton(option);
                 _optionButtons.Add(button);
             }
+        }
+
+        private UguiButton CreateSkillMenuButton()
+        {
+            var rect = CreateUiObject(SkillButtonName, _optionsRoot);
+            rect.sizeDelta = new Vector2(130f, 38f);
+            var layout = rect.gameObject.AddComponent<LayoutElement>();
+            layout.preferredWidth = 130f;
+            layout.preferredHeight = 38f;
+
+            var image = rect.gameObject.AddComponent<UguiImage>();
+            image.color = new Color(0.34f, 0.36f, 0.56f, 0.94f);
+            var button = rect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() =>
+            {
+                _skillsPanelVisible = !_skillsPanelVisible;
+                RenderSkillPanel(_renderedState ?? _viewModel?.Current);
+            });
+
+            var label = CreateText(rect, "Label", "部长技能", 14f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform, Vector2.zero, Vector2.zero);
+            return button;
         }
 
         private UguiButton CreateOptionButton(MinisterReplyOptionState option)
@@ -345,6 +381,89 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             var label = CreateText(rect, "Label", option.Label, 14f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(label.rectTransform, Vector2.zero, Vector2.zero);
             return button;
+        }
+
+        private void RenderSkillPanel(MinisterReportState state)
+        {
+            if (_skillPanelRoot == null)
+            {
+                return;
+            }
+
+            state ??= _renderedState ?? _viewModel?.Current;
+            var signature = BuildSkillsSignature(state) + "|" + _skillsPanelVisible;
+            if (string.Equals(signature, _lastSkillsSignature, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastSkillsSignature = signature;
+            ClearChildren(_skillPanelRoot);
+            var hasSkills = state != null && state.Skills.Count > 0;
+            _skillPanelRoot.gameObject.SetActive(_skillsPanelVisible && hasSkills);
+            if (!_skillsPanelVisible || !hasSkills)
+            {
+                return;
+            }
+
+            var header = CreateText(_skillPanelRoot, "SkillTitle", "部长技能", 17f, FontStyles.Bold, TextAlignmentOptions.Left);
+            header.color = new Color(0.98f, 0.86f, 0.55f, 1f);
+            header.rectTransform.sizeDelta = new Vector2(0f, 28f);
+            header.gameObject.AddComponent<LayoutElement>().preferredHeight = 28f;
+
+            for (var i = 0; i < state.Skills.Count; i++)
+            {
+                CreateSkillCard(state.Skills[i]);
+            }
+        }
+
+        private void CreateSkillCard(MinisterSkillCardState skill)
+        {
+            var card = CreateUiObject("skill-" + SafeName(skill.Id), _skillPanelRoot);
+            var cardImage = card.gameObject.AddComponent<UguiImage>();
+            cardImage.color = new Color(1f, 1f, 1f, 0.07f);
+            var cardLayout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            cardLayout.padding = new RectOffset(12, 12, 10, 10);
+            cardLayout.spacing = 6f;
+            cardLayout.childControlWidth = true;
+            cardLayout.childControlHeight = true;
+            cardLayout.childForceExpandWidth = true;
+            cardLayout.childForceExpandHeight = false;
+            var cardElement = card.gameObject.AddComponent<LayoutElement>();
+            cardElement.preferredHeight = 148f;
+            cardElement.flexibleWidth = 1f;
+
+            var title = CreateText(card, "Name", skill.Name, 16f, FontStyles.Bold, TextAlignmentOptions.Left);
+            title.color = new Color(0.98f, 0.9f, 0.68f, 1f);
+            title.rectTransform.sizeDelta = new Vector2(0f, 22f);
+
+            var timing = CreateText(card, "Timing", skill.Timing, 12f, FontStyles.Normal, TextAlignmentOptions.Left);
+            timing.color = MutedTextColor;
+            timing.rectTransform.sizeDelta = new Vector2(0f, 18f);
+
+            var description = CreateText(card, "Description", skill.Description, 13f, FontStyles.Normal, TextAlignmentOptions.Left);
+            description.color = new Color(0.91f, 0.94f, 0.96f, 1f);
+            description.textWrappingMode = TextWrappingModes.Normal;
+            description.overflowMode = TextOverflowModes.Overflow;
+            description.gameObject.AddComponent<LayoutElement>().preferredHeight = 42f;
+
+            var buttonRect = CreateUiObject("Activate", card);
+            buttonRect.sizeDelta = new Vector2(0f, 32f);
+            buttonRect.gameObject.AddComponent<LayoutElement>().preferredHeight = 32f;
+            var buttonImage = buttonRect.gameObject.AddComponent<UguiImage>();
+            buttonImage.color = skill.IsAvailable
+                ? new Color(0.38f, 0.46f, 0.72f, 0.94f)
+                : new Color(0.22f, 0.23f, 0.27f, 0.84f);
+            var button = buttonRect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = buttonImage;
+            button.interactable = skill.IsAvailable;
+            button.onClick.AddListener(() =>
+            {
+                _skillsPanelVisible = false;
+                _viewModel?.ChooseSkill(skill);
+            });
+            var buttonText = CreateText(buttonRect, "Label", skill.IsAvailable ? "释放技能" : "已释放", 13f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(buttonText.rectTransform, Vector2.zero, Vector2.zero);
         }
 
         private static string BuildTabsSignature(MinisterReportState state)
@@ -411,12 +530,18 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private static string BuildOptionsSignature(MinisterReportState state)
         {
-            if (state?.Options == null || state.Options.Count == 0)
+            if (state == null)
             {
                 return string.Empty;
             }
 
-            var builder = new StringBuilder(state.Options.Count * 64);
+            var builder = new StringBuilder((state.Options?.Count ?? 0) * 64 + (state.Skills?.Count ?? 0) * 32);
+            builder.Append(BuildSkillsSignature(state)).Append('\n');
+            if (state.Options == null || state.Options.Count == 0)
+            {
+                return builder.ToString();
+            }
+
             for (var i = 0; i < state.Options.Count; i++)
             {
                 var item = state.Options[i];
@@ -432,6 +557,34 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     .Append(item.Label).Append('|')
                     .Append(item.PlayerText).Append('|')
                     .Append(item.Accept).Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildSkillsSignature(MinisterReportState state)
+        {
+            if (state?.Skills == null || state.Skills.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder(state.Skills.Count * 96);
+            for (var i = 0; i < state.Skills.Count; i++)
+            {
+                var item = state.Skills[i];
+                if (item == null)
+                {
+                    builder.Append("<null>|");
+                    continue;
+                }
+
+                builder.Append(item.Id).Append('|')
+                    .Append(item.MinisterRole).Append('|')
+                    .Append(item.Name).Append('|')
+                    .Append(item.Description).Append('|')
+                    .Append(item.Timing).Append('|')
+                    .Append(item.IsAvailable).Append('\n');
             }
 
             return builder.ToString();
@@ -539,6 +692,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             CreateChatScroll(conversation);
             CreateOptionsRoot(conversation);
+            CreateSkillPanel(conversation);
         }
 
         private void CreateChatScroll(RectTransform parent)
@@ -584,6 +738,21 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
             layout.childAlignment = TextAnchor.MiddleLeft;
+        }
+
+        private void CreateSkillPanel(RectTransform parent)
+        {
+            _skillPanelRoot = CreateUiObject(SkillPanelName, parent);
+            AnchorFixed(_skillPanelRoot, new Vector2(1f, 0f), new Vector2(-238f, 260f), new Vector2(440f, 330f));
+            _skillPanelRoot.gameObject.AddComponent<UguiImage>().color = new Color(0.045f, 0.05f, 0.068f, 0.98f);
+            var layout = _skillPanelRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.spacing = 10f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            _skillPanelRoot.gameObject.SetActive(false);
         }
 
         private UguiButton CreateHeaderButton(RectTransform parent, string name, string label)

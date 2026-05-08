@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "5c77c71828bd4060b6e5a4f7c8199a6b2fd2d1fddf7aff1cd1ed8126b5be4f92",
+    "bundle_hash": "97e4a4fb7439743e9bdb94c6d722084d3b00c8b887a818c45ed8f6b590a0cb11",
     "required_sections": [
       "resources",
       "points",
@@ -16,6 +16,7 @@
       "terrains",
       "rules",
       "ministers",
+      "minister_skill_cards",
       "maps",
       "ui_tech_tree_layout",
       "ui_build_menu_layout",
@@ -31,6 +32,10 @@
         "hash": "a6ceda0bb27328a5a0e11b6d8c349722df2805dfe0a53c3f6abd503b65107fbd"
       },
       {
+        "section_name": "minister_skill_cards",
+        "hash": "dfbe5d49bb10aaeb9788477e32b4fe6fcc491efc027676fc3521535b693d2640"
+      },
+      {
         "section_name": "ministers",
         "hash": "0ccc2f985b251511a7ce930619d5eabfa773b482f303fa9cd451efe43a81db26"
       },
@@ -40,11 +45,11 @@
       },
       {
         "section_name": "policies",
-        "hash": "c0cd7f1582ba47b2a25be3762e8c3310d5b3477797256ea68a03472c928bf6cc"
+        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
       },
       {
         "section_name": "recipes",
-        "hash": "1306cd567efdbb183e2a62d533758f24025f20db6aea13ca6a8835c6b951afaf"
+        "hash": "23ca295069d6cbd7255b5ca8e4ac8b63b47fbf6165d7c7ba703617db4432b38e"
       },
       {
         "section_name": "resources",
@@ -76,7 +81,7 @@
       },
       {
         "section_name": "units",
-        "hash": "5fba7994d1e10db6d54fe634f42a583a75a0083c550c3894ca0ca5de086c3c20"
+        "hash": "b0dc0316d64699d9a5047b44f4b1c08c2e7d57a1e8e3999adac5c44bfdd55714"
       }
     ]
   },
@@ -1798,7 +1803,7 @@
       "id": "foundry_directives",
       "name": "冶造敕令",
       "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
-      "icon_key": "policy_foundry_directives",
+      "icon_key": "policy_reorganization",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -1836,7 +1841,7 @@
       "id": "mercantile_charter",
       "name": "商贸特许",
       "description": "制度层面的市集授权，提高契约调拨效率。",
-      "icon_key": "policy_mercantile_charter",
+      "icon_key": "policy_logistics_corps",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -1886,7 +1891,7 @@
       "id": "research_mandate",
       "name": "研学敕令",
       "description": "制度层面的学术优先令，显著提高科研产出。",
-      "icon_key": "policy_research_mandate",
+      "icon_key": "policy_academy_charter",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -2524,6 +2529,28 @@
       "personality_desc": "稳健审慎",
       "loyalty": 8,
       "ambition": 4
+    }
+  ],
+  "minister_skill_cards": [
+    {
+      "id": "stargazing",
+      "name": "观星",
+      "description": "激活后在下一回合获得全图视野，持续一回合。",
+      "icon_key": "skill_stargazing",
+      "role_tags": [
+        "domestic",
+        "military"
+      ],
+      "rarity": "rare",
+      "effect_key": "next_turn_full_map_vision",
+      "trigger_timing": "activated",
+      "delay_turns": 1,
+      "duration_turns": 1,
+      "sort_order": 10,
+      "tags": [
+        "vision",
+        "map"
+      ]
     }
   ],
   "maps": [

@@ -99,6 +99,14 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 		t.Fatalf("rules = %#v", rules)
 	}
 
+	skillCard, ok := catalog.GetMinisterSkillCard("stargazing")
+	if !ok {
+		t.Fatalf("GetMinisterSkillCard(stargazing) missing")
+	}
+	if skillCard.EffectKey != "next_turn_full_map_vision" || skillCard.DelayTurns != 1 || skillCard.DurationTurns != 1 {
+		t.Fatalf("minister skill card = %#v", skillCard)
+	}
+
 	m, ok := catalog.GetMap("default")
 	if !ok {
 		t.Fatalf("GetMap(default) missing")
@@ -314,6 +322,12 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
   "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
     { "id": "m001", "name": "李猛", "role": "military", "icon_key": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
+  ]
+}`,
+		"data/content/ministers/skill_cards.json": `{
+  "$schema": "../../schema/content/minister_skill_cards.schema.json",
+  "minister_skill_cards": [
+    { "id": "stargazing", "name": "观星", "description": "下一回合展开全图视野。", "icon_key": "skill_stargazing", "role_tags": ["military"], "rarity": "rare", "effect_key": "next_turn_full_map_vision", "trigger_timing": "activated", "delay_turns": 1, "duration_turns": 1, "sort_order": 10 }
   ]
 }`,
 		"data/content/maps/default/definition.json": `{

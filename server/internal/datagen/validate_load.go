@@ -52,6 +52,9 @@ type authoredData struct {
 	Ministers jsonDocument[struct {
 		Pool []staticdata.Minister `json:"pool"`
 	}]
+	MinisterSkillCards jsonDocument[struct {
+		MinisterSkillCards []staticdata.MinisterSkillCard `json:"minister_skill_cards"`
+	}]
 	ResourceUI       jsonDocument[staticdata.ResourceCatalogUIFile]
 	PointUI          jsonDocument[staticdata.PointCatalogUIFile]
 	UnitUI           jsonDocument[staticdata.UnitCatalogUIFile]
@@ -129,6 +132,12 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	ministerSkillCards, err := readJSONDocument[struct {
+		MinisterSkillCards []staticdata.MinisterSkillCard `json:"minister_skill_cards"`
+	}](filepath.Join(repoRoot, "data/content/ministers/skill_cards.json"))
+	if err != nil {
+		return nil, err
+	}
 	resourceUI, err := readJSONDocument[staticdata.ResourceCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/resources.json"))
 	if err != nil {
 		return nil, err
@@ -171,29 +180,30 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	}
 
 	return &authoredData{
-		Manifest:         manifest,
-		Resources:        resources,
-		Points:           points,
-		Units:            units,
-		Buildings:        buildings,
-		Technologies:     technologies,
-		Policies:         policies,
-		Recipes:          recipes,
-		Terrains:         terrains,
-		Rules:            rules,
-		Ministers:        ministers,
-		ResourceUI:       resourceUI,
-		PointUI:          pointUI,
-		UnitUI:           unitUI,
-		BuildingUI:       buildingUI,
-		TechnologyUI:     technologyUI,
-		TechnologyTreeUI: technologyTreeUI,
-		PolicyUI:         policyUI,
-		RecipeUI:         recipeUI,
-		TerrainUI:        terrainUI,
-		MapDefs:          mapDefs,
-		MapUI:            mapUI,
-		MapIDs:           mapIDs,
+		Manifest:           manifest,
+		Resources:          resources,
+		Points:             points,
+		Units:              units,
+		Buildings:          buildings,
+		Technologies:       technologies,
+		Policies:           policies,
+		Recipes:            recipes,
+		Terrains:           terrains,
+		Rules:              rules,
+		Ministers:          ministers,
+		MinisterSkillCards: ministerSkillCards,
+		ResourceUI:         resourceUI,
+		PointUI:            pointUI,
+		UnitUI:             unitUI,
+		BuildingUI:         buildingUI,
+		TechnologyUI:       technologyUI,
+		TechnologyTreeUI:   technologyTreeUI,
+		PolicyUI:           policyUI,
+		RecipeUI:           recipeUI,
+		TerrainUI:          terrainUI,
+		MapDefs:            mapDefs,
+		MapUI:              mapUI,
+		MapIDs:             mapIDs,
 	}, nil
 }
 
