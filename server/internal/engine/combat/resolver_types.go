@@ -119,7 +119,7 @@ type SnapshotStructure struct {
 	IsCapitalCore bool
 }
 
-// BlockSource 记录阻断来源，既能表达敌方单位，也能表达敌方建筑/城堡。
+// BlockSource 记录阻断来源，既能表达任何单位占位，也能表达敌方建筑/城堡。
 type BlockSource struct {
 	Kind     string
 	Owner    string
@@ -129,8 +129,9 @@ type BlockSource struct {
 }
 
 type BlockSourcesAtPos struct {
-	// Unit 表示该格在回合起点被冻结的敌方单位阻断。
-	// charge 必须优先读取它，否则“单位站在建筑格上”时会丢失第一接敌目标。
+	// Unit 表示该格在回合起点被冻结的单位占位。
+	// 这里不区分友军/敌军，因为“不堆叠”要求任何单位都能挡住后续移动；
+	// charge 只是在这里额外把敌方单位识别成第一接敌目标。
 	Unit *BlockSource
 	// Structure 表示同格上的敌方建筑阻断。
 	// 它不会覆盖 Unit，而是作为次级阻断来源保留下来。
@@ -166,7 +167,7 @@ type ConflictPair struct {
 }
 
 // ConflictGroup 是 resolver 内部的主冲突模型。
-// 对外仍会投影成兼容的二元 conflict event，但结算真相已经允许同一格出现多成员争夺。
+// 对外仍只投影 hostile pair conflict event；友军-only 节点碰撞用于打散落位，不产生伤害事件。
 type ConflictGroup struct {
 	ConflictType string
 	Location     domain.Position

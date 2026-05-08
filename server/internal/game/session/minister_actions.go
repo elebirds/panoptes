@@ -34,12 +34,12 @@ func (r *Runtime) ApplyMinisterActions(playerID string, role string, actions []m
 	}
 
 	staged := false
-	selectedCandidateIDs := make(map[string]struct{})
+	selectedCandidateActions := make(map[string]ministerengine.MinisterActionItem)
 	for _, action := range actions {
 		if ministerActionIsCandidateSelection(action) {
 			draftID := ministerActionStringParam(action.Params, "draft_id", "candidate_id")
 			if draftID != "" {
-				selectedCandidateIDs[draftID] = struct{}{}
+				selectedCandidateActions[draftID] = action
 			}
 			continue
 		}
@@ -47,7 +47,7 @@ func (r *Runtime) ApplyMinisterActions(playerID string, role string, actions []m
 			staged = true
 		}
 	}
-	if len(selectedCandidateIDs) > 0 && r.applyMinisterCandidateSelections(playerID, role, selectedCandidateIDs) {
+	if len(selectedCandidateActions) > 0 && r.applyMinisterCandidateSelections(playerID, role, selectedCandidateActions) {
 		staged = true
 	}
 	if staged {
@@ -68,22 +68,23 @@ func ministerActionIsCandidateSelection(action ministerengine.MinisterActionItem
 func (r *Runtime) stageMinisterActionDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
 	switch strings.TrimSpace(action.Type) {
 	case "build":
-		return r.stageMinisterBuildDraft(playerID, role, action.Params)
+		return r.stageMinisterBuildDraft(playerID, role, action)
 	case "research", "set_research":
-		return r.stageMinisterResearchDraft(playerID, role, action.Params)
+		return r.stageMinisterResearchDraft(playerID, role, action)
 	case "policy", "set_policy":
-		return r.stageMinisterPolicyDraft(playerID, role, action.Params)
+		return r.stageMinisterPolicyDraft(playerID, role, action)
 	case "institution_loadout", "set_institution_loadout":
-		return r.stageMinisterInstitutionDraft(playerID, role, action.Params)
+		return r.stageMinisterInstitutionDraft(playerID, role, action)
 	case "recipe", "set_recipe", "set_building_recipe":
-		return r.stageMinisterRecipeDraft(playerID, role, action.Params)
+		return r.stageMinisterRecipeDraft(playerID, role, action)
 	default:
 		slog.Warn("unsupported minister action type", "player_id", playerID, "type", strings.TrimSpace(action.Type))
 		return false
 	}
 }
 
-func (r *Runtime) stageMinisterResearchDraft(playerID string, role string, params map[string]any) bool {
+func (r *Runtime) stageMinisterResearchDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
+	params := action.Params
 	technologyID := ministerActionStringParam(params, "technology_id", "tech_id", "target_id")
 	if technologyID == "" {
 		return false
@@ -93,10 +94,11 @@ func (r *Runtime) stageMinisterResearchDraft(playerID string, role string, param
 		slog.Warn("minister research action rejected", "player_id", playerID, "technology_id", technologyID, "error_code", validation.ErrorCode)
 		return false
 	}
-	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetResearchTargetIntent{TechnologyID: technologyID})
+	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetResearchTargetIntent{TechnologyID: technologyID}, action)
 }
 
-func (r *Runtime) stageMinisterPolicyDraft(playerID string, role string, params map[string]any) bool {
+func (r *Runtime) stageMinisterPolicyDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
+	params := action.Params
 	policyID := ministerActionStringParam(params, "policy_id", "national_policy_id", "target_id")
 	if policyID == "" {
 		return false
@@ -105,23 +107,25 @@ func (r *Runtime) stageMinisterPolicyDraft(playerID string, role string, params 
 		slog.Warn("minister policy action rejected", "player_id", playerID, "policy_id", policyID, "error_code", errCode)
 		return false
 	}
-	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetPolicyIntent{NationalPolicyID: policyID})
+	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetPolicyIntent{NationalPolicyID: policyID}, action)
 }
 
-func (r *Runtime) stageMinisterInstitutionDraft(playerID string, role string, params map[string]any) bool {
+func (r *Runtime) stageMinisterInstitutionDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
 	if r == nil || r.state == nil {
 		return false
 	}
+	params := action.Params
 	institutionIDs := ministerActionStringSliceParam(params, "institution_ids", "policies")
 	normalized, errCode := planning.ValidateInstitutionLoadout(r.state, playerID, r.state.Players[playerID], institutionIDs)
 	if errCode != "" || len(normalized) == 0 {
 		slog.Warn("minister institution action rejected", "player_id", playerID, "institution_ids", strings.Join(institutionIDs, ","), "error_code", errCode)
 		return false
 	}
-	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetInstitutionLoadoutIntent{InstitutionIDs: normalized})
+	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetInstitutionLoadoutIntent{InstitutionIDs: normalized}, action)
 }
 
-func (r *Runtime) stageMinisterBuildDraft(playerID string, role string, params map[string]any) bool {
+func (r *Runtime) stageMinisterBuildDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
+	params := action.Params
 	nodeID := ministerActionStringParam(params, "node_id", "target_node", "target_node_id")
 	buildingType := ministerActionStringParam(params, "building_type", "building_type_id")
 	cityID := ministerActionStringParam(params, "city_id")
@@ -138,10 +142,11 @@ func (r *Runtime) stageMinisterBuildDraft(playerID string, role string, params m
 		NodeID:         nodeID,
 		BuildingTypeID: buildingType,
 		CityID:         cityID,
-	})
+	}, action)
 }
 
-func (r *Runtime) stageMinisterRecipeDraft(playerID string, role string, params map[string]any) bool {
+func (r *Runtime) stageMinisterRecipeDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
+	params := action.Params
 	nodeID := ministerActionStringParam(params, "node_id", "building_node_id")
 	recipeID := ministerActionStringParam(params, "recipe_id", "target_id")
 	if nodeID == "" || recipeID == "" {
@@ -152,7 +157,7 @@ func (r *Runtime) stageMinisterRecipeDraft(playerID string, role string, params 
 		slog.Warn("minister recipe action rejected", "player_id", playerID, "node_id", nodeID, "recipe_id", recipeID, "error_code", validation.ErrorCode)
 		return false
 	}
-	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetBuildingRecipeIntent{NodeID: nodeID, RecipeID: recipeID})
+	return r.upsertMinisterActionIntentDraft(playerID, role, planning.SetBuildingRecipeIntent{NodeID: nodeID, RecipeID: recipeID}, action)
 }
 
 func (r *Runtime) upsertMinisterActionDraft(playerID string, draft domain.MinisterDraft) bool {
@@ -173,64 +178,39 @@ func (r *Runtime) upsertMinisterActionDraft(playerID string, draft domain.Minist
 	return true
 }
 
-func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string, selectedDraftIDs map[string]struct{}) bool {
-	if r == nil || r.state == nil || len(selectedDraftIDs) == 0 {
+func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string, selectedDraftActions map[string]ministerengine.MinisterActionItem) bool {
+	if r == nil || r.state == nil || len(selectedDraftActions) == 0 {
 		return false
 	}
+	turn := r.state.Turn
 	role = strings.TrimSpace(role)
-	drafts := r.state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
-	if len(drafts) == 0 {
-		return false
-	}
-	found := false
-	for _, draft := range drafts {
-		if !ministerDraftSelectableForRole(draft, r.state.Turn, role) {
-			continue
-		}
-		if _, ok := selectedDraftIDs[strings.TrimSpace(draft.DraftID)]; ok {
-			found = true
-			break
-		}
-	}
-	if !found {
+	r.PrepareMinisterDraftCacheForTurn(turn)
+	candidates := r.preparedMinisterDraftsForPlayer(turn, playerID)
+	if len(candidates) == 0 {
 		return false
 	}
 	changed := false
-	for idx := range drafts {
-		if !ministerDraftSelectableForRole(drafts[idx], r.state.Turn, role) {
+	for _, draft := range candidates {
+		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
 			continue
 		}
-		draftID := strings.TrimSpace(drafts[idx].DraftID)
-		if _, selected := selectedDraftIDs[draftID]; selected {
-			if drafts[idx].Source != domain.MinisterDraftSourceLLMAction {
-				drafts[idx].Source = domain.MinisterDraftSourceLLMAction
-				changed = true
-			}
+		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
 			continue
 		}
-		if drafts[idx].Source == domain.MinisterDraftSourceRuleOnly || drafts[idx].Source == domain.MinisterDraftSourceRuleLLM {
-			drafts[idx].Status = domain.MinisterDraftStatusStale
-			drafts[idx].Available = false
+		action, selected := selectedDraftActions[strings.TrimSpace(draft.DraftID)]
+		if !selected {
+			continue
+		}
+		draft.Source = domain.MinisterDraftSourceLLMAction
+		applyMinisterActionProposalText(&draft, role, action)
+		if r.upsertMinisterActionDraft(playerID, draft) {
 			changed = true
 		}
-	}
-	if changed {
-		r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
 	}
 	return changed
 }
 
-func ministerDraftSelectableForRole(draft domain.MinisterDraft, turn int, role string) bool {
-	if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
-		return false
-	}
-	if role == "" {
-		return true
-	}
-	return strings.TrimSpace(draft.MinisterRole) == role
-}
-
-func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, intent planning.Intent) bool {
+func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, intent planning.Intent, action ministerengine.MinisterActionItem) bool {
 	if r == nil || r.state == nil {
 		return false
 	}
@@ -252,7 +232,28 @@ func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, 
 		fmt.Sprint(r.state.Turn),
 	}, ":")
 	draft.Title, draft.Summary, draft.Rationale, draft.RiskNote = ministerDraftText(role, string(draft.Kind), draft.TargetLabel)
+	applyMinisterActionProposalText(&draft, role, action)
 	return r.upsertMinisterActionDraft(playerID, draft)
+}
+
+func applyMinisterActionProposalText(draft *domain.MinisterDraft, role string, action ministerengine.MinisterActionItem) {
+	if draft == nil {
+		return
+	}
+	title, summary, rationale, riskNote := ministerDraftText(role, string(draft.Kind), draft.TargetLabel)
+	draft.Title = firstNonEmpty(action.Title, title)
+	draft.Summary = firstNonEmpty(action.Summary, summary)
+	draft.Rationale = firstNonEmpty(action.Rationale, rationale)
+	draft.RiskNote = firstNonEmpty(action.RiskNote, riskNote)
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func (r *Runtime) sendMinisterProposalSync(playerID string) error {

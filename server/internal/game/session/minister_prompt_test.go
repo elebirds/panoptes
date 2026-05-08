@@ -75,9 +75,7 @@ func TestBuildMinisterObservationSummaryAddsDistortionMetadata(t *testing.T) {
 }
 
 func TestBuildMinisterActionCandidateSummaryFiltersCurrentRoleCandidates(t *testing.T) {
-	state := domain.NewGameState("game-candidates", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
-	state.Turn = 3
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+	drafts := []domain.MinisterDraft{
 		{
 			DraftID:      "domestic:research:bronze_working:3",
 			PlayerID:     "player-1",
@@ -114,9 +112,9 @@ func TestBuildMinisterActionCandidateSummaryFiltersCurrentRoleCandidates(t *test
 			Turn:         2,
 			Source:       domain.MinisterDraftSourceRuleOnly,
 		},
-	})
+	}
 
-	summary := buildMinisterActionCandidateSummary(state, "player-1", "domestic")
+	summary := buildMinisterActionCandidateSummaryFromDrafts(3, drafts, "domestic")
 	if !strings.Contains(summary, "candidate_id=domestic:research:bronze_working:3") ||
 		!strings.Contains(summary, "kind=research") ||
 		!strings.Contains(summary, "target_id=bronze_working") {

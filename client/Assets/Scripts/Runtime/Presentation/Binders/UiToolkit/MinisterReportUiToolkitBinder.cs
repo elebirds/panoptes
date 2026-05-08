@@ -19,6 +19,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     {
         private const int MinisterSortingOrder = 5000;
         private const int HiddenManagementSortingOrder = -1000;
+        private const float MessageBubbleMinWidth = 96f;
+        private const float MessageBubbleMaxWidth = 720f;
+        private const float MessageBubbleHorizontalPadding = 24f;
         public const string RootName = "minister-report-root";
         public const string TitleName = "minister-report-title";
         public const string CloseButtonName = "minister-report-close";
@@ -333,7 +336,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             var bubbleRoot = CreateUiObject("Bubble", row);
             var bubbleLayoutElement = bubbleRoot.gameObject.AddComponent<LayoutElement>();
-            bubbleLayoutElement.preferredWidth = 920f;
+            bubbleLayoutElement.minWidth = MessageBubbleMinWidth;
             bubbleLayoutElement.flexibleWidth = 0f;
             var bubbleImage = bubbleRoot.gameObject.AddComponent<UguiImage>();
             bubbleImage.color = message.IsPlayer
@@ -349,21 +352,43 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             bubbleLayout.childForceExpandHeight = false;
             bubbleRoot.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            TextMeshProUGUI header = null;
             if (!message.IsPlayer)
             {
-                var header = CreateText(bubbleRoot, "Header", BuildMessageHeader(message), 12f, FontStyles.Bold, TextAlignmentOptions.Left);
+                header = CreateText(bubbleRoot, "Header", BuildMessageHeader(message), 12f, FontStyles.Bold, TextAlignmentOptions.Left);
                 header.color = new Color(0.96f, 0.83f, 0.55f, 1f);
             }
 
             var body = CreateText(bubbleRoot, "Text", message.Text + (message.IsStreaming ? " ..." : string.Empty), 14f, FontStyles.Normal, TextAlignmentOptions.Left);
             body.color = new Color(0.93f, 0.96f, 0.97f, 1f);
             body.textWrappingMode = TextWrappingModes.Normal;
+            body.overflowMode = TextOverflowModes.Overflow;
+            bubbleLayoutElement.preferredWidth = CalculateMessageBubbleWidth(body, header);
 
             if (!message.IsPlayer)
             {
                 var spacer = CreateUiObject("Spacer", row);
                 spacer.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
             }
+        }
+
+        private static float CalculateMessageBubbleWidth(TMP_Text body, TMP_Text header)
+        {
+            var bodyWidth = PreferredTextWidth(body);
+            var headerWidth = PreferredTextWidth(header);
+            var preferredWidth = Mathf.Max(bodyWidth, headerWidth) + MessageBubbleHorizontalPadding;
+            return Mathf.Clamp(preferredWidth, MessageBubbleMinWidth, MessageBubbleMaxWidth);
+        }
+
+        private static float PreferredTextWidth(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return 0f;
+            }
+
+            var preferred = text.GetPreferredValues(text.text ?? string.Empty, MessageBubbleMaxWidth, 0f);
+            return Mathf.Max(0f, preferred.x);
         }
 
         private void RenderOptions(MinisterReportState state)

@@ -3,93 +3,7 @@ package minister
 import (
 	"strings"
 	"testing"
-
-	"github.com/elebirds/panoptes/internal/domain"
 )
-
-func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
-	req := BuildDraftPrompt(MinisterProfile{
-		ID:              "m002",
-		Name:            "沈衡",
-		Role:            "domestic",
-		Ability:         7,
-		Personality:     "steady",
-		PersonalityDesc: "稳健审慎",
-		Loyalty:         8,
-		Ambition:        4,
-		Cautiousness:    76,
-		Decisiveness:    58,
-		LoyaltyTendency: 84,
-		AmbitionStyle:   32,
-	}, DraftPromptInput{
-		Turn:               6,
-		PlayerID:           "player-1",
-		ObservationSummary: "可见 3 个节点，当前食物储备偏紧。",
-		CurrentPolicy:      "reorganization",
-		CurrentResearch:    "agrarian_foundations",
-		Draft: domain.MinisterDraft{
-			DraftID:      "domestic:research:bronze_working:6",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindResearch,
-			TargetID:     "bronze_working",
-			TargetLabel:  "Bronze Working",
-		},
-		Memory: &MinisterMemory{
-			PlayerID: "player-1",
-			Role:     "domestic",
-			Favor:    55,
-			Entries: []MemoryEntry{
-				{Turn: 5, Type: "draft", Content: "建议优先农业基础", Outcome: "generated", PlayerResp: "accepted"},
-			},
-		},
-	})
-
-	if !strings.Contains(req.SystemPrompt, "沈衡") || !strings.Contains(req.SystemPrompt, "稳健审慎") {
-		t.Fatalf("SystemPrompt = %q, want injected minister profile", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "# Panoptes Minister Persona") || !strings.Contains(req.SystemPrompt, "<highlight>") {
-		t.Fatalf("SystemPrompt = %q, want markdown structure and highlight control tags", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "P 社让你当上帝，我们让你当人") || !strings.Contains(req.SystemPrompt, "truth") || !strings.Contains(req.SystemPrompt, "observed") || !strings.Contains(req.SystemPrompt, "reported") {
-		t.Fatalf("SystemPrompt = %q, want Panoptes premise and information model", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "亲政令牌") || !strings.Contains(req.SystemPrompt, "游戏规则层，而不是 LLM") {
-		t.Fatalf("SystemPrompt = %q, want player authority and rule authority framing", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "谨慎度=76/100") || !strings.Contains(req.SystemPrompt, "野心表现=32/100") {
-		t.Fatalf("SystemPrompt = %q, want personality dimensions", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "大臣奏报") || !strings.Contains(req.SystemPrompt, "淡化不利信息") {
-		t.Fatalf("SystemPrompt = %q, want subjective distortion instructions", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "不得改写目标") || !strings.Contains(req.SystemPrompt, "必须使用简体中文") {
-		t.Fatalf("SystemPrompt = %q, want draft-only Chinese constraints", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "输出必须是裸 JSON 对象") {
-		t.Fatalf("SystemPrompt = %q, want bare JSON constraint", req.SystemPrompt)
-	}
-	if !strings.Contains(req.SystemPrompt, "## JSON Response Format") ||
-		!strings.Contains(req.SystemPrompt, `"title": "<简体中文字符串，短标题>"`) ||
-		!strings.Contains(req.SystemPrompt, "只允许这四个字段") {
-		t.Fatalf("SystemPrompt = %q, want exact draft JSON response format", req.SystemPrompt)
-	}
-	if !strings.Contains(req.UserPrompt, "bronze_working") || !strings.Contains(req.UserPrompt, "可见 3 个节点") {
-		t.Fatalf("UserPrompt = %q, want target id and observation summary", req.UserPrompt)
-	}
-	if !strings.Contains(req.UserPrompt, "## Rule-Selected Draft") || !strings.Contains(req.UserPrompt, "<highlight>") {
-		t.Fatalf("UserPrompt = %q, want markdown structure and highlight control tags", req.UserPrompt)
-	}
-	if !strings.Contains(req.UserPrompt, "favor=55/100") {
-		t.Fatalf("UserPrompt = %q, want memory favor injected", req.UserPrompt)
-	}
-	if !strings.Contains(req.UserPrompt, "不要 ``` 或 ```json 代码块") || !strings.Contains(req.UserPrompt, "不要任何前缀说明或后缀解释") {
-		t.Fatalf("UserPrompt = %q, want no-fence/no-noise output contract", req.UserPrompt)
-	}
-	if !strings.Contains(req.UserPrompt, "Return exactly this JSON shape and no other fields") ||
-		!strings.Contains(req.UserPrompt, `"risk_note": "<简体中文字符串，风险、盲区或机会成本>"`) {
-		t.Fatalf("UserPrompt = %q, want exact draft JSON shape", req.UserPrompt)
-	}
-}
 
 func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testing.T) {
 	req := BuildReportPrompt(MinisterProfile{
@@ -131,6 +45,18 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	if !strings.Contains(req.SystemPrompt, "`select_candidate`") || !strings.Contains(req.SystemPrompt, "candidate_id") ||
 		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
 		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, "必须输出一个最匹配的 `select_candidate`") ||
+		!strings.Contains(req.UserPrompt, "必须使用 `select_candidate`") {
+		t.Fatalf("Prompt = %q\n%s, want candidate-backed action requirement", req.SystemPrompt, req.UserPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, `"risk_note": "<可选，简体中文风险提示>"`) ||
+		!strings.Contains(req.UserPrompt, "`title`、`summary`、`rationale`、`risk_note`") {
+		t.Fatalf("Prompt = %q\n%s, want optional action proposal copy fields", req.SystemPrompt, req.UserPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, "不得把候选来源、规则规划器、内部校验或系统实现写进玩家可见提案文案") ||
+		!strings.Contains(req.UserPrompt, "不得提到候选来源、规则规划器、内部校验或系统实现") {
+		t.Fatalf("Prompt = %q\n%s, want no internal proposal copy rule", req.SystemPrompt, req.UserPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.UserPrompt, "单位/地图行动只能通过 Action Candidates") {
 		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)

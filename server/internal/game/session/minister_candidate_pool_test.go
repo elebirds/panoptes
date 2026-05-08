@@ -21,6 +21,7 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
 			InitialCityTerritoryRadius: 2,
 			CityCoreMaxHP:              100,
 		},
@@ -108,6 +109,9 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 			t.Fatalf("draft kind %q count = %d, want at least %d; all drafts = %#v", kind, got, wantAtLeast, drafts)
 		}
 	}
+	if got := countByKind[domain.MinisterDraftKindBuild]; got > 2 {
+		t.Fatalf("build candidates = %d, want at most 2 after budget filtering", got)
+	}
 	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
 		t.Fatalf("build orders = %d, want 0 before approval", got)
 	}
@@ -132,6 +136,49 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 	if got := len(state.TurnRuntime.Planning.PendingInstitutionLoadout("player-1")); got != 0 {
 		t.Fatalf("pending institution loadout count = %d, want 0 before approval", got)
 	}
+}
+
+func TestBuildMinisterDraftsFromLegalCandidatesOffersOpeningMilitaryRecon(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{CityCoreMaxHP: 100},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state := newMinisterCandidatePoolState(t)
+	observation := &gamequery.ObservationSnapshot{
+		ViewerID: "player-1",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "C1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1", BuildingTypeId: "city_core"},
+			{Id: "B1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1"},
+		},
+		Units: []*pb.UnitView{
+			{Id: "u1", Faction: "player-1", UnitType: "infantry"},
+		},
+	}
+
+	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
+	for _, draft := range drafts {
+		if draft.MinisterRole != militaryMinisterRole || draft.Kind != domain.MinisterDraftKindOperation {
+			continue
+		}
+		if len(draft.OperationSteps) != 1 || draft.OperationSteps[0].TargetNodeID != "B1" {
+			t.Fatalf("military recon draft = %#v, want one move step to B1", draft)
+		}
+		return
+	}
+	t.Fatalf("drafts = %#v, want opening military recon operation", drafts)
 }
 
 func TestMinisterDraftFromIntentKeepsDraftIDsUniqueForCommandDimensions(t *testing.T) {

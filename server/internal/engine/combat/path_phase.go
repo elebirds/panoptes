@@ -122,7 +122,8 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		// charge 鍙厑璁告妸璺緞涓婄殑绗竴澶勬晫鏂瑰崟浣嶆帴鏁岀偣璁颁负鍐查攱鐩爣锛?
 		// 涓嶈兘绌胯繃绗竴閬撴晫绾垮幓鍛戒腑鍚庢帓銆?
 		// 杩欎篃鏄负浠€涔?BlockRule 浼氫紭鍏堣繑鍥炲悓鏍煎崟浣嶈€屼笉鏄缓绛戙€?
-		if allowCharge && source.Kind == "unit" {
+		if allowCharge && source.Kind == "unit" && source.Owner != unit.PlayerID {
+			// 只有敌方单位才会被记为 charge 的第一接敌目标；友军只是普通占位阻断。
 			plan.ChargeTargetID = source.UnitID
 		}
 		candidateIndex = i - 1

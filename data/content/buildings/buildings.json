@@ -209,7 +209,7 @@
       "required_resource_type": "",
       "resource_costs": { "wood": 2, "ore": 2 },
       "point_costs": { "industry_output": 1 },
-      "recipe_ids": ["engineer_camp_raider", "engineer_camp_siege_engine"],
+      "recipe_ids": ["engineer_camp_raider", "engineer_camp_engineer", "engineer_camp_siege_engine"],
       "default_recipe_id": "engineer_camp_raider",
       "explicit_effects": [],
       "modifier_effects": [],

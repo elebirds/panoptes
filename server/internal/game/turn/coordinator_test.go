@@ -2,7 +2,7 @@ package turn
 
 import (
 	"context"
-	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -218,14 +218,11 @@ func TestCoordinatorBeginPlanningExposesHumanMinisterDefaultDraftsBeforeNotify(t
 		start.GetSnapshot().GetPlannedNationalPolicyId() != "" {
 		t.Fatalf("planning snapshot = %#v, want no applied minister defaults", start.GetSnapshot())
 	}
-	if status := ministerDraftStatusFromStart(t, start, "research"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("research draft status = %q, want pending", status)
+	if got := len(start.GetMinisterDrafts()); got != 0 {
+		t.Fatalf("planning start minister drafts = %d, want 0 before LLM selection", got)
 	}
-	if status := ministerDraftStatusFromStart(t, start, "policy"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("policy draft status = %q, want pending", status)
-	}
-	if status := ministerDraftStatusFromStart(t, start, "build"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("build draft status = %q, want pending", status)
+	if summary := runtime.BuildMinisterActionCandidateSummary("player-1", "domestic"); !strings.Contains(summary, "candidate_id=") {
+		t.Fatalf("candidate summary = %q, want hidden minister candidates", summary)
 	}
 }
 
@@ -260,24 +257,6 @@ func newMinisterDefaultCoordinatorState(t *testing.T) *domain.GameState {
 	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	return state
-}
-
-func ministerDraftStatusFromStart(t *testing.T, start *pb.MsgPlanningStart, kind string) string {
-	t.Helper()
-	for _, draft := range start.GetMinisterDrafts() {
-		var payload struct {
-			Kind   string `json:"kind"`
-			Status string `json:"status"`
-		}
-		if err := json.Unmarshal([]byte(draft.GetJsonPayload()), &payload); err != nil {
-			t.Fatalf("unmarshal minister draft: %v", err)
-		}
-		if payload.Kind == kind {
-			return payload.Status
-		}
-	}
-	t.Fatalf("minister draft kind %q not found", kind)
-	return ""
 }
 
 type coordinatorCaptureTransport struct {

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend architecture and layering rules for verifying the no-stacking refactor."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Quality gates and forbidden patterns for checking the occupancy rewrite."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Validation and error-code rules for review of new occupancy failures."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The change spans domain, engine, event, and protocol-facing surfaces."}

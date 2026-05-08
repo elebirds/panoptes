@@ -382,6 +382,7 @@
       },
       "recipe_ids": [
         "engineer_camp_raider",
+        "engineer_camp_engineer",
         "engineer_camp_siege_engine"
       ],
       "default_recipe_id": "engineer_camp_raider",

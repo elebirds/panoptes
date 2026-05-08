@@ -32,7 +32,11 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
   "actions": [
     {
       "type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe",
-      "params": {}
+      "params": {},
+      "title": "<可选，简体中文短标题>",
+      "summary": "<可选，简体中文一句话提案>",
+      "rationale": "<可选，简体中文理由>",
+      "risk_note": "<可选，简体中文风险提示>"
     }
   ],
   "action_id": "<简短英文或数字标识；无动作时可为空字符串>"
@@ -44,13 +48,14 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
 - `metrics` 必须是数组；没有可靠数值轨时返回 `[]`。
 - 每个 metric 必须包含 `label`、`value`、`trend`、`confidence`、`is_delayed`。
 - `trend` 只能是 `up`、`down`、`stable`；`confidence` 只能是 `high`、`medium`、`low`。
-- `actions` 必须是数组；没有把握时返回 `[]`。
-- 每个 action 必须只包含 `type` 和 `params`，其中 `params` 必须是 JSON object。
+- `actions` 必须是数组；没有可执行提案时返回 `[]`。
+- 每个 action 必须包含 `type` 和 `params`，其中 `params` 必须是 JSON object；可以额外包含 `title`、`summary`、`rationale`、`risk_note` 作为玩家可见提案文案。
 - 不要输出 null，不要输出 Markdown，不要输出未定义字段。
 
 ## Action Contract
-- `actions` 可以为空数组；没有把握时必须输出 `[]`。
-- 只有当观察摘要和记忆足以支持一个具体动作时，才输出 action。
+- `actions` 可以为空数组；但如果 Action Candidates 不为 `(none)`，且你的 `report` 建议了具体行动，必须输出一个最匹配的 `select_candidate`。
+- 只有当观察摘要、候选行动和记忆足以支持一个具体动作时，才输出 action。
+- action 的 `title`、`summary`、`rationale`、`risk_note` 是最终提案卡片文案；如果输出 action，尽量给出这些字段，使其和 `report` 的判断一致。
 - 支持的 `type` 只有：
   - `select_candidate`: `params` 必须包含 `draft_id`，且只能引用用户 prompt 的 Action Candidates 中出现的 `candidate_id`。
   - `build`: `params` 必须包含 `node_id`、`building_type`，可选 `city_id`。
@@ -60,4 +65,5 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
   - `set_building_recipe`: `params` 必须包含 `node_id`、`recipe_id`。
   - `select_candidate` 是地图/单位行动的唯一入口；若候选列表里已有合适项，优先选它，不要手写同类 action。
 - 不得发明新的 `type`、不得发明未在观察摘要中出现的单位、节点或建筑目标。
+- 不得把候选来源、规则规划器、内部校验或系统实现写进玩家可见提案文案。
 - 规则层会再次校验 action；你可以提出主张，但不能保证非法动作会执行。

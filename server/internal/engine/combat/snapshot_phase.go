@@ -65,7 +65,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		snapshot.Units[stats.ID] = unit
 		snapshot.OrderedUnitIDs = append(snapshot.OrderedUnitIDs, stats.ID)
 		// 单位起始占位直接进入阻断快照。
-		// 根据 V1 规格，这个阻断信息在整次结算中不会因为单位本回合移动而更新。
+		// 不堆叠规则要求任意单位都能形成占位；这个信息在整次结算中不会因为单位本回合移动而更新。
 		sources := snapshot.BlockSources[unit.Position]
 		source := BlockSource{
 			Kind:     "unit",

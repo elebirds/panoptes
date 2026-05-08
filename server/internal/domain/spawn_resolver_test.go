@@ -41,6 +41,35 @@ func TestResolveUnitSpawnPositionSkipsReservedAndBlockedCandidates(t *testing.T)
 	}
 }
 
+func TestResolveUnitSpawnPositionSkipsOccupiedCandidates(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state := newSpawnResolverState(t, 9, 9, Position{Q: 4, R: 4})
+	origin := Position{Q: 4, R: 4}
+
+	unitEntry := state.World.Entry(state.World.Create(PositionC, UnitStatsC))
+	PositionC.SetValue(unitEntry, PositionComp{Q: 5, R: 4})
+	UnitStatsC.SetValue(unitEntry, UnitStatsComp{
+		ID:      "occupied-candidate",
+		Faction: "player-2",
+		Type:    UnitTypeSettler,
+		HP:      1,
+		MaxHP:   1,
+	})
+
+	got, ok := ResolveUnitSpawnPosition(state, origin)
+	if !ok {
+		t.Fatalf("ResolveUnitSpawnPosition() = not found, want a later ring tile")
+	}
+	if got == (Position{Q: 5, R: 4}) {
+		t.Fatalf("ResolveUnitSpawnPosition() = %#v, want to skip occupied candidate", got)
+	}
+}
+
 func TestResolveUnitSpawnPositionRejectsPocketWithoutEscape(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Terrains: []staticdata.TerrainDefinition{

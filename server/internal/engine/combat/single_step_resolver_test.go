@@ -227,6 +227,128 @@ func TestSingleStepResolver_NodeConflictGroupSkipsFriendlyPairs(t *testing.T) {
 	}
 }
 
+func TestSingleStepResolver_FriendlySameDestinationFallsBackWithoutDamage(t *testing.T) {
+	state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a"})
+	a1ID := spawnTestUnit(state.World, "infantry", "player-a", 0, 1)
+	a2ID := spawnTestUnit(state.World, "infantry", "player-a", 2, 1)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		a1ID: {PlayerID: "player-a", UnitID: a1ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		a2ID: {PlayerID: "player-a", UnitID: a2ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countConflicts(events, "node"); got != 0 {
+		t.Fatalf("friendly-only node collision emitted combat conflicts = %d, want 0", got)
+	}
+	if got := countDamageEventsForUnit(events, a1ID) + countDamageEventsForUnit(events, a2ID); got != 0 {
+		t.Fatalf("friendly-only node collision damage events = %d, want 0", got)
+	}
+	if got := unitPosition(t, state.World, a1ID); got != (domain.Position{Q: 0, R: 1}) {
+		t.Fatalf("unit a1 position = %#v, want fallback to start", got)
+	}
+	if got := unitPosition(t, state.World, a2ID); got != (domain.Position{Q: 2, R: 1}) {
+		t.Fatalf("unit a2 position = %#v, want fallback to start", got)
+	}
+	assertNoUnitStacks(t, state.World)
+}
+
+func TestSingleStepResolver_FriendlyStartPositionBlocksMovement(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	moverID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	blockerID := spawnTestUnit(state.World, "infantry", "player-a", 1, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		moverID:   {PlayerID: "player-a", UnitID: moverID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+		blockerID: {PlayerID: "player-a", UnitID: blockerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, moverID); got != (domain.Position{Q: 0, R: 0}) {
+		t.Fatalf("mover position = %#v, want blocked by friendly start position", got)
+	}
+	if got := unitPosition(t, state.World, blockerID); got != (domain.Position{Q: 2, R: 0}) {
+		t.Fatalf("blocker position = %#v, want move to target", got)
+	}
+	assertNoUnitStacks(t, state.World)
+}
+
+func TestSingleStepResolver_EngineerBuildsRoadTrailOnActualPath(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	engineerID := spawnTestUnit(state.World, "engineer", "player-a", 0, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		engineerID: {PlayerID: "player-a", UnitID: engineerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "engineer_road_trail_built"); got != 1 {
+		t.Fatalf("engineer road trail events = %d, want 1", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0", "N2_0"} {
+		if !nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = false, want true", nodeID)
+		}
+	}
+}
+
+func TestSingleStepResolver_NonEngineerDoesNotBuildRoadTrail(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	infantryID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		infantryID: {PlayerID: "player-a", UnitID: infantryID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "engineer_road_trail_built"); got != 0 {
+		t.Fatalf("engineer road trail events = %d, want 0", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0", "N2_0"} {
+		if nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = true, want false", nodeID)
+		}
+	}
+}
+
+func TestSingleStepResolver_EngineerRoadTrailStopsAtBlockedActualPosition(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	engineerID := spawnTestUnit(state.World, "engineer", "player-a", 0, 0)
+	spawnTestUnit(state.World, "infantry", "player-b", 2, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		engineerID: {PlayerID: "player-a", UnitID: engineerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, engineerID); got != (domain.Position{Q: 1, R: 0}) {
+		t.Fatalf("engineer position = %#v, want stop before blocker", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0"} {
+		if !nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = false, want true", nodeID)
+		}
+	}
+	if nodeHasRoad(t, state, "N2_0") {
+		t.Fatalf("node N2_0 HasRoad = true, want false")
+	}
+}
+
 func TestSingleStepResolver_NodeConflictGroupEmitsStableConflictOrder(t *testing.T) {
 	buildState := func() *domain.GameState {
 		state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b", "player-c"})
@@ -401,6 +523,7 @@ func newCombatTestStateWithPlayers(t *testing.T, width, height int, playerIDs []
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian"}},
+			{ID: "engineer", Class: "civilian", MaxHP: 16, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian", "engineer"}},
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}, Tags: []string{"melee"}},
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
@@ -485,6 +608,15 @@ func unitPosition(t *testing.T, world donburi.World, unitID string) domain.Posit
 	return domain.Position{Q: pos.Q, R: pos.R}
 }
 
+func nodeHasRoad(t *testing.T, state *domain.GameState, nodeID string) bool {
+	t.Helper()
+	entry, ok := state.GetNode(nodeID)
+	if !ok {
+		t.Fatalf("missing node %s", nodeID)
+	}
+	return ecs.NodeC.Get(entry).HasRoad
+}
+
 func findUnitEntry(world donburi.World, unitID string) (*donburi.Entry, bool) {
 	var found *donburi.Entry
 	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
@@ -548,6 +680,13 @@ func collectConflictPairs(events []event.Event) []string {
 		pairs = append(pairs, conflict.UnitAID+"|"+conflict.UnitBID+"|"+conflict.ConflictType)
 	}
 	return pairs
+}
+
+func assertNoUnitStacks(t *testing.T, world donburi.World) {
+	t.Helper()
+	if violations := domain.UnitOccupancyViolations(world); len(violations) != 0 {
+		t.Fatalf("unit occupancy violations = %d, want 0", len(violations))
+	}
 }
 
 func nodeID(x, y int) string {

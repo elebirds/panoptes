@@ -160,66 +160,57 @@ if err := json.Unmarshal([]byte(normalized), &out); err != nil {
 ### Scenario: Minister LLM Role Enablement
 
 #### 1. Scope / Trigger
-- Trigger: any backend change that wires minister roles to LLM draft polishing or report generation.
-- Minister LLM is an expression layer. It must never become the source of executable planning targets unless a separate decision contract is designed.
+- Trigger: any backend change that wires minister roles to LLM report generation.
+- Minister LLM is a reported-expression and candidate-selection layer. It may select from rule-generated candidates through the report action contract, but it must not invent executable planning targets outside that bounded contract.
 
 #### 2. Signatures
 - Config field: `Config.MinisterLLMRoles string`
 - Environment key: `MINISTER_LLM_ENABLED_ROLES`
 - Default value: `domestic,military`
 - Role gate: `MinisterEngine.SetEnabledRoles([]string{...})`
-- Draft path: `MinisterEngine.PolishDraft(ctx, playerID, draft, input) (*DraftOutput, bool)`
+- Report path: `MinisterEngine.GenerateReports(ctx, room)`
 
 #### 3. Contracts
 - Enabled roles are comma-separated role ids and must be trimmed, lower-cased, and de-duplicated before passing to `SetEnabledRoles`.
 - Blank configured roles fall back to `[]string{"domestic", "military"}`.
-- Draft targets still come from `ai.RuleBotProvider.BuildPlanningIntents`.
-- LLM draft polish may only replace `Title`, `Summary`, `Rationale`, `RiskNote`, and `Source`.
-- LLM draft polish must not replace `DraftID`, `TargetID`, unit ids, action ids, node ids, recipe ids, policy ids, or command payload fields.
-- Draft polish prompt output must be exactly the four string fields `title`, `summary`, `rationale`, and `risk_note`; no executable fields or extra JSON keys are allowed.
+- Rule-generated draft/candidate targets come from the legal candidate pool, not from per-draft LLM calls.
+- Draft cards remain `rule_only` until selected, accepted, rejected, or staled.
+- Do not add per-candidate draft polishing; the single report prompt receives current observations plus Action Candidates, then returns narrative, metrics, and optional approval-gated actions.
 - Minister reports may include narrative text, metrics, and approval-gated report actions. Report `actions` must follow the "Minister Report Actions Become Approval-Gated Proposals" contract below.
 
 #### 4. Validation & Error Matrix
-- Role omitted from enabled roles -> `PolishDraft` returns `(nil, false)` and no report is generated for that role.
-- LLM disabled or client missing -> rule-only drafts remain usable.
-- LLM stream error -> keep existing rule-only draft text.
-- Invalid draft JSON -> keep existing rule-only draft text.
-- English or empty player-visible text -> sanitize to the Chinese fallback strings.
-- Unknown role with no profile -> `PolishDraft` returns `(nil, false)`.
+- Role omitted from enabled roles -> no report is generated for that role.
+- LLM disabled or client missing -> deterministic fallback reports are generated where applicable, and rule-only candidates remain usable.
+- LLM stream error -> use a Chinese fallback report; do not mutate draft candidates.
+- Invalid report JSON -> parse the Chinese fallback report; do not apply actions from invalid payloads.
+- English or empty player-visible report/metric text -> sanitize to the Chinese fallback strings.
+- Unknown role with no profile -> no report is generated for that role.
 
 #### 5. Good / Base / Bad Cases
-- Good: `MINISTER_LLM_ENABLED_ROLES=domestic,military`; rulebot selects a military unit order, and LLM only rewrites the visible military advice copy.
-- Base: `MINISTER_LLM_ENABLED_ROLES=domestic`; domestic drafts are polished, military drafts remain rule-only.
-- Bad: LLM output changes a military draft from `move A2` to `attack enemy-1`, or appends a new executable action from report JSON.
+- Good: `MINISTER_LLM_ENABLED_ROLES=domestic,military`; both roles produce subjective reports, and an LLM-selected legal candidate becomes an approval-gated `llm_action` proposal.
+- Base: `MINISTER_LLM_ENABLED_ROLES=domestic`; domestic report generation runs, while military candidates remain rule-only and available.
+- Bad: one LLM request per draft candidate just to rewrite card copy, or LLM output changes a military candidate from `move A2` to `attack enemy-1`.
 
 #### 6. Tests Required
 - Config/env test reads `MINISTER_LLM_ENABLED_ROLES`.
 - Role parser test covers trim, lower-case, de-duplication, and blank fallback.
-- Draft polish test verifies a military role is rejected when only domestic is enabled.
-- Draft polish test verifies military role succeeds when enabled.
-- Draft polish test verifies only display fields change after polish.
-- Draft/report tests cover invalid JSON and English visible text fallback.
+- Report generation test verifies a military role is included when enabled.
+- Report generation test verifies parsed actions are forwarded to the room callback.
+- Report parser tests cover invalid JSON/noisy JSON and English visible text fallback.
 
 #### 7. Wrong vs Correct
 #### Wrong
 ```go
-// Do not special-case one role in session code or let LLM alter command fields.
-if draft.MinisterRole != "domestic" {
-    continue
+// Do not start one LLM request per rule-generated candidate.
+for _, draft := range drafts {
+    go requestPerDraftLLMRewrite(draft)
 }
-draft.TargetNodeID = llmOutput.TargetNodeID
 ```
 #### Correct
 ```go
-// Enqueue drafts through the shared engine; role gating stays in MinisterEngine.
-output, ok := r.ministerEngine.PolishDraft(ctx, playerID, draft, input)
-if ok {
-    draft.Title = output.Title
-    draft.Summary = output.Summary
-    draft.Rationale = output.Rationale
-    draft.RiskNote = output.RiskNote
-    draft.Source = domain.MinisterDraftSourceRuleLLM
-}
+// Generate rule-only candidates once; report LLM selects from the bounded list.
+drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, state, observation)
+input.ActionCandidates = buildMinisterActionCandidateSummary(drafts)
 ```
 
 ### Scenario: Minister Subjective Report and Memory Pressure
@@ -296,7 +287,7 @@ if ok {
 - `select_candidate` must only be allowed to reference an existing current-turn pending draft for the same player and minister role.
 - Rule-generated map/unit action space must be folded into bounded `operation` candidates. Each operation carries a small batch of normal planning commands and hides the raw per-unit/per-node search space from the LLM prompt.
 - Accepting an operation proposal must pre-validate every contained command through the same normal planning validators, then apply the batch through normal planning state writes. If any command is invalid, no command in the operation may be applied.
-- When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role rule-only/rule+llm candidates become stale/unavailable.
+- When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role `rule_only` candidates become stale/unavailable.
 - Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
 - Build actions must be validated with the normal build-order rules before creating a pending minister draft.
 - Research, policy, institution loadout, and building recipe actions must use the same validators as direct planning commands before creating a pending minister draft.
@@ -326,7 +317,7 @@ if ok {
 - Session test confirms valid minister build actions stage pending minister drafts.
 - Session test confirms deprecated map/unit action compatibility types are ignored rather than staged.
 - Session test confirms expanded research, policy, institution, and recipe actions stage pending minister drafts without mutating planning state before approval.
-- Session test confirms `select_candidate` marks selected same-role candidates as `llm_action` and stales unselected same-role rule candidates.
+- Session test confirms `select_candidate` marks the selected same-role candidate as `llm_action` while unselected rule candidates stay hidden in the runtime cache.
 - Prompt test confirms Action Candidates are injected into report prompts and the selection contract is visible.
 - Projection/query test confirms minister proposals carry typed commands, operation command batches, and raw JSON.
 - Planning test confirms accepting an operation applies every step, and invalid operations reject without partial application.
@@ -366,7 +357,8 @@ if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, 
   - institutional loadout -> `planning.ValidateInstitutionLoadout`
   - unit orders/map actions -> `orders.ValidatePlanningUnitOrder`
 - Candidate generation may enumerate many valid options for a surface. Ranking, selection, and narrative explanation belong to the minister report LLM via `select_candidate`.
-- Generated candidates must be `MinisterDraftSourceRuleOnly`, `pending`, and `available` until selected, accepted, rejected, or staled.
+- The hidden candidate cache is not projected into `state.TurnRuntime.Planning.MinisterDrafts` until the LLM selects a candidate or stages a new proposal.
+- Generated candidates must be `MinisterDraftSourceRuleOnly`, `pending`, and `available` in the hidden runtime cache until selected, accepted, rejected, or staled.
 - Candidate generation must not write `BuildOrders`, `RecipeSelections`, `UnitOrders`, pending research/policy/institution maps, or resolving caches.
 - Draft IDs must include every command dimension that changes execution semantics, including `city_id`, `secondary_node_id`, and deterministic params when present.
 
@@ -442,6 +434,69 @@ drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observ
 - Runtime test verifies strong-mode detection is trimmed and case-insensitive.
 - Planning test verifies strong mode rejects a direct gameplay intent before state mutation.
 - Planning test verifies the same direct gameplay intent succeeds once mandate mode is enabled.
+
+### Scenario: Unit Occupancy Is Non-Stacking
+
+#### 1. Scope / Trigger
+- Trigger: any backend change that creates units, moves units, projects node unit counts, builds debug scenarios, or changes combat movement/conflict resolution.
+- Panoptes uses one-unit-per-node occupancy. Stacking is not a supported gameplay state.
+
+#### 2. Signatures
+- Domain occupancy helpers:
+  - `domain.GetUnitAtNode(world donburi.World, pos domain.Position) (*donburi.Entry, bool)`
+  - `domain.HasUnitAtNode(world donburi.World, pos domain.Position) bool`
+  - `domain.UnitOccupancyViolations(world donburi.World) map[domain.Position][]*donburi.Entry`
+- Spawn entrypoint: `domain.ResolveUnitSpawnPosition(state *domain.GameState, origin domain.Position) (domain.Position, bool)`
+- Combat rule points:
+  - `combat.StaticSnapshotBlockRule.SourceFor(...)`
+  - `combat.NodeConflictDetector.Detect(...)`
+  - `combat.MovementApplyPhase.Apply(...)`
+
+#### 3. Contracts
+- A stable authoritative world must not contain more than one living unit at the same `Position`.
+- Unit starting positions are frozen movement blockers for the entire resolving pass, regardless of faction or whether the unit moves away this turn.
+- Friendly units block movement but do not become `charge` targets and do not produce damage events.
+- If multiple units candidate the same node in resolving, all members are treated as a node occupancy collision and move by the node-conflict fallback rule.
+- Hostile pairs inside a node collision still produce normal conflict damage; friendly-only collisions only affect movement.
+- Spawn, production, research grants, bootstrap, and debug/scenario placement must consult the shared occupancy rule before creating a unit.
+- ECS `CreateUnit` is a low-level constructor. Gameplay entrypoints must validate or resolve occupancy before calling it.
+
+#### 4. Validation & Error Matrix
+- Spawn candidate occupied by any living unit -> skip candidate and keep searching.
+- No legal spawn candidate -> do not create the unit; existing event behavior may skip without a client error.
+- Friendly unit blocks path -> moving unit stops at the last legal non-conflicting tile.
+- Friendly-only same-destination collision -> no damage/conflict event, all members fall back by movement rules.
+- Hostile same-destination collision -> normal node conflict hostile-pair damage, all members fall back by movement rules.
+- Debug/scenario placement attempts occupied node -> fail fast rather than silently creating stacked fixtures.
+
+#### 5. Good/Base/Bad Cases
+- Good: two allied infantry both target `N1_1`; neither takes damage, both fall back, and `UnitOccupancyViolations` is empty.
+- Base: one infantry is produced near a barracks; `ResolveUnitSpawnPosition` skips buildings, reservations, impassable terrain, and occupied unit nodes.
+- Bad: a bootstrap helper only checks for an existing infantry and creates a new infantry on top of a settler.
+- Bad: `BlockRule` only blocks enemy units, allowing friendly units to move through or stop on each other.
+
+#### 6. Tests Required
+- Combat test for friendly same-destination collision with no damage and no final stack.
+- Combat test for friendly starting position blocking movement.
+- Combat test that hostile node conflict behavior still emits deterministic hostile pairs.
+- Spawn/production/research/bootstrap tests that occupied candidates are skipped.
+- Scenario/debug fixture tests or guards that fail on occupied placement.
+
+#### 7. Wrong vs Correct
+#### Wrong
+```go
+// Only enemy units block movement: this reintroduces friendly stacking.
+if sources.Unit != nil && sources.Unit.Owner != unit.PlayerID {
+    return *sources.Unit, true
+}
+```
+#### Correct
+```go
+// Any living unit occupies the node; faction only affects whether damage/charge applies.
+if sources.Unit != nil && sources.Unit.UnitID != unit.UnitID {
+    return *sources.Unit, true
+}
+```
 
 ---
 

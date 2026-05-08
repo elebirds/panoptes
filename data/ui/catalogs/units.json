@@ -2,12 +2,13 @@
   "$schema": "../../schema/ui/units.schema.json",
   "units": [
     { "id": "settler", "name": "开拓者", "description": "用于建立新城市。", "icon_key": "unit_settler", "prefab_key": "Settler", "sort_order": 10, "tags": ["civilian"] },
-    { "id": "infantry", "name": "步兵", "description": "基础近战战斗单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 20, "tags": ["frontline"] },
-    { "id": "archer", "name": "弓手", "description": "基础远程压制单位。", "icon_key": "unit_archer", "prefab_key": "Archer", "sort_order": 30, "tags": ["ranged"] },
-    { "id": "raider", "name": "掠袭兵", "description": "破坏道路并劫掠城市储备。", "icon_key": "unit_infantry", "prefab_key": "Fighter", "sort_order": 40, "tags": ["raider", "sabotage"] },
-    { "id": "siege_engine", "name": "攻城器械", "description": "用于摧毁城市核心和防御设施。", "icon_key": "unit_siege_engine", "prefab_key": "SiegeEngine", "sort_order": 50, "tags": ["siege"] },
-    { "id": "cavalry", "name": "骑兵", "description": "高机动冲锋单位，适合快速增援和截击。", "icon_key": "unit_cavalry", "prefab_key": "Cavalry", "sort_order": 60, "tags": ["mobile", "charge"] },
-    { "id": "scout", "name": "斥候", "description": "高速侦察单位，不适合直接战斗。", "icon_key": "unit_scout", "prefab_key": "Scout", "sort_order": 70, "tags": ["civilian", "visibility"] },
-    { "id": "spearman", "name": "长矛兵", "description": "廉价可靠的职业近战部队。", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 80, "tags": ["frontline", "melee"] }
+    { "id": "engineer", "name": "工程队", "description": "低速移动并在实际行进路径上铺设道路。", "icon_key": "unit_settler", "prefab_key": "Settler", "sort_order": 20, "tags": ["civilian", "logistics"] },
+    { "id": "infantry", "name": "步兵", "description": "基础近战战斗单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 30, "tags": ["frontline"] },
+    { "id": "archer", "name": "弓手", "description": "基础远程压制单位。", "icon_key": "unit_archer", "prefab_key": "Archer", "sort_order": 40, "tags": ["ranged"] },
+    { "id": "raider", "name": "掠袭兵", "description": "破坏道路并劫掠城市储备。", "icon_key": "unit_infantry", "prefab_key": "Fighter", "sort_order": 50, "tags": ["raider", "sabotage"] },
+    { "id": "siege_engine", "name": "攻城器械", "description": "用于摧毁城市核心和防御设施。", "icon_key": "unit_siege_engine", "prefab_key": "SiegeEngine", "sort_order": 60, "tags": ["siege"] },
+    { "id": "cavalry", "name": "骑兵", "description": "高机动冲锋单位，适合快速增援和截击。", "icon_key": "unit_cavalry", "prefab_key": "Cavalry", "sort_order": 70, "tags": ["mobile", "charge"] },
+    { "id": "scout", "name": "斥候", "description": "高速侦察单位，不适合直接战斗。", "icon_key": "unit_scout", "prefab_key": "Scout", "sort_order": 80, "tags": ["civilian", "visibility"] },
+    { "id": "spearman", "name": "长矛兵", "description": "廉价可靠的职业近战部队。", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 90, "tags": ["frontline", "melee"] }
   ]
 }

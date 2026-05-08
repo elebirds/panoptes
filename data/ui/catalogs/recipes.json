@@ -14,13 +14,14 @@
     { "id": "granary_rations", "name": "整备口粮", "description": "将粮食转为更高效的补给产出。", "icon_key": "recipe_farm_food", "sort_order": 100, "tags": ["food", "storage"] },
     { "id": "smelter_refined_ore", "name": "矿石冶炼", "description": "消耗木材和矿石，提高矿石加工产出。", "icon_key": "recipe_mine_ore", "sort_order": 110, "tags": ["ore", "industry"] },
     { "id": "stable_cavalry", "name": "训练骑兵", "description": "产出高速骑兵。", "icon_key": "unit_cavalry", "sort_order": 120, "tags": ["military", "mobile"] },
-    { "id": "engineer_camp_raider", "name": "训练掠袭兵", "description": "产出擅长破坏道路的掠袭兵。", "icon_key": "recipe_barracks_infantry", "sort_order": 130, "tags": ["military", "sabotage"] },
-    { "id": "engineer_camp_siege_engine", "name": "组装攻城器械", "description": "产出用于摧毁防御设施的攻城器械。", "icon_key": "unit_siege_engine", "sort_order": 140, "tags": ["military", "siege"] },
-    { "id": "warehouse_reserve_rations", "name": "后备口粮", "description": "整理粮食储备，提高短缺时的口粮可用量。", "icon_key": "recipe_farm_food", "sort_order": 150, "tags": ["food", "storage"] },
-    { "id": "market_grain_contracts", "name": "粮食契约", "description": "用木材与矿石换取粮食。", "icon_key": "recipe_farm_food", "sort_order": 160, "tags": ["trade", "food"] },
-    { "id": "market_lumber_contracts", "name": "木材契约", "description": "用粮食与矿石换取木材。", "icon_key": "recipe_lumber_wood", "sort_order": 170, "tags": ["trade", "wood"] },
-    { "id": "market_ore_contracts", "name": "矿石契约", "description": "用粮食与木材换取矿石。", "icon_key": "recipe_mine_ore", "sort_order": 180, "tags": ["trade", "ore"] },
-    { "id": "watchtower_scout", "name": "训练斥候", "description": "产出高速侦察单位。", "icon_key": "unit_scout", "sort_order": 190, "tags": ["visibility"] },
-    { "id": "training_ground_spearman", "name": "训练长矛兵", "description": "产出职业近战部队。", "icon_key": "recipe_barracks_infantry", "sort_order": 200, "tags": ["military", "melee"] }
+    { "id": "engineer_camp_engineer", "name": "组织工程队", "description": "产出可随行军铺设道路的工程队。", "icon_key": "unit_settler", "sort_order": 130, "tags": ["logistics", "road"] },
+    { "id": "engineer_camp_raider", "name": "训练掠袭兵", "description": "产出擅长破坏道路的掠袭兵。", "icon_key": "recipe_barracks_infantry", "sort_order": 140, "tags": ["military", "sabotage"] },
+    { "id": "engineer_camp_siege_engine", "name": "组装攻城器械", "description": "产出用于摧毁防御设施的攻城器械。", "icon_key": "unit_siege_engine", "sort_order": 150, "tags": ["military", "siege"] },
+    { "id": "warehouse_reserve_rations", "name": "后备口粮", "description": "整理粮食储备，提高短缺时的口粮可用量。", "icon_key": "recipe_farm_food", "sort_order": 160, "tags": ["food", "storage"] },
+    { "id": "market_grain_contracts", "name": "粮食契约", "description": "用木材与矿石换取粮食。", "icon_key": "recipe_farm_food", "sort_order": 170, "tags": ["trade", "food"] },
+    { "id": "market_lumber_contracts", "name": "木材契约", "description": "用粮食与矿石换取木材。", "icon_key": "recipe_lumber_wood", "sort_order": 180, "tags": ["trade", "wood"] },
+    { "id": "market_ore_contracts", "name": "矿石契约", "description": "用粮食与木材换取矿石。", "icon_key": "recipe_mine_ore", "sort_order": 190, "tags": ["trade", "ore"] },
+    { "id": "watchtower_scout", "name": "训练斥候", "description": "产出高速侦察单位。", "icon_key": "unit_scout", "sort_order": 200, "tags": ["visibility"] },
+    { "id": "training_ground_spearman", "name": "训练长矛兵", "description": "产出职业近战部队。", "icon_key": "recipe_barracks_infantry", "sort_order": 210, "tags": ["military", "melee"] }
   ]
 }

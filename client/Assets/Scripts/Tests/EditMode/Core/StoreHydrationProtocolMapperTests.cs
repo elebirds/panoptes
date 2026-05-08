@@ -194,7 +194,7 @@ namespace Panoptes.Tests.EditMode.Core
                     {
                         MinisterRole = "military",
                         Available = true,
-                        JsonPayload = "{\"draft_id\":\"op-1\",\"player_id\":\"player-1\",\"minister_role\":\"military\",\"kind\":\"operation\",\"target_id\":\"north_front\",\"target_label\":\"北线\",\"title\":\"北线行动\",\"summary\":\"压迫敌军前线。\",\"rationale\":\"敌军补给不足。\",\"risk_note\":\"侧翼会变薄。\",\"status\":\"pending\",\"available\":true,\"turn\":6,\"source\":\"rule+llm\",\"operation_id\":\"north-front\",\"objective\":\"夺取北部渡口\",\"operation_steps\":[{\"draft_id\":\"step-1\",\"kind\":\"unit_order\",\"target_label\":\"弓兵前压至 N2\",\"unit_id\":\"u-archer\",\"action\":\"move\",\"target_node_id\":\"N2\"},{\"draft_id\":\"step-2\",\"kind\":\"build\",\"target_label\":\"V3 修筑箭塔\",\"node_id\":\"V3\",\"building_type_id\":\"watchtower\"}]}"
+                        JsonPayload = "{\"draft_id\":\"op-1\",\"player_id\":\"player-1\",\"minister_role\":\"military\",\"kind\":\"operation\",\"target_id\":\"north_front\",\"target_label\":\"北线\",\"title\":\"北线行动\",\"summary\":\"压迫敌军前线。\",\"rationale\":\"敌军补给不足。\",\"risk_note\":\"侧翼会变薄。\",\"status\":\"pending\",\"available\":true,\"turn\":6,\"source\":\"llm_action\",\"operation_id\":\"north-front\",\"objective\":\"夺取北部渡口\",\"operation_steps\":[{\"draft_id\":\"step-1\",\"kind\":\"unit_order\",\"target_label\":\"弓兵前压至 N2\",\"unit_id\":\"u-archer\",\"action\":\"move\",\"target_node_id\":\"N2\"},{\"draft_id\":\"step-2\",\"kind\":\"build\",\"target_label\":\"V3 修筑箭塔\",\"node_id\":\"V3\",\"building_type_id\":\"watchtower\"}]}"
                     }
                 }
             });

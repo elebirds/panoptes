@@ -126,32 +126,12 @@ func (r *Runtime) ensureStartingInfantryAtSpawn(playerID string, spawnEntry *don
 	if !ok {
 		return
 	}
-	if r.hasOwnedUnitAtPosition(playerID, domain.UnitTypeInfantry, infantryPos) {
+	// 起始赠送兵同样遵守全局不堆叠规则：
+	// 只要目标格上已经有任何单位，这次补给就直接跳过，避免 bootstrap 偷偷制造例外。
+	if domain.HasUnitAtNode(r.state.World, infantryPos) {
 		return
 	}
 	ecs.CreateUnit(r.state.World, string(domain.UnitTypeInfantry), playerID, infantryPos)
-}
-
-func (r *Runtime) hasOwnedUnitAtPosition(playerID string, unitType domain.UnitType, pos domain.Position) bool {
-	if r == nil || r.state == nil || r.state.World == nil {
-		return false
-	}
-
-	found := false
-	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
-		if found || entry == nil {
-			return
-		}
-		stats := ecs.UnitStatsC.Get(entry)
-		if stats.Faction != playerID || stats.Type != unitType {
-			return
-		}
-		unitPos := ecs.PositionC.Get(entry)
-		if unitPos.Q == pos.Q && unitPos.R == pos.R {
-			found = true
-		}
-	})
-	return found
 }
 
 func (r *Runtime) validateBootstrapState() error {

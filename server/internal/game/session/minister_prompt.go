@@ -81,22 +81,23 @@ func (r *Runtime) BuildMinisterActionCandidateSummary(playerID string, role stri
 	if r == nil || r.state == nil {
 		return "(none)"
 	}
-	return buildMinisterActionCandidateSummary(r.state, playerID, role)
-}
-
-func buildMinisterActionCandidateSummary(state *domain.GameState, playerID string, role string) string {
-	if state == nil {
-		return "(none)"
-	}
-	playerID = strings.TrimSpace(playerID)
-	role = strings.TrimSpace(role)
-	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
+	turn := r.currentTurn()
+	r.PrepareMinisterDraftCacheForTurn(turn)
+	drafts := r.preparedMinisterDraftsForPlayer(turn, playerID)
 	if len(drafts) == 0 {
 		return "(none)"
 	}
+	return buildMinisterActionCandidateSummaryFromDrafts(turn, drafts, role)
+}
+
+func buildMinisterActionCandidateSummaryFromDrafts(turn int, drafts []domain.MinisterDraft, role string) string {
+	if turn <= 0 || len(drafts) == 0 {
+		return "(none)"
+	}
+	role = strings.TrimSpace(role)
 	parts := make([]string, 0, len(drafts))
 	for _, draft := range drafts {
-		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != state.Turn {
+		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
 			continue
 		}
 		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {

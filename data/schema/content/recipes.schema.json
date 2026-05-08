@@ -94,6 +94,7 @@
                   "enum": [
                     "archer",
                     "cavalry",
+                    "engineer",
                     "infantry",
                     "raider",
                     "scout",
