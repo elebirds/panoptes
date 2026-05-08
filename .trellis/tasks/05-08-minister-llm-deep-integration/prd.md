@@ -168,7 +168,7 @@
 ### MVP 核心体验（本次实现）
 - [ ] 大臣汇报带有主观色彩，同一份 truth 产生不同叙述（信息失真）
 - [ ] 玩家每回合有 3 个亲政令牌，用于查看真实状态或亲自操作（亲政令牌）
-- [ ] LLM 选择的行动进入锁定/批准流程（LLM Actions）
+- [x] LLM 选择的行动进入锁定/批准流程（LLM Actions）
 - [ ] 大臣忠诚度影响汇报的失真程度（行为影响）
 - [ ] 大臣记忆影响后续行为（被拒绝→保守）（行为影响）
 - [x] 支持强参与模式和弱参与模式（LLM 参与程度开关）
@@ -177,6 +177,7 @@
 - `MINISTER_LLM_PARTICIPATION_MODE=weak|strong` 已接入后端配置。
 - 弱模式保持既有玩家自由 planning 命令行为。
 - 强模式下，直接玩法命令必须先通过 `direct_command` 消耗亲政令牌进入 mandate mode；否则 planning 层会在命令处理前拒绝并保持状态不变。
+- LLM report `actions` 不再直接落 planning order，而是先转为 `MinisterDraft` / `MinisterProposalView`，等待玩家通过现有 accept/reject 指令批准或否决。
 
 ### 后续迭代
 - [ ] 客户端同时展示叙事轨和数值轨（双轨信息呈现）

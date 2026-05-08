@@ -8,13 +8,9 @@ package minister
 
 import (
 	"encoding/json"
-	"log/slog"
 	"strings"
 	"unicode"
 
-	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/event"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
@@ -235,62 +231,4 @@ func isObviouslyEnglishText(text string) bool {
 
 func isLatinLetter(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
-}
-
-type ActionRoom interface {
-	State() *domain.GameState
-}
-
-func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID string) []event.Event {
-	state := room.State()
-	events := make([]event.Event, 0)
-	for _, action := range actions {
-		switch action.Type {
-		case "build":
-			nodeID, _ := asString(action.Params["node_id"])
-			buildingType, _ := asString(action.Params["building_type"])
-			if nodeID == "" || buildingType == "" {
-				continue
-			}
-			state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
-		case "repair_road":
-			// 道路当前仍未接入 Chunk 3 统一预算与 map action 结算，
-			// 这里禁止部长直接落图，避免绕过点数账本。
-			continue
-		case "move_units":
-			unitID, _ := asString(action.Params["unit_id"])
-			targetNode, _ := asString(action.Params["target_node"])
-			if unitID == "" || targetNode == "" {
-				continue
-			}
-			nodeEntry, ok := state.GetNode(targetNode)
-			if !ok {
-				continue
-			}
-			p := ecs.PositionC.Get(nodeEntry)
-			pos := domain.Position{Q: p.Q, R: p.R}
-			state.TurnRuntime.Planning.MinisterMoves = append(state.TurnRuntime.Planning.MinisterMoves, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
-		case "redirect_flow":
-			// redirect_flow 暂时只记录，不直接修改持久配置。
-		default:
-			slog.Warn("unknown minister action", "type", action.Type)
-		}
-	}
-	return events
-}
-
-func asString(v any) (string, bool) {
-	s, ok := v.(string)
-	return s, ok
-}
-
-func asInt(v any) (int, bool) {
-	switch t := v.(type) {
-	case float64:
-		return int(t), true
-	case int:
-		return t, true
-	default:
-		return 0, false
-	}
 }

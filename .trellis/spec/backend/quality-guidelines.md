@@ -149,14 +149,14 @@ if ok {
 }
 ```
 
-### Scenario: Minister Report Actions Routed Through Planning Rules
+### Scenario: Minister Report Actions Become Approval-Gated Proposals
 
 #### 1. Scope / Trigger
-- Trigger: minister report generation returns structured `actions` that should be applied to the authoritative planning path instead of being ignored.
-- Minister actions remain advisory output from the LLM, but the backend must convert them into normal planning writes and let existing validation decide whether they survive.
+- Trigger: minister report generation returns structured `actions` that should become player-visible proposals instead of mutating planning state immediately.
+- Minister actions remain advisory output from the LLM, but the backend must convert them into pending minister drafts / proposals and let the player approve them through the existing minister draft flow.
 
 #### 2. Signatures
-- Engine callback: `RuntimeRoom.ApplyMinisterActions(playerID string, actions []MinisterActionItem) error`
+- Engine callback: `RuntimeRoom.ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error`
 - Supported action types in the current contract:
   - `build`
   - `move_units`
@@ -170,27 +170,29 @@ if ok {
 
 #### 3. Contracts
 - `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.
-- Session-level action application must route through existing planning validation and planning writes.
-- Build actions must be validated with the normal build-order rules before adding a planning build order.
-- Move actions must be validated with the normal unit-order rules before calling the shared planning-unit-order writer.
+- Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
+- Build actions must be validated with the normal build-order rules before creating a pending minister draft.
+- Move actions must be validated with the normal unit-order rules before creating a pending minister draft.
 - Invalid minister actions are ignored after logging; they must not mutate authority directly or bypass the normal planning checks.
+- Staged actions should be visible through `MsgGameSync.minister_proposals` and remain pending until accepted.
 
 #### 4. Validation & Error Matrix
 - Missing action type or required params -> ignore the action.
-- Build action fails `ValidateBuildOrder` -> log warning, do not queue a build order.
-- Move action fails `ValidatePlanningUnitOrder` -> log warning, do not queue a unit order.
+- Build action fails `ValidateBuildOrder` -> log warning, do not create a proposal.
+- Move action fails `ValidatePlanningUnitOrder` -> log warning, do not create a proposal.
 - Unsupported action type -> log warning, ignore.
-- Valid build/move action -> queue through the normal planning surfaces.
+- Valid build/move action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
 
 #### 5. Good/Base/Bad Cases
-- Good: LLM returns `build` with a valid node/building pair and the session queues a `domain.BuildOrder`.
-- Base: LLM returns `move_units` and the session uses `game/orders.ApplyPlanningUnitOrder` to keep the active march cache in sync.
+- Good: LLM returns `build` with a valid node/building pair and the session creates a pending minister proposal that the player can approve.
+- Base: LLM returns `move_units` and the session creates a pending movement proposal that later flows through the same approve/reject path as other minister drafts.
 - Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
 
 #### 6. Tests Required
 - Engine test confirms parsed actions are forwarded to the room callback.
-- Session test confirms valid minister build actions queue build orders.
-- Session test confirms valid minister move actions queue unit orders and active marches.
+- Session test confirms valid minister build actions stage pending minister drafts.
+- Session test confirms valid minister move actions stage pending minister drafts.
+- Projection/query test confirms minister proposals carry typed commands and raw JSON.
 - Regression tests confirm invalid minister actions are ignored, not applied.
 
 #### 7. Wrong vs Correct
@@ -201,7 +203,8 @@ state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.Mi
 #### Correct
 ```go
 if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, cityID); errCode == "" {
-    room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
+    draft := domain.MinisterDraft{Kind: domain.MinisterDraftKindBuild, Status: domain.MinisterDraftStatusPending}
+    state.TurnRuntime.Planning.SetMinisterDrafts(playerID, append(existingDrafts, draft))
 }
 ```
 

@@ -40,6 +40,7 @@ type ministerEngineTestRoom struct {
 	input          ReportPromptInput
 	messages       []proto.Message
 	appliedPlayer  string
+	appliedRole    string
 	appliedActions []MinisterActionItem
 }
 
@@ -60,8 +61,9 @@ func (r *ministerEngineTestRoom) BuildMinisterReportInput(_ string, _ string) Re
 	return r.input
 }
 
-func (r *ministerEngineTestRoom) ApplyMinisterActions(playerID string, actions []MinisterActionItem) error {
+func (r *ministerEngineTestRoom) ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error {
 	r.appliedPlayer = playerID
+	r.appliedRole = role
 	r.appliedActions = append(r.appliedActions, actions...)
 	return nil
 }
@@ -153,6 +155,9 @@ func TestGenerateOneReportForwardsActionsToRoom(t *testing.T) {
 
 	if room.appliedPlayer != "player-1" {
 		t.Fatalf("applied player = %q, want player-1", room.appliedPlayer)
+	}
+	if room.appliedRole != "domestic" {
+		t.Fatalf("applied role = %q, want domestic", room.appliedRole)
 	}
 	if len(room.appliedActions) != 2 {
 		t.Fatalf("applied actions = %#v, want 2 parsed actions", room.appliedActions)

@@ -6,11 +6,13 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/game/query"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
-func TestRuntimeApplyMinisterActionsQueuesValidatedBuildAndMoveOrders(t *testing.T) {
+func TestRuntimeApplyMinisterActionsStagesValidatedBuildAndMoveProposals(t *testing.T) {
 	previous := staticdata.Default()
 	t.Cleanup(func() {
 		staticdata.SetDefault(previous)
@@ -50,10 +52,11 @@ func TestRuntimeApplyMinisterActionsQueuesValidatedBuildAndMoveOrders(t *testing
 	unitEntry := state.World.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 
-	runtime := newTestRuntime("game-1", []*capturePlayer{{playerID: "player-1", username: "alice"}}, nil)
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	runtime.SetState(state)
 
-	err := runtime.ApplyMinisterActions("player-1", []ministerengine.MinisterActionItem{
+	err := runtime.ApplyMinisterActions("player-1", "domestic", []ministerengine.MinisterActionItem{
 		{
 			Type: "build",
 			Params: map[string]any{
@@ -74,22 +77,42 @@ func TestRuntimeApplyMinisterActionsQueuesValidatedBuildAndMoveOrders(t *testing
 		t.Fatalf("ApplyMinisterActions error = %v", err)
 	}
 
-	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 1 {
-		t.Fatalf("build orders = %d, want 1", got)
+	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
+		t.Fatalf("build orders = %d, want 0 before approval", got)
 	}
-	build := state.TurnRuntime.Planning.BuildOrders[0]
-	if build.PlayerID != "player-1" || build.NodeID != "A2" || build.BuildingType != "farm" || build.CityID != "A1" {
-		t.Fatalf("build order = %#v, want minister build queued", build)
+	builds := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(builds) != 2 {
+		t.Fatalf("minister drafts = %#v, want 2 proposals", builds)
 	}
-
-	move, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]
-	if !ok {
-		t.Fatalf("minister move order missing")
+	for _, draft := range builds {
+		if draft.Source != domain.MinisterDraftSourceLLMAction {
+			t.Fatalf("draft = %#v, want llm action source", draft)
+		}
+		if draft.Status != domain.MinisterDraftStatusPending || !draft.Available {
+			t.Fatalf("draft = %#v, want pending and available", draft)
+		}
 	}
-	if move.Action != "move" || move.TargetNodeID != "A2" {
-		t.Fatalf("minister move directive = %#v, want queued move order", move)
+	var syncMsg *pb.MsgGameSync
+	for i := len(player.sent) - 1; i >= 0; i-- {
+		if msg, ok := player.sent[i].(*pb.MsgGameSync); ok {
+			syncMsg = msg
+			break
+		}
 	}
-	if _, ok := state.TurnRuntime.Resolving.ActiveMarches["infantry-1"]; !ok {
-		t.Fatalf("active march missing for minister move")
+	if syncMsg == nil {
+		t.Fatalf("game sync message missing")
+	}
+	if got := len(syncMsg.GetMinisterProposals()); got != 2 {
+		t.Fatalf("minister proposals = %d, want 2", got)
+	}
+	proposals := query.BuildMinisterProposalViews(state, "player-1")
+	if len(proposals) != 2 {
+		t.Fatalf("proposal views = %d, want 2", len(proposals))
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0 before approval", got)
+	}
+	if got := len(state.TurnRuntime.Planning.UnitOrders); got != 0 {
+		t.Fatalf("unit orders = %d, want 0 before approval", got)
 	}
 }
