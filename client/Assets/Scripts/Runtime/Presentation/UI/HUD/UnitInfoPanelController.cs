@@ -3,6 +3,7 @@ using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using TMPro;
@@ -356,55 +357,17 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var sprite = LoadIconSprite(iconKey, unitType);
+            var sprite = UiIconLoader.LoadSprite(
+                iconKey,
+                unitType,
+                unitIconResourcesRoot,
+                buildingIconResourcesRoot,
+                resourceIconResourcesRoot);
             unitIcon.enabled = true;
             unitIcon.gameObject.SetActive(true);
             unitIcon.preserveAspect = true;
             unitIcon.sprite = sprite;
             unitIcon.color = sprite == null ? new Color(0.3f, 0.3f, 0.3f, 1f) : Color.white;
-        }
-
-        private Sprite LoadIconSprite(string iconKey, string fallbackId)
-        {
-            var sprite = LoadIconSpriteByKey(iconKey);
-            return sprite != null ? sprite : LoadIconSpriteByKey(fallbackId);
-        }
-
-        private Sprite LoadIconSpriteByKey(string key)
-        {
-            key = NormalizeToken(key);
-            if (string.IsNullOrEmpty(key))
-            {
-                return null;
-            }
-
-            var sprite = Resources.Load<Sprite>(key);
-            if (sprite == null)
-            {
-                sprite = LoadIconSpriteFromRoot(unitIconResourcesRoot, key);
-            }
-
-            if (sprite == null)
-            {
-                sprite = LoadIconSpriteFromRoot(buildingIconResourcesRoot, key);
-            }
-
-            if (sprite == null)
-            {
-                sprite = LoadIconSpriteFromRoot(resourceIconResourcesRoot, key);
-            }
-
-            return sprite;
-        }
-
-        private static Sprite LoadIconSpriteFromRoot(string root, string key)
-        {
-            if (string.IsNullOrWhiteSpace(root) || string.IsNullOrWhiteSpace(key))
-            {
-                return null;
-            }
-
-            return Resources.Load<Sprite>($"{root.Trim().TrimEnd('/')}/{key}");
         }
 
         private bool TryRefreshUnitPortrait(bool forceRender)

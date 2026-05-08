@@ -278,6 +278,23 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class MinisterSkillCardJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string[] role_tags;
+            public string rarity;
+            public string effect_key;
+            public string trigger_timing;
+            public int delay_turns;
+            public int duration_turns;
+            public int sort_order;
+            public string[] tags;
+        }
+
+        [Serializable]
         public sealed class TechTreeLayoutPointJson
         {
             public float x;
@@ -349,6 +366,7 @@ namespace Panoptes.Core.Application.Cache
             public TerrainEntryJson[] terrains;
             public RulesJson rules;
             public MinisterJson[] ministers;
+            public MinisterSkillCardJson[] minister_skill_cards;
             public MapEntryJson[] maps;
             public TechTreeLayoutJson ui_tech_tree_layout;
             public BuildMenuLayoutJson ui_build_menu_layout;
@@ -420,6 +438,12 @@ namespace Panoptes.Core.Application.Cache
         private sealed class MinistersSectionJson
         {
             public MinisterJson[] ministers;
+        }
+
+        [Serializable]
+        private sealed class MinisterSkillCardsSectionJson
+        {
+            public MinisterSkillCardJson[] minister_skill_cards;
         }
 
         [Serializable]
@@ -497,6 +521,7 @@ namespace Panoptes.Core.Application.Cache
 
         private RulesJson _rules;
         private MinisterJson[] _ministers = Array.Empty<MinisterJson>();
+        private MinisterSkillCardJson[] _ministerSkillCards = Array.Empty<MinisterSkillCardJson>();
         private TechTreeLayoutJson _techTreeLayout;
         private BuildMenuLayoutJson _buildMenuLayout;
         private RecipeLayoutJson _recipeLayout;
@@ -517,6 +542,7 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
         public RulesJson Rules => _rules;
         public IReadOnlyList<MinisterJson> Ministers => _ministers;
+        public IReadOnlyList<MinisterSkillCardJson> MinisterSkillCards => _ministerSkillCards;
         public TechTreeLayoutJson TechTreeLayout => _techTreeLayout;
         public BuildMenuLayoutJson BuildMenuLayout => _buildMenuLayout;
         public RecipeLayoutJson RecipeLayout => _recipeLayout;
@@ -580,6 +606,7 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
             _rules = parsed.rules;
             _ministers = parsed.ministers ?? Array.Empty<MinisterJson>();
+            _ministerSkillCards = parsed.minister_skill_cards ?? Array.Empty<MinisterSkillCardJson>();
             _techTreeLayout = parsed.ui_tech_tree_layout;
             _buildMenuLayout = parsed.ui_build_menu_layout;
             _recipeLayout = parsed.ui_recipe_layout;
@@ -929,6 +956,7 @@ namespace Panoptes.Core.Application.Cache
             _syncedSectionHashes.Clear();
             _rules = null;
             _ministers = Array.Empty<MinisterJson>();
+            _ministerSkillCards = Array.Empty<MinisterSkillCardJson>();
             _techTreeLayout = null;
             _buildMenuLayout = null;
             _recipeLayout = null;
@@ -1014,6 +1042,7 @@ namespace Panoptes.Core.Application.Cache
             yield return ("terrains", JsonUtility.ToJson(new TerrainsSectionJson { terrains = _terrainsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("rules", JsonUtility.ToJson(new RulesSectionJson { rules = _rules ?? new RulesJson() }));
             yield return ("ministers", JsonUtility.ToJson(new MinistersSectionJson { ministers = _ministers ?? Array.Empty<MinisterJson>() }));
+            yield return ("minister_skill_cards", JsonUtility.ToJson(new MinisterSkillCardsSectionJson { minister_skill_cards = _ministerSkillCards ?? Array.Empty<MinisterSkillCardJson>() }));
             yield return ("maps", JsonUtility.ToJson(new MapsSectionJson { maps = _mapsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("ui_tech_tree_layout", JsonUtility.ToJson(_techTreeLayout ?? new TechTreeLayoutJson()));
             yield return ("ui_build_menu_layout", JsonUtility.ToJson(_buildMenuLayout ?? new BuildMenuLayoutJson()));
@@ -1145,6 +1174,9 @@ namespace Panoptes.Core.Application.Cache
                         return true;
                     case "ministers":
                         _ministers = JsonUtility.FromJson<MinistersSectionJson>(payload)?.ministers ?? Array.Empty<MinisterJson>();
+                        return true;
+                    case "minister_skill_cards":
+                        _ministerSkillCards = JsonUtility.FromJson<MinisterSkillCardsSectionJson>(payload)?.minister_skill_cards ?? Array.Empty<MinisterSkillCardJson>();
                         return true;
                     case "maps":
                         RebuildIndex(_mapsById, JsonUtility.FromJson<MapsSectionJson>(payload)?.maps, entry => entry != null ? entry.id : string.Empty);

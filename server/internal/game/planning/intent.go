@@ -54,6 +54,7 @@ type SetMinisterDirectiveIntent struct {
 	MinisterRole  string
 	DirectiveType string
 	DraftID       string
+	SkillCardID   string
 }
 
 func (SetMinisterDirectiveIntent) isPlanningIntent() {}

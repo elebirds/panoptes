@@ -681,7 +681,7 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 	}
 }
 
-func TestRuntimeInitializePreparedDevModeKeepsBuildingAndRecipeLocked(t *testing.T) {
+func TestRuntimeInitializePreparedDevModeLeavesTechnologiesLocked(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "barracks"},
@@ -708,15 +708,18 @@ func TestRuntimeInitializePreparedDevModeKeepsBuildingAndRecipeLocked(t *testing
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
+	if runtime.state.HasTechnologyUnlocked("player-1", "military_foundation") {
+		t.Fatalf("technology military_foundation should stay locked in dev mode")
+	}
 	if runtime.state.IsBuildingUnlocked("player-1", "barracks") {
-		t.Fatalf("building barracks should remain locked in dev mode")
+		t.Fatalf("building barracks should stay locked in dev mode")
 	}
 	if runtime.state.IsRecipeUnlocked("player-1", "barracks_infantry") {
-		t.Fatalf("recipe barracks_infantry should remain locked in dev mode")
+		t.Fatalf("recipe barracks_infantry should stay locked in dev mode")
 	}
 }
 
-func TestRuntimeInitializePreparedNonDevModeKeepsBuildingAndRecipeLocked(t *testing.T) {
+func TestRuntimeInitializePreparedNonDevModeLeavesTechnologiesLocked(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "barracks"},
@@ -743,11 +746,14 @@ func TestRuntimeInitializePreparedNonDevModeKeepsBuildingAndRecipeLocked(t *test
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
+	if runtime.state.HasTechnologyUnlocked("player-1", "military_foundation") {
+		t.Fatalf("technology military_foundation should stay locked when dev mode is disabled")
+	}
 	if runtime.state.IsBuildingUnlocked("player-1", "barracks") {
-		t.Fatalf("building barracks should remain locked when dev mode is disabled")
+		t.Fatalf("building barracks should stay locked when dev mode is disabled")
 	}
 	if runtime.state.IsRecipeUnlocked("player-1", "barracks_infantry") {
-		t.Fatalf("recipe barracks_infantry should remain locked when dev mode is disabled")
+		t.Fatalf("recipe barracks_infantry should stay locked when dev mode is disabled")
 	}
 }
 

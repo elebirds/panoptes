@@ -167,23 +167,29 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	var payload struct {
 		DirectiveType string `json:"directive_type"`
 		DraftID       string `json:"draft_id"`
+		SkillCardID   string `json:"skill_card_id"`
 	}
 	if err := json.Unmarshal([]byte(msg.GetContent()), &payload); err != nil {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "invalid minister directive payload")
 	}
 	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
+	payload.SkillCardID = strings.TrimSpace(payload.SkillCardID)
 	switch payload.DirectiveType {
-	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command":
+	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command", "activate_skill":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}
 	if (payload.DirectiveType == "accept" || payload.DirectiveType == "reject") && payload.DraftID == "" {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "draft_id is required")
 	}
+	if payload.DirectiveType == "activate_skill" && payload.SkillCardID == "" {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "skill_card_id is required")
+	}
 	return SetMinisterDirectiveIntent{
 		MinisterRole:  role,
 		DirectiveType: payload.DirectiveType,
 		DraftID:       payload.DraftID,
+		SkillCardID:   payload.SkillCardID,
 	}, nil
 }

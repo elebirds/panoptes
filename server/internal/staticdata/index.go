@@ -41,6 +41,7 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 		institutions:          make(map[string]InstitutionDefinition, len(bundle.Institutions)),
 		recipes:               make(map[string]RecipeDefinition, len(bundle.Recipes)),
 		terrains:              make(map[string]TerrainDefinition, len(bundle.Terrains)),
+		ministerSkills:        make(map[string]MinisterSkillCard, len(bundle.MinisterSkillCards)),
 		maps:                  make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
 		sectionPayloads:       sectionPayloads,
 	}
@@ -74,6 +75,9 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 	for _, terrain := range bundle.Terrains {
 		catalog.terrains[terrain.ID] = terrain
+	}
+	for _, skill := range bundle.MinisterSkillCards {
+		catalog.ministerSkills[skill.ID] = skill
 	}
 	for _, runtime := range maps {
 		if runtime == nil {

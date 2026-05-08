@@ -83,6 +83,7 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 		Terrains:              authored.Terrains.Value.Terrains,
 		Rules:                 authored.Rules.Value,
 		Ministers:             authored.Ministers.Value.Pool,
+		MinisterSkillCards:    authored.MinisterSkillCards.Value.MinisterSkillCards,
 		Maps:                  entries,
 		UITechTreeLayout:      authored.TechnologyTreeUI.Value,
 		UIBuildMenuLayout:     buildBuildMenuLayout(authored.Buildings.Value.Buildings),

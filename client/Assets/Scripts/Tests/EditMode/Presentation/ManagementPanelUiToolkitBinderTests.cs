@@ -197,10 +197,16 @@ namespace Panoptes.Tests.EditMode.Presentation
         [Test]
         public void MinisterReportBinder_ShouldRenderUguiMinisterConversationWhenVisible()
         {
+            ActionLock.Release();
             _root = new GameObject("MinisterReportPaintTest");
             var binder = _root.AddComponent<MinisterReportUiToolkitBinder>();
             var draftStore = new PlanningDraftStore();
-            var viewModel = new MinisterReportViewModel(draftStore);
+            var sender = new RecordingMessageSender();
+            var viewModel = new MinisterReportViewModel(
+                draftStore,
+                null,
+                null,
+                new MinisterCommandService(sender));
             var visibilityStore = new ManagementPanelVisibilityStore();
             InjectMinisterReport(binder, viewModel, visibilityStore);
             binder.Render(new MinisterReportState(
@@ -220,6 +226,16 @@ namespace Panoptes.Tests.EditMode.Presentation
                 {
                     new MinisterReplyOptionState("accept", string.Empty, "domestic", "采纳全部", "采纳", true),
                     new MinisterReplyOptionState("reject", string.Empty, "domestic", "暂不采纳", "暂不采纳", false)
+                },
+                new[]
+                {
+                    new MinisterSkillCardState(
+                        "stargazing",
+                        "domestic",
+                        "观星",
+                        "下一回合展开全图视野，仅持续一回合。",
+                        "下一回合生效，持续 1 回合",
+                        true)
                 }));
 
             visibilityStore.Show(ManagementPanelId.MinisterReport);
@@ -237,6 +253,25 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(ContainsText(texts, "建议扩张粮食产出。"), Is.True);
             Assert.That(ContainsText(texts, "采纳全部"), Is.True);
             Assert.That(ContainsText(texts, "暂不采纳"), Is.True);
+            Assert.That(ContainsText(texts, "部长技能"), Is.True);
+
+            var skillButton = FindButton(MinisterReportUiToolkitBinder.SkillButtonName);
+            Assert.That(skillButton, Is.Not.Null);
+            skillButton!.onClick.Invoke();
+
+            texts = _root.GetComponentsInChildren<TextMeshProUGUI>(true);
+            Assert.That(ContainsText(texts, "观星"), Is.True);
+            Assert.That(ContainsText(texts, "下一回合展开全图视野，仅持续一回合。"), Is.True);
+            Assert.That(ContainsText(texts, "释放技能"), Is.True);
+
+            var activateButton = FindButton("Activate");
+            Assert.That(activateButton, Is.Not.Null);
+            activateButton!.onClick.Invoke();
+            var directive = sender.LastMessage as MsgSetMinisterDirective;
+            Assert.That(directive, Is.Not.Null);
+            Assert.That(directive!.MinisterRole, Is.EqualTo("domestic"));
+            StringAssert.Contains("\"directive_type\":\"activate_skill\"", directive.Content);
+            StringAssert.Contains("\"skill_card_id\":\"stargazing\"", directive.Content);
 
             var images = _root.GetComponentsInChildren<UguiImage>(true);
             Assert.That(images, Has.Some.Matches<UguiImage>(image =>
@@ -450,6 +485,20 @@ namespace Panoptes.Tests.EditMode.Presentation
             }
 
             return false;
+        }
+
+        private UguiButton FindButton(string name)
+        {
+            var buttons = _root.GetComponentsInChildren<UguiButton>(true);
+            for (var i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i] != null && buttons[i].gameObject.name == name)
+                {
+                    return buttons[i];
+                }
+            }
+
+            return null;
         }
 
         private static void InjectManagementHost(

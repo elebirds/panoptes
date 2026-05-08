@@ -559,6 +559,35 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			),
 			nil,
 		),
+		filepath.Join("content", "minister_skill_cards.schema.json"): schemaDocument(
+			filepath.Join("content", "minister_skill_cards.schema.json"),
+			authoredRootSchema(
+				map[string]any{
+					"minister_skill_cards": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":             stringSchema(nil),
+								"name":           stringSchema(nil),
+								"description":    stringSchema(nil),
+								"icon_key":       stringSchema(nil),
+								"role_tags":      arraySchema(stringSchema(nil), nil),
+								"rarity":         stringSchema(nil),
+								"effect_key":     stringSchema(nil),
+								"trigger_timing": enumSchema([]string{"activated", "passive", "planning_start"}),
+								"delay_turns":    intSchema(map[string]any{"minimum": 0}),
+								"duration_turns": intSchema(map[string]any{"minimum": 1}),
+								"sort_order":     intSchema(nil),
+								"tags":           arraySchema(stringSchema(nil), nil),
+							},
+							[]string{"id", "name", "description", "icon_key", "role_tags", "rarity", "effect_key", "trigger_timing", "delay_turns", "duration_turns", "sort_order"},
+						),
+						map[string]any{"minItems": 1},
+					),
+				},
+				[]string{"minister_skill_cards"},
+			),
+			nil,
+		),
 		filepath.Join("content", "maps", "definition.schema.json"): schemaDocument(
 			filepath.Join("content", "maps", "definition.schema.json"),
 			authoredRootSchema(

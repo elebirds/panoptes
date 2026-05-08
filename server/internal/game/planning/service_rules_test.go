@@ -1108,11 +1108,43 @@ func newMinisterDraftPlanningState(t *testing.T) *domain.GameState {
 			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
 			{ID: "expansion", Name: "Expansion", Layer: "national"},
 		},
+		MinisterSkillCards: []staticdata.MinisterSkillCard{
+			{ID: "stargazing", Name: "观星", EffectKey: "next_turn_full_map_vision", RoleTags: []string{"domestic"}, DelayTurns: 1, DurationTurns: 1},
+		},
 	}))
 
 	state := domain.NewGameState("game-minister-draft", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Players["player-1"].Policy = domain.Policy("reorganization")
 	return state
+}
+
+func TestSetMinisterDirectiveActivatesStargazingSkill(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.Turn = 2
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"activate_skill","skill_card_id":"stargazing"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if domain.PlayerHasFullMapVision(state, "player-1") {
+		t.Fatalf("full map vision active immediately, want next turn")
+	}
+	state.Turn = 3
+	if !domain.PlayerHasFullMapVision(state, "player-1") {
+		t.Fatalf("stargazing did not activate next turn")
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot == nil {
+		t.Fatalf("planning snapshot not sent after skill activation")
+	}
 }
 
 func decodeMinisterDraftStatus(t *testing.T, drafts []*pb.MinisterDraftView, draftID string) string {

@@ -8,21 +8,22 @@ import (
 )
 
 const (
-	SectionResources        = "resources"
-	SectionPoints           = "points"
-	SectionUnits            = "units"
-	SectionBuildings        = "buildings"
-	SectionTechnologies     = "technologies"
-	SectionPolicies         = "policies"
-	SectionInstitutions     = "institutions"
-	SectionRecipes          = "recipes"
-	SectionTerrains         = "terrains"
-	SectionRules            = "rules"
-	SectionMinisters        = "ministers"
-	SectionMaps             = "maps"
-	SectionUITechTreeLayout = "ui_tech_tree_layout"
-	SectionUIBuildMenu      = "ui_build_menu_layout"
-	SectionUIRecipeLayout   = "ui_recipe_layout"
+	SectionResources          = "resources"
+	SectionPoints             = "points"
+	SectionUnits              = "units"
+	SectionBuildings          = "buildings"
+	SectionTechnologies       = "technologies"
+	SectionPolicies           = "policies"
+	SectionInstitutions       = "institutions"
+	SectionRecipes            = "recipes"
+	SectionTerrains           = "terrains"
+	SectionRules              = "rules"
+	SectionMinisters          = "ministers"
+	SectionMinisterSkillCards = "minister_skill_cards"
+	SectionMaps               = "maps"
+	SectionUITechTreeLayout   = "ui_tech_tree_layout"
+	SectionUIBuildMenu        = "ui_build_menu_layout"
+	SectionUIRecipeLayout     = "ui_recipe_layout"
 )
 
 type sectionSpec struct {
@@ -75,6 +76,10 @@ type ministersSection struct {
 	Ministers []Minister `json:"ministers"`
 }
 
+type ministerSkillCardsSection struct {
+	MinisterSkillCards []MinisterSkillCard `json:"minister_skill_cards"`
+}
+
 type mapsSection struct {
 	Maps []MapCatalogEntry `json:"maps"`
 }
@@ -92,6 +97,7 @@ func RequiredCatalogSections() []string {
 		SectionTerrains,
 		SectionRules,
 		SectionMinisters,
+		SectionMinisterSkillCards,
 		SectionMaps,
 		SectionUITechTreeLayout,
 		SectionUIBuildMenu,
@@ -118,6 +124,7 @@ func CatalogSectionValues(bundle CatalogBundle) []struct {
 		{Name: SectionTerrains, Value: terrainsSection{Terrains: append([]TerrainDefinition(nil), bundle.Terrains...)}},
 		{Name: SectionRules, Value: rulesSection{Rules: bundle.Rules}},
 		{Name: SectionMinisters, Value: ministersSection{Ministers: append([]Minister(nil), bundle.Ministers...)}},
+		{Name: SectionMinisterSkillCards, Value: ministerSkillCardsSection{MinisterSkillCards: append([]MinisterSkillCard(nil), bundle.MinisterSkillCards...)}},
 		{Name: SectionMaps, Value: mapsSection{Maps: append([]MapCatalogEntry(nil), bundle.Maps...)}},
 		{Name: SectionUITechTreeLayout, Value: bundle.UITechTreeLayout},
 		{Name: SectionUIBuildMenu, Value: bundle.UIBuildMenuLayout},

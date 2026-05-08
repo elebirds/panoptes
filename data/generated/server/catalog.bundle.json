@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "cceb4182627d64a6bfd9f0c7174471ea173f5e568296a13965134a491a5666cf",
+    "bundle_hash": "c43f18fa39d4b7176e8710bd3491719758487b2ee72ada3828f3cb631f5486d1",
     "required_sections": [
       "resources",
       "points",
@@ -17,6 +17,7 @@
       "terrains",
       "rules",
       "ministers",
+      "minister_skill_cards",
       "maps",
       "ui_tech_tree_layout",
       "ui_build_menu_layout",
@@ -34,6 +35,10 @@
       {
         "section_name": "maps",
         "hash": "a6ceda0bb27328a5a0e11b6d8c349722df2805dfe0a53c3f6abd503b65107fbd"
+      },
+      {
+        "section_name": "minister_skill_cards",
+        "hash": "dfbe5d49bb10aaeb9788477e32b4fe6fcc491efc027676fc3521535b693d2640"
       },
       {
         "section_name": "ministers",
@@ -57,7 +62,7 @@
       },
       {
         "section_name": "rules",
-        "hash": "62be3faaccd45e2fb80d365b522cdfc0ebd7b0c776df8f9422444f11b48935fd"
+        "hash": "effc1e3b359f6170453e79d5524add3f77e0f0823b16d4daa39c7471e12f6359"
       },
       {
         "section_name": "technologies",
@@ -2590,7 +2595,7 @@
     "turn_time_limit_planning": 35,
     "tokens_per_turn": 3,
     "bonus_tokens_per_turn": 1,
-    "max_turns": 30,
+    "max_turns": 100,
     "city_core_max_hp": 100,
     "safe_zone_radius": 4,
     "facility_takeover_turns": 2,
@@ -2631,6 +2636,28 @@
       "decisiveness": 58,
       "loyalty_tendency": 84,
       "ambition_style": 32
+    }
+  ],
+  "minister_skill_cards": [
+    {
+      "id": "stargazing",
+      "name": "观星",
+      "description": "激活后在下一回合获得全图视野，持续一回合。",
+      "icon_key": "skill_stargazing",
+      "role_tags": [
+        "domestic",
+        "military"
+      ],
+      "rarity": "rare",
+      "effect_key": "next_turn_full_map_vision",
+      "trigger_timing": "activated",
+      "delay_turns": 1,
+      "duration_turns": 1,
+      "sort_order": 10,
+      "tags": [
+        "vision",
+        "map"
+      ]
     }
   ],
   "maps": [

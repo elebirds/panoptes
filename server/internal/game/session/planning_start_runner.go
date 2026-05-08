@@ -30,9 +30,12 @@ type InstitutionPromotionStage struct{}
 
 type PlanningRefreshStage struct{}
 
+type MinisterSkillExpiryStage struct{}
+
 func NewPlanningStartRunner() *PlanningStartRunner {
 	return &PlanningStartRunner{
 		stages: []planningStartStage{
+			MinisterSkillExpiryStage{},
 			TechnologyActivationStage{},
 			InstitutionPromotionStage{},
 			PlanningRefreshStage{},
@@ -51,6 +54,7 @@ func (r *PlanningStartRunner) Run(state *domain.GameState) *PlanningStartResult 
 		}
 		playerState.Research.EnsureProgressMaps()
 		playerState.Institutions.EnsureMaps()
+		playerState.EnsureMinisterSkillState()
 	}
 	ctx := &planningStartContext{state: state, result: result}
 	for _, stage := range r.stages {
@@ -90,4 +94,11 @@ func (InstitutionPromotionStage) Run(ctx *planningStartContext) {
 func (PlanningRefreshStage) Run(_ *planningStartContext) {
 	// 当前 MVP 保持 token 只在使用时扣减，不在 planning start 自动恢复。
 	// 这里保留为空 stage，是为了把“开回合刷新语义”的位置固定住，后续若新增刷新规则可直接落在这里。
+}
+
+func (MinisterSkillExpiryStage) Run(ctx *planningStartContext) {
+	if ctx == nil {
+		return
+	}
+	domain.ExpireMinisterSkillEffects(ctx.state)
 }

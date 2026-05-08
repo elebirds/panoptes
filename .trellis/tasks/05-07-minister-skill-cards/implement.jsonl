@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend layering, staticdata, domain/query, and planning command boundaries for minister skill implementation."}
+{"file":".trellis/spec/frontend/index.md","reason":"Client catalog cache compatibility and generated protocol boundary rules."}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Concrete backend package ownership rules for domain, game/query, game/planning, and engine/minister additions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Client static catalog state is presentation-only and must not own game rules."}

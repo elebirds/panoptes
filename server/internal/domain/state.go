@@ -84,17 +84,19 @@ type UnitDirective struct {
 }
 
 type PlayerState struct {
-	PlayerID          string
-	Username          string
-	Resources         ResourceBag
-	Cities            map[string]*CityState
-	CapitalCityID     string
-	Research          ResearchState
-	Policy            Policy
-	Institutions      InstitutionState
-	TokensLeft        int
-	CapitalCityCoreHP int
-	WarZones          []*WarZone
+	PlayerID              string
+	Username              string
+	Resources             ResourceBag
+	Cities                map[string]*CityState
+	CapitalCityID         string
+	Research              ResearchState
+	Policy                Policy
+	Institutions          InstitutionState
+	MinisterSkillLoadouts map[string][]string
+	MinisterSkillEffects  map[string]MinisterSkillEffectState
+	TokensLeft            int
+	CapitalCityCoreHP     int
+	WarZones              []*WarZone
 }
 
 type WarZone struct {
@@ -288,15 +290,17 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			username = usernames[idx]
 		}
 		state.Players[playerID] = &PlayerState{
-			PlayerID:          playerID,
-			Username:          username,
-			Resources:         NewResourceBag(),
-			Cities:            make(map[string]*CityState),
-			Research:          NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
-			Institutions:      NewInstitutionState(),
-			TokensLeft:        rules.TokensPerTurn,
-			CapitalCityCoreHP: rules.CityCoreMaxHP,
-			WarZones:          []*WarZone{},
+			PlayerID:              playerID,
+			Username:              username,
+			Resources:             NewResourceBag(),
+			Cities:                make(map[string]*CityState),
+			Research:              NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
+			Institutions:          NewInstitutionState(),
+			MinisterSkillLoadouts: DefaultMinisterSkillLoadouts(staticdata.Default().MinisterSkillCards()),
+			MinisterSkillEffects:  make(map[string]MinisterSkillEffectState),
+			TokensLeft:            rules.TokensPerTurn,
+			CapitalCityCoreHP:     rules.CityCoreMaxHP,
+			WarZones:              []*WarZone{},
 		}
 		state.TurnRuntime.Resolving.PointBudgets[playerID] = NewPointBag()
 	}

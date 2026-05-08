@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend quality review should verify layer boundaries and generated-file rules."}
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend review should verify client catalog/cache changes obey presentation-only boundaries."}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Check state ownership, planning command routing, and event/query package placement."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check that client changes avoid generated protocol edits and presentation gameplay logic."}

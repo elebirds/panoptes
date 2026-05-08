@@ -249,6 +249,30 @@ func (c *Catalog) Ministers() []Minister {
 	return out
 }
 
+func (c *Catalog) MinisterSkillCards() []MinisterSkillCard {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.ministerSkills))
+	for id := range c.ministerSkills {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]MinisterSkillCard, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.ministerSkills[id])
+	}
+	return out
+}
+
+func (c *Catalog) GetMinisterSkillCard(id string) (MinisterSkillCard, bool) {
+	if c == nil {
+		return MinisterSkillCard{}, false
+	}
+	card, ok := c.ministerSkills[id]
+	return card, ok
+}
+
 func (c *Catalog) GetMap(id string) (*MapRuntimeBundle, bool) {
 	if c == nil {
 		return nil, false
