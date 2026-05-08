@@ -4,6 +4,19 @@ using Panoptes.Core.Domain;
 
 namespace Panoptes.Presentation.Map
 {
+    public enum SettlementPlaybackTier
+    {
+        Ambient = 0,
+        Important = 1,
+        Critical = 2
+    }
+
+    public enum SettlementPlaybackWindowKind
+    {
+        MoveBatch = 0,
+        FocusedStep = 1
+    }
+
     public sealed class SettlementPlaybackStep
     {
         public string ActorUnitId = string.Empty;
@@ -14,6 +27,7 @@ namespace Panoptes.Presentation.Map
         public bool HasActor => !string.IsNullOrWhiteSpace(ActorUnitId);
         public bool HasMove => MoveEvent != null;
         public bool HasImpacts => Impacts.Count > 0;
+        public bool IsMoveOnly => HasMove && !HasImpacts;
 
         public void AddImpactEvent(TurnEventDto evt)
         {
@@ -74,6 +88,168 @@ namespace Panoptes.Presentation.Map
             return evt != null &&
                    (string.Equals(evt.Type, "unit_damaged", StringComparison.Ordinal) ||
                     string.Equals(evt.Type, "unit_died", StringComparison.Ordinal));
+        }
+    }
+
+    public sealed class SettlementPlaybackWindow
+    {
+        public SettlementPlaybackWindow(SettlementPlaybackWindowKind kind, SettlementPlaybackTier tier, IReadOnlyList<SettlementPlaybackStep> steps)
+        {
+            Kind = kind;
+            Tier = tier;
+            Steps = steps ?? Array.Empty<SettlementPlaybackStep>();
+        }
+
+        public SettlementPlaybackWindowKind Kind { get; }
+        public SettlementPlaybackTier Tier { get; }
+        public IReadOnlyList<SettlementPlaybackStep> Steps { get; }
+        public bool AllowsCameraFocus => Kind == SettlementPlaybackWindowKind.FocusedStep && Tier != SettlementPlaybackTier.Ambient;
+    }
+
+    public sealed class SettlementPlaybackSchedule
+    {
+        public SettlementPlaybackSchedule(IReadOnlyList<SettlementPlaybackStep> steps, IReadOnlyList<SettlementPlaybackWindow> windows)
+        {
+            Steps = steps ?? Array.Empty<SettlementPlaybackStep>();
+            Windows = windows ?? Array.Empty<SettlementPlaybackWindow>();
+        }
+
+        public IReadOnlyList<SettlementPlaybackStep> Steps { get; }
+        public IReadOnlyList<SettlementPlaybackWindow> Windows { get; }
+    }
+
+    public static class SettlementPlaybackScheduler
+    {
+        public static SettlementPlaybackSchedule Build(IReadOnlyList<SettlementPlaybackStep> steps)
+        {
+            var windows = new List<SettlementPlaybackWindow>();
+            var moveBatch = new List<SettlementPlaybackStep>();
+            var batchActors = new HashSet<string>(StringComparer.Ordinal);
+
+            if (steps == null || steps.Count == 0)
+            {
+                return new SettlementPlaybackSchedule(steps ?? Array.Empty<SettlementPlaybackStep>(), windows);
+            }
+
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                if (step == null)
+                {
+                    continue;
+                }
+
+                var tier = Classify(step);
+                if (tier == SettlementPlaybackTier.Ambient && step.IsMoveOnly && CanAddToMoveBatch(step, batchActors))
+                {
+                    AddMoveBatchStep(moveBatch, batchActors, step);
+                    continue;
+                }
+
+                FlushMoveBatch(windows, moveBatch, batchActors);
+                if (tier == SettlementPlaybackTier.Ambient && step.IsMoveOnly)
+                {
+                    AddMoveBatchStep(moveBatch, batchActors, step);
+                    continue;
+                }
+
+                windows.Add(new SettlementPlaybackWindow(SettlementPlaybackWindowKind.FocusedStep, tier, new[] { step }));
+            }
+
+            FlushMoveBatch(windows, moveBatch, batchActors);
+            return new SettlementPlaybackSchedule(steps, windows);
+        }
+
+        public static SettlementPlaybackTier Classify(SettlementPlaybackStep step)
+        {
+            if (step == null)
+            {
+                return SettlementPlaybackTier.Ambient;
+            }
+
+            if (HasEventType(step, "city_core_destroyed"))
+            {
+                return SettlementPlaybackTier.Critical;
+            }
+
+            if (step.HasImpacts ||
+                HasEventType(step, "unit_died") ||
+                HasEventType(step, "unit_damaged") ||
+                HasEventType(step, "building_damaged") ||
+                HasEventType(step, "city_core_damaged"))
+            {
+                return SettlementPlaybackTier.Important;
+            }
+
+            return SettlementPlaybackTier.Ambient;
+        }
+
+        private static bool CanAddToMoveBatch(SettlementPlaybackStep step, HashSet<string> batchActors)
+        {
+            if (step == null || !step.IsMoveOnly)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(step.ActorUnitId))
+            {
+                return true;
+            }
+
+            return !batchActors.Contains(step.ActorUnitId.Trim());
+        }
+
+        private static void AddMoveBatchStep(
+            List<SettlementPlaybackStep> moveBatch,
+            HashSet<string> batchActors,
+            SettlementPlaybackStep step)
+        {
+            moveBatch.Add(step);
+            if (!string.IsNullOrWhiteSpace(step.ActorUnitId))
+            {
+                batchActors.Add(step.ActorUnitId.Trim());
+            }
+        }
+
+        private static void FlushMoveBatch(
+            List<SettlementPlaybackWindow> windows,
+            List<SettlementPlaybackStep> moveBatch,
+            HashSet<string> batchActors)
+        {
+            if (moveBatch.Count == 0)
+            {
+                return;
+            }
+
+            windows.Add(new SettlementPlaybackWindow(
+                SettlementPlaybackWindowKind.MoveBatch,
+                SettlementPlaybackTier.Ambient,
+                moveBatch.ToArray()));
+            moveBatch.Clear();
+            batchActors.Clear();
+        }
+
+        private static bool HasEventType(SettlementPlaybackStep step, string type)
+        {
+            if (step == null || string.IsNullOrWhiteSpace(type))
+            {
+                return false;
+            }
+
+            if (step.MoveEvent != null && string.Equals(step.MoveEvent.Type, type, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < step.ImpactEvents.Count; i++)
+            {
+                if (string.Equals(step.ImpactEvents[i]?.Type, type, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 

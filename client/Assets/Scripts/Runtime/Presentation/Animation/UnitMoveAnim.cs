@@ -21,6 +21,14 @@ namespace Panoptes.Presentation.Animation
             Camera followCamera,
             bool followCameraEnabled)
         {
+            yield return Play(unitView, targetWorldPos, duration);
+        }
+
+        public static IEnumerator Play(
+            UnitView unitView,
+            Vector3 targetWorldPos,
+            float duration)
+        {
             if (unitView == null)
             {
                 yield break;
@@ -31,10 +39,7 @@ namespace Panoptes.Presentation.Animation
 
             duration = Mathf.Max(0.01f, duration);
             var elapsed = 0f;
-            if (unitView != null)
-            {
-                unitView.SetMovingVisual(true, 1f, initialDir);
-            }
+            unitView.SetMovingVisual(true, 1f, initialDir);
             var prevPos = startUnitPos;
 
             while (elapsed < duration)
@@ -46,19 +51,9 @@ namespace Panoptes.Presentation.Animation
 
                 elapsed += Time.unscaledDeltaTime;
                 var t = Mathf.Clamp01(elapsed / duration);
-
-                // Move unit.
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;
-                if (followCameraEnabled)
-                {
-                    CinemachineMapCameraController.TryFocus(unitPos, false);
-                }
-
-                if (unitView != null)
-                {
-                    unitView.SetMovingVisual(true, 1f, unitPos - prevPos);
-                }
+                unitView.SetMovingVisual(true, 1f, unitPos - prevPos);
                 prevPos = unitPos;
 
                 yield return null;
