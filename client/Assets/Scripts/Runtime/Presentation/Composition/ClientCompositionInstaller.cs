@@ -295,6 +295,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<CityCoreHpBarOverlayController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCorePolicyFocusActionRegistrar>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<GameOverOverlay>());
         }
 
         private static T LoadRequiredComponent<T>(string resourcePath) where T : Component

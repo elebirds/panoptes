@@ -132,11 +132,12 @@ namespace Panoptes.Presentation.UI.Game
             var winnerName = ResolvePlayerName(winnerId, "未知胜方");
             var loserName = ResolvePlayerName(loserId, "未知败方");
             var totalTurns = ResolveTotalTurns();
+            var isDraw = string.IsNullOrWhiteSpace(winnerId);
 
-            titleText.text = "胜负已分";
-            winnerIdText.text = $"{winnerName}，胜利";
-            loserIdText.text = $"{loserName}，失败";
-            reasonText.text = totalTurns > 0 ? $"总回合数：{totalTurns}" : "总回合数：未知";
+            titleText.text = isDraw ? "战斗结束" : "胜负已分";
+            winnerIdText.text = isDraw ? "平局" : $"{winnerName}，胜利";
+            loserIdText.text = isDraw ? "双方未分胜负" : $"{loserName}，失败";
+            reasonText.text = ResolveReasonText(evt.Reason, totalTurns);
             if (narrativeText != null)
             {
                 narrativeText.text = string.Empty;
@@ -258,6 +259,18 @@ namespace Panoptes.Presentation.UI.Game
                 turn = _gameStateCache.Turn;
             }
             return turn;
+        }
+
+        private static string ResolveReasonText(string reason, int totalTurns)
+        {
+            var turnText = totalTurns > 0 ? $"总回合数：{totalTurns}" : "总回合数：未知";
+            return SafeValue(reason) switch
+            {
+                "city_core_destroyed" => $"{turnText}　主基地被摧毁",
+                "timeout_draw" => $"{turnText}　达到回合上限",
+                "player_disconnected" => $"{turnText}　对手离线",
+                _ => turnText
+            };
         }
 
         private string ResolveLoserId(GameOverState evt, string winnerId)
