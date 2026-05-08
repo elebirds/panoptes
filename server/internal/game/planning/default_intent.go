@@ -161,10 +161,5 @@ func hasRecipeSelection(state *domain.GameState, playerID string, nodeID string)
 	if state == nil {
 		return false
 	}
-	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
-		if selection.PlayerID == playerID && selection.NodeID == nodeID {
-			return true
-		}
-	}
-	return false
+	return state.TurnRuntime.Planning.HasRecipeSelection(playerID, nodeID)
 }

@@ -111,6 +111,7 @@ func TestEconomyRunnerRecipeProducesResources(t *testing.T) {
 
 	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
 	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "farm_food",
 		RequiredTurns:    1,
@@ -412,6 +413,7 @@ func TestEconomyRunnerReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 
 	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
 	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "farm_food",
 		RequiredTurns:    1,
@@ -453,6 +455,11 @@ func TestEconomyRunnerLowEfficiencyRecipeConsumesPartialInputAndProgress(t *test
 
 	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "train_infantry",
+		RequiredTurns:    4,
+	})
 	state.Players["player-1"].Resources.Set(domain.ResourceFood, 2)
 	state.Players["player-1"].Research.UnlockBuilding("barracks")
 	state.Players["player-1"].Research.UnlockRecipe("train_infantry")

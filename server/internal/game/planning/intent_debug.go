@@ -50,6 +50,13 @@ func DebugIntentRecordFor(kind participant.Kind, participantID string, intent In
 			"node_id":       strings.TrimSpace(typed.NodeID),
 			"building_type": strings.TrimSpace(typed.BuildingTypeID),
 		}
+	case DemolishBuildingIntent:
+		record.IntentType = "demolish_building"
+		record.IntentLabel = "拆除建筑"
+		record.ActionSummary = joinNonEmpty("拆除建筑", strings.TrimSpace(typed.NodeID))
+		record.Fields = map[string]any{
+			"node_id": strings.TrimSpace(typed.NodeID),
+		}
 	case RevealNodeIntent:
 		record.IntentType = "reveal_node"
 		record.IntentLabel = "侦察节点"
@@ -72,12 +79,20 @@ func DebugIntentRecordFor(kind participant.Kind, participantID string, intent In
 			"node_id":   strings.TrimSpace(typed.NodeID),
 			"recipe_id": strings.TrimSpace(typed.RecipeID),
 		}
+	case CancelBuildingRecipeIntent:
+		record.IntentType = "cancel_building_recipe"
+		record.IntentLabel = "取消建筑配方"
+		record.ActionSummary = joinNonEmpty("取消建筑配方", strings.TrimSpace(typed.NodeID))
+		record.Fields = map[string]any{
+			"node_id": strings.TrimSpace(typed.NodeID),
+		}
 	case SetMinisterDirectiveIntent:
 		record.IntentType = "set_minister_directive"
 		record.IntentLabel = "处理大臣草案"
 		record.ActionSummary = joinNonEmpty("处理大臣草案", strings.TrimSpace(typed.MinisterRole), strings.TrimSpace(typed.DirectiveType), strings.TrimSpace(typed.DraftID))
 		record.Fields = map[string]any{
 			"directive_type": strings.TrimSpace(typed.DirectiveType),
+			"candidate_id":   strings.TrimSpace(typed.CandidateID),
 		}
 	case IssueUnitOrderIntent:
 		record.IntentType = "issue_unit_order"
@@ -131,6 +146,7 @@ func (r DebugIntentRecord) FieldAttrs() []any {
 		"recipe_id",
 		"unit_id",
 		"directive_type",
+		"candidate_id",
 		"target_node_id",
 	}
 	attrs := make([]any, 0, len(keys)*2)

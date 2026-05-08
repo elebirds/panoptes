@@ -23,6 +23,14 @@ namespace Panoptes.Core.Application.Services
             });
         }
 
+        public bool CancelBuildingRecipe(string nodeId)
+        {
+            return SendIfUnlocked(new MsgCancelBuildingRecipe
+            {
+                NodeId = nodeId ?? string.Empty
+            });
+        }
+
         public bool BuildToken(string nodeId, string buildingTypeId, string cityId = null)
         {
             return SendIfUnlocked(new MsgBuildStructure
@@ -30,6 +38,14 @@ namespace Panoptes.Core.Application.Services
                 NodeId = nodeId ?? string.Empty,
                 BuildingTypeId = buildingTypeId ?? string.Empty,
                 CityId = cityId ?? string.Empty
+            });
+        }
+
+        public bool DemolishBuilding(string nodeId)
+        {
+            return SendIfUnlocked(new MsgDemolishBuilding
+            {
+                NodeId = nodeId ?? string.Empty
             });
         }
 

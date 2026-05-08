@@ -71,6 +71,11 @@ namespace Panoptes.Tests.EditMode.Core
             var recipe = (MsgSetBuildingRecipe)sender.Last;
             Assert.That(recipe.NodeId, Is.EqualTo("city-core"));
             Assert.That(recipe.RecipeId, Is.EqualTo("grain_rations"));
+
+            Assert.That(service.CancelBuildingRecipe("city-core"), Is.True);
+            Assert.That(sender.Last, Is.TypeOf<MsgCancelBuildingRecipe>());
+            var cancelRecipe = (MsgCancelBuildingRecipe)sender.Last;
+            Assert.That(cancelRecipe.NodeId, Is.EqualTo("city-core"));
         }
 
         [Test]

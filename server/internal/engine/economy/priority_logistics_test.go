@@ -104,10 +104,14 @@ func newPriorityLogisticsScenario() (donburi.World, *domain.GameState) {
 		},
 	}))
 	world, state := newTwoCityLogisticsWorld()
-	ecs.CreateBuilding(world, "barracks", "player-1", "D1", mustNodeEntry(nil, state, "M1"))
-	ecs.BuildingOperationC.SetValue(mustNodeEntry(nil, state, "M1"), ecs.BuildingOperationComp{SelectedRecipeID: "train_infantry", RequiredTurns: 1})
-	ecs.CreateBuilding(world, "frontier_office", "player-1", "D1", mustNodeEntry(nil, state, "E1"))
-	ecs.BuildingOperationC.SetValue(mustNodeEntry(nil, state, "E1"), ecs.BuildingOperationComp{SelectedRecipeID: "organize_settler", RequiredTurns: 1})
+	barracksEntry := mustNodeEntry(nil, state, "M1")
+	ecs.CreateBuilding(world, "barracks", "player-1", "D1", barracksEntry)
+	barracksEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(barracksEntry, ecs.BuildingOperationComp{SelectedRecipeID: "train_infantry", RequiredTurns: 1})
+	frontierEntry := mustNodeEntry(nil, state, "E1")
+	ecs.CreateBuilding(world, "frontier_office", "player-1", "D1", frontierEntry)
+	frontierEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(frontierEntry, ecs.BuildingOperationComp{SelectedRecipeID: "organize_settler", RequiredTurns: 1})
 	state.AddResourceToCity("player-1", "C1", domain.ResourceOre, 1)
 	for _, recipeID := range []string{"train_infantry", "organize_settler"} {
 		state.Players["player-1"].Research.UnlockRecipe(recipeID)
@@ -136,10 +140,14 @@ func newIndustrialChainScenario() (donburi.World, *domain.GameState) {
 		},
 	}))
 	world, state := newTwoCityLogisticsWorld()
-	ecs.CreateBuilding(world, "mine", "player-1", "C1", mustNodeEntry(nil, state, "U1"))
-	ecs.BuildingOperationC.SetValue(mustNodeEntry(nil, state, "U1"), ecs.BuildingOperationComp{SelectedRecipeID: "mine_ore", RequiredTurns: 1})
-	ecs.CreateBuilding(world, "barracks", "player-1", "D1", mustNodeEntry(nil, state, "D2"))
-	ecs.BuildingOperationC.SetValue(mustNodeEntry(nil, state, "D2"), ecs.BuildingOperationComp{SelectedRecipeID: "train_infantry", RequiredTurns: 1})
+	mineEntry := mustNodeEntry(nil, state, "U1")
+	ecs.CreateBuilding(world, "mine", "player-1", "C1", mineEntry)
+	mineEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(mineEntry, ecs.BuildingOperationComp{SelectedRecipeID: "mine_ore", RequiredTurns: 1})
+	barracksEntry := mustNodeEntry(nil, state, "D2")
+	ecs.CreateBuilding(world, "barracks", "player-1", "D1", barracksEntry)
+	barracksEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(barracksEntry, ecs.BuildingOperationComp{SelectedRecipeID: "train_infantry", RequiredTurns: 1})
 	for _, recipeID := range []string{"mine_ore", "train_infantry"} {
 		state.Players["player-1"].Research.UnlockRecipe(recipeID)
 	}

@@ -77,6 +77,8 @@ message PlanningCommand {
     MsgSetInstitutionLoadout set_institution_loadout = 13;
     MsgBuildStructurePreviewRequest build_structure_preview = 14;
     MsgSetBuildingRecipePreviewRequest set_building_recipe_preview = 15;
+    MsgCancelBuildingRecipe cancel_building_recipe = 16;
+    MsgDemolishBuilding demolish_building = 17;
   }
 }
 
@@ -86,6 +88,7 @@ message GameCommand {
     MsgStaticCatalogSyncRequest static_catalog_sync_request = 2;
     ChatCommand chat = 3;
     MsgGameCommandBatch command_batch = 4;
+    MsgAcknowledgeTurnReport acknowledge_turn_report = 5;
   }
 }
 
@@ -147,6 +150,7 @@ message GameEvent {
     MsgCommandAck command_ack = 27;
     MsgGameSync game_sync = 28;
     MsgMandateResult mandate_result = 29;
+    MsgDemolishBuildingResult demolish_building_result = 30;
   }
 }
 

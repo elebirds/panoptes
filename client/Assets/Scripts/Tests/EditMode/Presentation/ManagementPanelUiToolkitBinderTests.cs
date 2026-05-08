@@ -217,11 +217,13 @@ namespace Panoptes.Tests.EditMode.Presentation
                 {
                     new MinisterTabState(
                         "domestic",
+                        "minister-domestic",
                         "内政大臣",
                         "内政大臣",
                         string.Empty,
                         "内",
-                        true,
+                        selected: true,
+                        vacant: false,
                         attributes: new[]
                         {
                             new MinisterAttributeState("ability", "能力", 7),
@@ -229,16 +231,36 @@ namespace Panoptes.Tests.EditMode.Presentation
                             new MinisterAttributeState("ambition", "野心", 4)
                         }),
                     new MinisterTabState(
-                        "military",
-                        "军事大臣",
-                        "军事大臣",
+                        "command",
+                        "minister-command",
+                        "军令大臣",
+                        "军令大臣",
                         string.Empty,
-                        "军",
-                        false,
+                        "令",
+                        selected: false,
+                        vacant: false,
                         attributes: new[]
                         {
                             new MinisterAttributeState("ability", "能力", 8),
                             new MinisterAttributeState("loyalty", "忠诚", 7)
+                        })
+                },
+                new[]
+                {
+                    new MinisterTabState(
+                        "defense",
+                        "cand-defense-1",
+                        "候选军备大臣",
+                        "军备大臣",
+                        string.Empty,
+                        "备",
+                        selected: false,
+                        vacant: false,
+                        roleVacant: true,
+                        attributes: new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", 9),
+                            new MinisterAttributeState("loyalty", "忠诚", 6)
                         })
                 },
                 new[]
@@ -272,10 +294,12 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             var texts = _root.GetComponentsInChildren<TextMeshProUGUI>(true);
             Assert.That(ContainsText(texts, "内政大臣"), Is.True);
-            Assert.That(ContainsText(texts, "军事大臣"), Is.True);
+            Assert.That(ContainsText(texts, "军令大臣"), Is.True);
+            Assert.That(ContainsText(texts, "候选大臣"), Is.True);
             Assert.That(ContainsText(texts, "能力 7"), Is.True);
             Assert.That(ContainsText(texts, "忠诚 8"), Is.True);
             Assert.That(ContainsText(texts, "野心 4"), Is.True);
+            Assert.That(ContainsText(texts, "雇佣"), Is.True);
             Assert.That(ContainsText(texts, "好感 12"), Is.False);
             Assert.That(ContainsText(texts, "建议扩张粮食产出。"), Is.True);
             Assert.That(ContainsText(texts, "采纳全部"), Is.True);
@@ -324,12 +348,14 @@ namespace Panoptes.Tests.EditMode.Presentation
             binder.Render(new MinisterReportState(
                 "大臣汇报",
                 "domestic",
-                new[] { new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12) },
+                new[] { new MinisterTabState("domestic", "minister-domestic", "内政大臣", "内政大臣", string.Empty, "内", selected: true, vacant: false, affection: 12) },
+                System.Array.Empty<MinisterTabState>(),
                 new[]
                 {
                     new MinisterChatMessageState("m1", "domestic", "内政大臣", "内政大臣", string.Empty, "内", "好。", false, false),
                     new MinisterChatMessageState("m2", "domestic", string.Empty, string.Empty, string.Empty, string.Empty, "收到。", true, false)
                 },
+                null,
                 null));
 
             visibilityStore.Show(ManagementPanelId.MinisterReport);
@@ -340,6 +366,8 @@ namespace Panoptes.Tests.EditMode.Presentation
             {
                 Assert.That(bubble.preferredWidth, Is.GreaterThanOrEqualTo(96f));
                 Assert.That(bubble.preferredWidth, Is.LessThan(360f));
+                Assert.That(bubble.preferredHeight, Is.GreaterThan(0f));
+                Assert.That(bubble.preferredHeight, Is.LessThan(180f));
             }
 
             visibilityStore.Dispose();
@@ -434,7 +462,8 @@ namespace Panoptes.Tests.EditMode.Presentation
             var sender = new RecordingMessageSender();
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new RecipeSynthesisContextStore();
-            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore);
+            var draftStore = new PlanningDraftStore();
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
 
             var document = _root.GetComponent<UIDocument>();
             var rootElement = document.rootVisualElement;
@@ -449,6 +478,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             visibilityStore.Dispose();
             contextStore.Dispose();
+            draftStore.Dispose();
         }
 
         [Test]
@@ -460,8 +490,9 @@ namespace Panoptes.Tests.EditMode.Presentation
             var sender = new RecordingMessageSender();
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new RecipeSynthesisContextStore();
+            var draftStore = new PlanningDraftStore();
             contextStore.SetContext("node-a", "mill", "player-1");
-            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore);
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
 
             RequestRecipeSelection(binder, "grain");
 
@@ -472,6 +503,34 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             visibilityStore.Dispose();
             contextStore.Dispose();
+        }
+
+        [Test]
+        public void RecipeSynthesisBinder_ShouldCancelPlannedRecipeWhenClickingCurrentSelection()
+        {
+            ActionLock.Release();
+            _root = new GameObject("RecipeSynthesisCancelTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            var draftStore = new PlanningDraftStore();
+            contextStore.SetContext("node-a", "mill", "player-1");
+            draftStore.Replace(new PlanningDraftState(recipeSelections: new[]
+            {
+                new QueuedRecipeSelectionDto { NodeId = "node-a", RecipeId = "grain" }
+            }));
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
+
+            RequestRecipeSelection(binder, "grain");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgCancelBuildingRecipe>());
+            var message = (MsgCancelBuildingRecipe)sender.LastMessage;
+            Assert.That(message.NodeId, Is.EqualTo("node-a"));
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+            draftStore.Dispose();
         }
 
         private static void InjectTechTreeFlow(
@@ -611,13 +670,14 @@ namespace Panoptes.Tests.EditMode.Presentation
             RecipeSynthesisUiToolkitBinder binder,
             PlanningIntentService planningIntentService,
             ManagementPanelVisibilityStore visibilityStore,
-            RecipeSynthesisContextStore contextStore)
+            RecipeSynthesisContextStore contextStore,
+            PlanningDraftStore draftStore)
         {
             var method = typeof(RecipeSynthesisUiToolkitBinder).GetMethod(
                 "ConstructRecipeFlow",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
-            method!.Invoke(binder, new object[] { planningIntentService, visibilityStore, contextStore });
+            method!.Invoke(binder, new object[] { planningIntentService, visibilityStore, contextStore, draftStore });
         }
 
         private static void RequestRecipeSelection(RecipeSynthesisUiToolkitBinder binder, string recipeId)

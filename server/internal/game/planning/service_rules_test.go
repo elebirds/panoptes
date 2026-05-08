@@ -600,6 +600,117 @@ func TestSetBuildingRecipeReplacesDraftOnSameNode(t *testing.T) {
 	}
 }
 
+func TestCancelBuildingRecipeRemovesQueuedSelection(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", BuildingScope: "in_city", MaxHP: 80, RecipeIDs: []string{"train_infantry"}},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"B1": nodeEntity},
+	})
+	state.World = world
+	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	if err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetBuildingRecipe{
+			SetBuildingRecipe: &pb.MsgSetBuildingRecipe{NodeId: "B1", RecipeId: "train_infantry"},
+		},
+	}); err != nil {
+		t.Fatalf("SetBuildingRecipe() error = %v", err)
+	}
+	if err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_CancelBuildingRecipe{
+			CancelBuildingRecipe: &pb.MsgCancelBuildingRecipe{NodeId: "B1"},
+		},
+	}); err != nil {
+		t.Fatalf("CancelBuildingRecipe() error = %v", err)
+	}
+
+	if got := len(state.TurnRuntime.Planning.RecipeSelections); got != 0 {
+		t.Fatalf("recipe selection count = %d, want 0 after cancel", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetRecipeSelections()) != 0 {
+		t.Fatalf("snapshot recipe selections = %#v, want empty after cancel", snapshot.GetRecipeSelections())
+	}
+}
+
+func TestCancelBuildingRecipeRejectedForInvalidTarget(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_CancelBuildingRecipe{
+			CancelBuildingRecipe: &pb.MsgCancelBuildingRecipe{NodeId: "missing"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want invalid_target")
+	}
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_target" {
+		t.Fatalf("problem = %#v, want invalid_target", problem)
+	}
+}
+
+func TestCancelBuildingRecipeRejectedForUnauthorizedTarget(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", MaxHP: 80, RecipeIDs: []string{"train_infantry"}},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-2"
+	node.TerritoryOwner = "player-2"
+	ecs.CreateBuilding(world, "barracks", "player-2", "C1", nodeEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"B1": nodeEntity},
+	})
+	state.World = world
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_CancelBuildingRecipe{
+			CancelBuildingRecipe: &pb.MsgCancelBuildingRecipe{NodeId: "B1"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want unauthorized")
+	}
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "unauthorized" {
+		t.Fatalf("problem = %#v, want unauthorized", problem)
+	}
+}
+
 func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	session := newPlanningSessionStub(state)
@@ -1787,8 +1898,16 @@ func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 	s.state.TurnRuntime.Planning.UpsertBuildOrder(order)
 }
 
+func (s *planningSessionStub) QueueDemolishOrder(order domain.DemolishOrder) {
+	s.state.TurnRuntime.Planning.UpsertDemolishOrder(order)
+}
+
 func (s *planningSessionStub) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	s.state.TurnRuntime.Planning.UpsertRecipeSelection(order)
+}
+
+func (s *planningSessionStub) CancelRecipeSelection(playerID string, nodeID string) {
+	s.state.TurnRuntime.Planning.RemoveRecipeSelection(playerID, nodeID)
 }
 
 func (s *planningSessionStub) SetInstitutionLoadout(playerID string, policyIDs []string) {

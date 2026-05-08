@@ -104,6 +104,19 @@ func TestDebugIntentRecordForCoversAllPlanningIntents(t *testing.T) {
 			},
 		},
 		{
+			name:          "cancel building recipe",
+			kind:          participant.KindHuman,
+			participantID: "player-1",
+			intent:        CancelBuildingRecipeIntent{NodeID: "A3"},
+			wantType:      "cancel_building_recipe",
+			wantLabel:     "取消建筑配方",
+			wantSource:    "player",
+			wantSummary:   "玩家[player-1] 取消建筑配方 A3",
+			wantFields: map[string]any{
+				"node_id": "A3",
+			},
+		},
+		{
 			name:          "issue unit order",
 			kind:          participant.KindBot,
 			participantID: "bot-1",

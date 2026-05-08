@@ -31,7 +31,9 @@ type planningDeliveryPort interface {
 
 type planningDraftPort interface {
 	QueueBuildOrder(order domain.BuildOrder)
+	QueueDemolishOrder(order domain.DemolishOrder)
 	QueueRecipeSelection(order domain.RecipeSelectionOrder)
+	CancelRecipeSelection(playerID string, nodeID string)
 	SetInstitutionLoadout(playerID string, institutionIDs []string)
 	SetUnitOrder(order gameorders.UnitOrder)
 	CancelUnitOrder(playerID string, unitID string)

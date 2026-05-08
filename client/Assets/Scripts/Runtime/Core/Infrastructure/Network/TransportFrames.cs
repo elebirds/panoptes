@@ -68,8 +68,14 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSetBuildingRecipe setBuildingRecipe:
                     frame = PlanningFrame(new PlanningCommand { SetBuildingRecipe = setBuildingRecipe });
                     return true;
+                case MsgCancelBuildingRecipe cancelBuildingRecipe:
+                    frame = PlanningFrame(new PlanningCommand { CancelBuildingRecipe = cancelBuildingRecipe });
+                    return true;
                 case MsgBuildStructure buildStructure:
                     frame = PlanningFrame(new PlanningCommand { BuildStructure = buildStructure });
+                    return true;
+                case MsgDemolishBuilding demolishBuilding:
+                    frame = PlanningFrame(new PlanningCommand { DemolishBuilding = demolishBuilding });
                     return true;
                 case MsgBuildStructurePreviewRequest buildStructurePreview:
                     frame = PlanningFrame(new PlanningCommand { BuildStructurePreview = buildStructurePreview });
@@ -262,6 +268,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.SetInstitutionLoadoutResult => evt.SetInstitutionLoadoutResult,
                 GameEvent.BodyOneofCase.SetBuildingRecipeResult => evt.SetBuildingRecipeResult,
                 GameEvent.BodyOneofCase.BuildStructureResult => evt.BuildStructureResult,
+                GameEvent.BodyOneofCase.DemolishBuildingResult => evt.DemolishBuildingResult,
                 GameEvent.BodyOneofCase.TurnReport => evt.TurnReport,
                 GameEvent.BodyOneofCase.GameSync => evt.GameSync,
                 GameEvent.BodyOneofCase.GameOver => evt.GameOver,

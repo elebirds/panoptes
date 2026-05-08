@@ -1040,6 +1040,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "配方合成 ViewModel 应按最终上下文 Store 过滤当前建筑。");
             StringAssert.Contains("SetBuildingRecipe(nodeId, recipeId)", recipeBinderContent,
                 "配方合成 Binder 应通过 PlanningIntentService 提交当前节点配方。");
+            StringAssert.Contains("CancelBuildingRecipe(nodeId)", recipeBinderContent,
+                "配方合成 Binder 应支持取消当前节点配方。");
             StringAssert.Contains("BuildCatalogContextStore", registrarContent,
                 "主城 Build 入口应把主城节点上下文写入最终建造目录上下文 Store。");
             StringAssert.Contains("Show(ManagementPanelId.BuildCatalog)", registrarContent,
@@ -1310,13 +1312,14 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void GamePhases_ShouldOnlyExposePlanningAndResolving()
+        public void GamePhases_ShouldExposePlanningResolvingAndTurnReport()
         {
             Assert.That(File.Exists(_gamePhasesPath), Is.True, "GamePhases.cs 不存在。");
 
             var content = File.ReadAllText(_gamePhasesPath);
             StringAssert.Contains("public const string Planning = \"planning\";", content);
             StringAssert.Contains("public const string Resolving = \"resolving\";", content);
+            StringAssert.Contains("public const string TurnReport = \"turn_report\";", content);
             Assert.That(content, Does.Not.Contain("DomesticPlanning"));
             Assert.That(content, Does.Not.Contain("CombatPlanning"));
             Assert.That(content, Does.Not.Contain("DomesticResolving"));

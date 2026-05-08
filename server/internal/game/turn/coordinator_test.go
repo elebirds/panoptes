@@ -135,6 +135,7 @@ func TestCoordinatorBeginPlanningTriggersDomesticMinisterReports(t *testing.T) {
 	host := &stubCoordinatorHost{runtime: runtime}
 	coordinator := NewCoordinator(runtime, host)
 	coordinator.beginPlanning(context.Background(), false)
+	runtime.GenerateMinisterReports(context.Background())
 
 	deadline := time.Now().Add(2 * time.Second)
 	for {
@@ -369,9 +370,19 @@ func (h *stubCoordinatorHost) QueueBuildOrder(order domain.BuildOrder) {
 		h.State().TurnRuntime.Planning.UpsertBuildOrder(order)
 	}
 }
+func (h *stubCoordinatorHost) QueueDemolishOrder(order domain.DemolishOrder) {
+	if h.State() != nil {
+		h.State().TurnRuntime.Planning.UpsertDemolishOrder(order)
+	}
+}
 func (h *stubCoordinatorHost) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	if h.State() != nil {
 		h.State().TurnRuntime.Planning.UpsertRecipeSelection(order)
+	}
+}
+func (h *stubCoordinatorHost) CancelRecipeSelection(playerID string, nodeID string) {
+	if h.State() != nil {
+		h.State().TurnRuntime.Planning.RemoveRecipeSelection(playerID, nodeID)
 	}
 }
 func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, institutionIDs []string) {
@@ -408,6 +419,7 @@ func (h *stubCoordinatorHost) RunTurnResolution() {
 		h.runTurnResolution()
 	}
 }
+func (h *stubCoordinatorHost) BroadcastTurnReport()            {}
 func (h *stubCoordinatorHost) ShouldStopAfterResolution() bool { return false }
 func (h *stubCoordinatorHost) HandleDraw()                     { h.runtime.State().IsOver = true }
 func (h *stubCoordinatorHost) CheckGameOver()                  {}
