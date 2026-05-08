@@ -199,6 +199,102 @@ func TestRuleBotProviderMovesInfantryUnderOmniscientVision(t *testing.T) {
 	}
 }
 
+func TestRuleBotProviderSpreadsSameOriginExplorersAcrossFrontier(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 1, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, observation := buildRuleBotBranchState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		first := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
+		second := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
+		ecs.UnitStatsC.Get(first).ID = "ally-1"
+		ecs.UnitStatsC.Get(second).ID = "ally-2"
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: observation,
+		RNG:         rand.New(rand.NewSource(53)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	orders := findUnitOrderIntents(intents)
+	if len(orders) != 2 {
+		t.Fatalf("unit order count = %d, want 2: %#v", len(orders), intents)
+	}
+	if orders[0].Action != "move" || orders[1].Action != "move" {
+		t.Fatalf("unit orders = %#v, want both move", orders)
+	}
+	if orders[0].TargetNodeID == orders[1].TargetNodeID {
+		t.Fatalf("same-origin explorers chose the same target %q; orders=%#v", orders[0].TargetNodeID, orders)
+	}
+}
+
+func TestRuleBotProviderPressuresKnownEnemyBuildingWithDifferentSiegeSlots(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 5, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", BuildingScope: "in_city", PlacementKind: "city_center", MaxHP: 100, TakeoverMode: "city_capture"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, observation := buildRuleBotSiegePressureState(t)
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: observation,
+		RNG:         rand.New(rand.NewSource(59)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	orders := findUnitOrderIntents(intents)
+	if len(orders) != 2 {
+		t.Fatalf("unit order count = %d, want 2: %#v", len(orders), intents)
+	}
+	for _, order := range orders {
+		if order.Action != "move" {
+			t.Fatalf("order = %#v, want pressure move before attack range", order)
+		}
+		if order.TargetNodeID == "Enemy" {
+			t.Fatalf("order = %#v, want a siege slot around Enemy instead of the occupied city core", order)
+		}
+	}
+	if orders[0].TargetNodeID == orders[1].TargetNodeID {
+		t.Fatalf("pressure moves chose the same siege slot %q; orders=%#v", orders[0].TargetNodeID, orders)
+	}
+}
+
 func TestRuleBotProviderAttacksEnemyCityCore(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
@@ -529,6 +625,86 @@ func createNode(world donburi.World, mapData *domain.MapData, nodeID string, x i
 	return entry
 }
 
+func buildRuleBotBranchState(t *testing.T, mutate func(world donburi.World, mapData *domain.MapData, state *domain.GameState)) (*domain.GameState, *gamequery.ObservationSnapshot) {
+	t.Helper()
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "bot-branch-test",
+		Width:        4,
+		Height:       4,
+		PlayerSpawns: map[string]domain.Position{"bot-1": {Q: 0, R: 0}, "player-2": {Q: 3, R: 0}},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	createNeutralNode(world, mapData, "C", 0, 0)
+	createNeutralNode(world, mapData, "E", 1, 0)
+	createNeutralNode(world, mapData, "SE", 0, 1)
+	createNeutralNode(world, mapData, "E2", 2, 0)
+	createNeutralNode(world, mapData, "SE2", 0, 2)
+	ecs.NodeC.Get(world.Entry(mapData.NodeIndex["C"])).Owner = "bot-1"
+	ecs.NodeC.Get(world.Entry(mapData.NodeIndex["C"])).TerritoryOwner = "bot-1"
+
+	state := domain.NewGameState("game-bot-branch", []string{"bot-1", "player-2"}, []string{"bot", "enemy"}, mapData)
+	state.World = world
+	state.Turn = 3
+	state.EnsureCityState("bot-1", "C")
+	state.Players["bot-1"].CapitalCityID = "C"
+
+	if mutate != nil {
+		mutate(world, mapData, state)
+	}
+	return state, gamequery.NewObservationStore().BuildObservation(state, "bot-1")
+}
+
+func buildRuleBotSiegePressureState(t *testing.T) (*domain.GameState, *gamequery.ObservationSnapshot) {
+	t.Helper()
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "bot-siege-pressure-test",
+		Width:        5,
+		Height:       3,
+		PlayerSpawns: map[string]domain.Position{"bot-1": {Q: 0, R: 0}, "player-2": {Q: 3, R: 0}},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	createNeutralNode(world, mapData, "C", 0, 0)
+	createNeutralNode(world, mapData, "Mid", 1, 0)
+	createNeutralNode(world, mapData, "SlotA", 2, 0)
+	createNeutralNode(world, mapData, "SlotB", 2, 1)
+	createNeutralNode(world, mapData, "Enemy", 3, 0)
+	ecs.NodeC.Get(world.Entry(mapData.NodeIndex["C"])).Owner = "bot-1"
+	ecs.NodeC.Get(world.Entry(mapData.NodeIndex["C"])).TerritoryOwner = "bot-1"
+
+	state := domain.NewGameState("game-bot-siege-pressure", []string{"bot-1", "player-2"}, []string{"bot", "enemy"}, mapData)
+	state.World = world
+	state.Turn = 3
+	state.EnsureCityState("bot-1", "C")
+	state.Players["bot-1"].CapitalCityID = "C"
+
+	first := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
+	second := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(first).ID = "ally-1"
+	ecs.UnitStatsC.Get(second).ID = "ally-2"
+	enemyEntry := world.Entry(mapData.NodeIndex["Enemy"])
+	ecs.CreateBuilding(world, "city_core", "player-2", "Enemy", enemyEntry)
+	node := ecs.NodeC.Get(enemyEntry)
+	node.Owner = "player-2"
+	node.TerritoryOwner = "player-2"
+
+	return state, gamequery.NewObservationStore().BuildObservation(state, "bot-1")
+}
+
+func createNeutralNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) *donburi.Entry {
+	entity := ecs.CreateNode(world, ecs.MapNode{
+		ID:      nodeID,
+		Q:       x,
+		R:       y,
+		Terrain: "plain",
+	})
+	mapData.NodeIndex[nodeID] = entity
+	return world.Entry(entity)
+}
+
 func findIntent[T planning.Intent](intents []planning.Intent) *T {
 	for _, intent := range intents {
 		if typed, ok := intent.(T); ok {
@@ -536,6 +712,16 @@ func findIntent[T planning.Intent](intents []planning.Intent) *T {
 		}
 	}
 	return nil
+}
+
+func findUnitOrderIntents(intents []planning.Intent) []planning.IssueUnitOrderIntent {
+	orders := make([]planning.IssueUnitOrderIntent, 0)
+	for _, intent := range intents {
+		if typed, ok := intent.(planning.IssueUnitOrderIntent); ok {
+			orders = append(orders, typed)
+		}
+	}
+	return orders
 }
 
 func findLastSubmitIntent(intents []planning.Intent) *planning.SubmitTurnIntent {
