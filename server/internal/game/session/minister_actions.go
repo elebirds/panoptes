@@ -18,6 +18,7 @@ import (
 	"github.com/elebirds/panoptes/internal/game/planning"
 	gameprojection "github.com/elebirds/panoptes/internal/game/projection"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
 
 func (r *Runtime) ApplyMinisterActions(playerID string, role string, actions []ministerengine.MinisterActionItem) error {
@@ -32,6 +33,7 @@ func (r *Runtime) ApplyMinisterActions(playerID string, role string, actions []m
 	if role == "" {
 		role = "domestic"
 	}
+	role = ministerroles.Canonical(role)
 
 	staged := false
 	selectedCandidateActions := make(map[string]ministerengine.MinisterActionItem)
@@ -222,6 +224,7 @@ func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, 
 	if role == "" {
 		role = domesticMinisterRole
 	}
+	role = ministerroles.Canonical(role)
 	draft.MinisterRole = role
 	draft.Source = domain.MinisterDraftSourceLLMAction
 	draft.DraftID = strings.Join([]string{

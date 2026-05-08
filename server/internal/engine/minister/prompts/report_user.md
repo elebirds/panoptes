@@ -26,8 +26,10 @@ current_research={{ .CurrentResearch }}
 </highlight>
 
 ## Action Contract
-- `actions` 可以为空数组，也可以包含若干动作。
-- 如果 Action Candidates 不为 `(none)`，且你的奏报建议了具体行动，必须使用 `select_candidate` 从候选中选择一个最匹配项，不要手写同类动作参数。
+- `proposals` 可以为空数组，也可以包含若干提案。若 Action Candidates 不为 `(none)`，且你的奏报建议了具体行动，至少给出 1-3 个提案。
+- 每个 proposal 最好围绕一个清晰主题；如果一个提案包含多个动作，它们必须语义一致，且玩家批准时可以一起成立。
+- `actions` 保留兼容输出。若你已经在 `proposals` 中组织提案，通常让 `actions` 为空数组即可，避免重复。
+- 如果 Action Candidates 不为 `(none)`，且你的奏报建议了具体行动，必须使用 `select_candidate` 从候选中选择最匹配项，不要手写同类动作参数。
 - 单位/地图行动只能通过 Action Candidates 中的 operation 候选进入 `select_candidate`，不要输出单位级 action。
 - `select_candidate` 动作需要 `params.draft_id`，其值必须来自 Action Candidates 中的 `candidate_id`。
 - `build` 动作需要 `params.node_id`、`params.building_type`，可选 `params.city_id`。
@@ -36,7 +38,7 @@ current_research={{ .CurrentResearch }}
 - `set_institution_loadout` 动作需要 `params.institution_ids` 数组。
 - `set_building_recipe` 动作需要 `params.node_id`、`params.recipe_id`。
 - 不要发明新的动作类型，不要输出无关参数。
-- 如果输出 action，可以在 action 上额外给出 `title`、`summary`、`rationale`、`risk_note`，这些字段会显示为最终提案卡片文案；必须是简体中文，并且不得提到候选来源、规则规划器、内部校验或系统实现。
+- 如果输出 proposal 或 action，可以额外给出 `title`、`summary`、`rationale`、`risk_note`，这些字段会显示为最终提案卡片文案；必须是简体中文，并且不得提到候选来源、规则规划器、内部校验或系统实现。
 
 ## Two-Track Output Contract
 - `report` 是叙事轨：简体中文、1-3 句、有大臣立场，但只基于观察摘要。
@@ -54,6 +56,20 @@ Return exactly this JSON shape and no other fields:
       "trend": "up|down|stable",
       "confidence": "high|medium|low",
       "is_delayed": false
+    }
+  ],
+  "proposals": [
+    {
+      "title": "<可选，简体中文短标题>",
+      "summary": "<可选，简体中文一句话提案>",
+      "rationale": "<可选，简体中文理由>",
+      "risk_note": "<可选，简体中文风险提示>",
+      "actions": [
+        {
+          "type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe",
+          "params": {}
+        }
+      ]
     }
   ],
   "actions": [

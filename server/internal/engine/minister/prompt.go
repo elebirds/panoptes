@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/elebirds/panoptes/internal/llm"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
 
 //go:embed prompts/*.md
@@ -108,6 +109,7 @@ type ministerProfileTemplateData struct {
 	LoyaltyTendency   int
 	AmbitionStyle     int
 	StylePressureNote string
+	RoleDuty          string
 }
 
 type reportPromptTemplateData struct {
@@ -122,8 +124,9 @@ type reportPromptTemplateData struct {
 }
 
 func newMinisterProfileTemplateData(profile MinisterProfile) ministerProfileTemplateData {
+	role := ministerroles.Canonical(profile.Role)
 	return ministerProfileTemplateData{
-		Role:              strings.TrimSpace(profile.Role),
+		Role:              role,
 		Name:              strings.TrimSpace(profile.Name),
 		Personality:       strings.TrimSpace(profile.Personality),
 		PersonalityDesc:   strings.TrimSpace(profile.PersonalityDesc),
@@ -135,6 +138,24 @@ func newMinisterProfileTemplateData(profile MinisterProfile) ministerProfileTemp
 		LoyaltyTendency:   profile.LoyaltyTendency,
 		AmbitionStyle:     profile.AmbitionStyle,
 		StylePressureNote: stylePressureNote(profile),
+		RoleDuty:          roleDuty(profile.Role),
+	}
+}
+
+func roleDuty(role string) string {
+	switch ministerroles.Canonical(role) {
+	case ministerroles.Domestic:
+		return "你负责内政、研究、国策和制度，优先看民生、治理与长期秩序。"
+	case ministerroles.Works:
+		return "你负责工务、资源建筑、生产配方与修复，优先看产能、供给和设施利用率。"
+	case ministerroles.Defense:
+		return "你负责军备、征募、军工和防线，优先看兵力补充、驻防与战争准备。"
+	case ministerroles.Command:
+		return "你负责军队指挥、侦察、机动与接敌命令，优先看战术位置和回合内行动连续性。"
+	case ministerroles.Frontier:
+		return "你负责拓边、前哨、扩张和定居，优先看领土推进、边线压力与新据点落地。"
+	default:
+		return "你需要按照该职位的职责边界行动，不要越权覆盖其他部门。"
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 	"github.com/elebirds/panoptes/internal/event"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/llm"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"google.golang.org/protobuf/proto"
 )
@@ -55,7 +56,7 @@ func (e *MinisterEngine) SetEnabledRoles(roles []string) {
 	defer e.mu.Unlock()
 	e.enabledRoles = make(map[string]struct{}, len(roles))
 	for _, role := range roles {
-		role = strings.TrimSpace(role)
+		role = ministerroles.Canonical(role)
 		if role == "" {
 			continue
 		}
@@ -220,12 +221,12 @@ func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemor
 }
 
 func pickProfiles() []MinisterProfile {
-	pool := staticdata.Default().Ministers()
+	pool := ministerroles.NormalizeMinisters(staticdata.Default().Ministers())
 	if len(pool) == 0 {
 		return []MinisterProfile{{
-			ID:              "finance",
-			Name:            "财政大臣",
-			Role:            "finance",
+			ID:              "domestic",
+			Name:            "内政大臣",
+			Role:            ministerroles.Domestic,
 			Ability:         5,
 			Personality:     "steady",
 			PersonalityDesc: "稳健",
@@ -258,9 +259,9 @@ func pickProfiles() []MinisterProfile {
 }
 
 func profileForRole(role string) (MinisterProfile, bool) {
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	for _, profile := range pickProfiles() {
-		if strings.TrimSpace(profile.Role) == role {
+		if ministerroles.Canonical(profile.Role) == role {
 			return profile, true
 		}
 	}
@@ -271,7 +272,7 @@ func (e *MinisterEngine) roleEnabled(role string) bool {
 	if e == nil {
 		return false
 	}
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.enabledRoles) == 0 {
@@ -303,7 +304,7 @@ func (e *MinisterEngine) requestModel() string {
 }
 
 func fallbackJSON(report string) string {
-	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
+	return `{"report":"` + report + `","metrics":[],"proposals":[],"actions":[],"action_id":"fallback"}`
 }
 
 func ministerDebugPreview(text string) string {

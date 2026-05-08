@@ -41,7 +41,7 @@ func TestBuildMinisterChatClientDisabledReturnsNil(t *testing.T) {
 
 func TestParseMinisterEnabledRoles(t *testing.T) {
 	got := parseMinisterEnabledRoles(" domestic, Military,domestic ,, ")
-	want := []string{"domestic", "military"}
+	want := []string{"domestic", "command"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("parseMinisterEnabledRoles() = %#v, want %#v", got, want)
 	}
@@ -49,7 +49,7 @@ func TestParseMinisterEnabledRoles(t *testing.T) {
 
 func TestParseMinisterEnabledRolesDefaultsWhenBlank(t *testing.T) {
 	got := parseMinisterEnabledRoles("  ")
-	want := []string{"domestic", "military"}
+	want := []string{"domestic", "works", "defense", "command", "frontier"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("parseMinisterEnabledRoles() = %#v, want %#v", got, want)
 	}

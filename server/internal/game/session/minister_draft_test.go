@@ -24,11 +24,11 @@ func TestMinisterDraftTextUsesChineseProposalCopyForResearch(t *testing.T) {
 	}
 }
 
-func TestMinisterDraftTextUsesChineseRuleCopyForMilitary(t *testing.T) {
+func TestMinisterDraftTextUsesChineseRuleCopyForCommand(t *testing.T) {
 	title, summary, rationale, riskNote := ministerDraftText(militaryMinisterRole, string(domain.MinisterDraftKindUnitOrder), "军团一号进驻 A3")
 
-	if title != "军事提案" {
-		t.Fatalf("title = %q, want 军事提案", title)
+	if title != "军令提案" {
+		t.Fatalf("title = %q, want 军令提案", title)
 	}
 	if !strings.Contains(summary, "军团一号进驻 A3") {
 		t.Fatalf("summary = %q, want target label in Chinese copy", summary)

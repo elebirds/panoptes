@@ -6,6 +6,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
@@ -24,7 +25,7 @@ func BuildMinisterDraftViews(state *domain.GameState, playerID string) []*pb.Min
 			continue
 		}
 		out = append(out, &pb.MinisterDraftView{
-			MinisterRole: strings.TrimSpace(draft.MinisterRole),
+			MinisterRole: ministerroles.Canonical(draft.MinisterRole),
 			JsonPayload:  string(payload),
 			Available:    draft.Available,
 		})
@@ -51,7 +52,7 @@ func BuildMinisterProposalViews(state *domain.GameState, playerID string) []*pb.
 		}
 		out = append(out, &pb.MinisterProposalView{
 			ProposalId:        strings.TrimSpace(draft.DraftID),
-			MinisterRole:      strings.TrimSpace(draft.MinisterRole),
+			MinisterRole:      ministerroles.Canonical(draft.MinisterRole),
 			Kind:              string(draft.Kind),
 			Title:             strings.TrimSpace(draft.Title),
 			Summary:           strings.TrimSpace(draft.Summary),
@@ -161,13 +162,13 @@ func cloneDraftParams(src map[string]string) map[string]string {
 }
 
 func BuildMinisterRosterViews() []*pb.MinisterView {
-	ministers := staticdata.Default().Ministers()
+	ministers := ministerroles.NormalizeMinisters(staticdata.Default().Ministers())
 	if len(ministers) == 0 {
 		return nil
 	}
 	out := make([]*pb.MinisterView, 0, len(ministers))
 	for _, minister := range ministers {
-		role := strings.TrimSpace(minister.Role)
+		role := ministerroles.Canonical(minister.Role)
 		if role == "" {
 			continue
 		}

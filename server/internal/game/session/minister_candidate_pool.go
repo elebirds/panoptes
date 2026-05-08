@@ -310,7 +310,7 @@ func engageVisibleEnemyOperations(playerID string, state *domain.GameState, obse
 		out = append(out, ministerOperationCandidate{
 			key:         "engage:" + enemyID,
 			score:       300 + len(intents)*20,
-			role:        militaryMinisterRole,
+			role:        commandMinisterRole,
 			operationID: "engage_" + safeDraftIDPart(enemyID),
 			objective:   "压制可见敌军 " + enemyID,
 			title:       "军事方案",
@@ -351,7 +351,7 @@ func developResourceOperations(playerID string, state *domain.GameState, observa
 			out = append(out, ministerOperationCandidate{
 				key:         "develop:" + nodeID,
 				score:       230 + resourceOperationBonus(node),
-				role:        domesticMinisterRole,
+				role:        worksMinisterRole,
 				operationID: "develop_" + safeDraftIDPart(nodeID),
 				objective:   "开发资源点 " + nodeID,
 				title:       "开发方案",
@@ -400,7 +400,7 @@ func repairInfrastructureOperations(playerID string, state *domain.GameState, ob
 			out = append(out, ministerOperationCandidate{
 				key:         "repair:" + action + ":" + nodeID,
 				score:       score,
-				role:        domesticMinisterRole,
+				role:        worksMinisterRole,
 				operationID: "repair_" + safeDraftIDPart(nodeID),
 				objective:   "修复 " + nodeID,
 				title:       "修复方案",
@@ -421,17 +421,21 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		if node == nil || strings.TrimSpace(node.GetId()) == "" || strings.TrimSpace(node.GetBuildingTypeId()) != "" {
 			continue
 		}
-		score := 40
+		score := 0
 		if node.GetEnemyUnitCount() > 0 {
 			score += 120
 		}
 		if ownerKnownAgainstPlayer(node, playerID) {
-			score += 60
+			score += 80
 		}
-		if node.GetIsResourcePoint() {
-			score += 25
+		territoryOwner := strings.TrimSpace(node.GetTerritoryOwnerPlayerId())
+		switch {
+		case territoryOwner == "":
+			score += 40
+		case territoryOwner == playerID:
+			score += 20
 		}
-		if score < 40 {
+		if score == 0 {
 			continue
 		}
 		intents := make([]planning.IssueUnitOrderIntent, 0, 2)
@@ -455,7 +459,7 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		out = append(out, ministerOperationCandidate{
 			key:         "secure:" + nodeID,
 			score:       score + len(intents)*10,
-			role:        militaryMinisterRole,
+			role:        commandMinisterRole,
 			operationID: "secure_" + safeDraftIDPart(nodeID),
 			objective:   "控制或侦察 " + nodeID,
 			title:       "机动方案",
@@ -495,7 +499,7 @@ func ministerOperationDraftFromCandidate(turn int, playerID string, candidate mi
 	}
 	role := strings.TrimSpace(candidate.role)
 	if role == "" {
-		role = militaryMinisterRole
+		role = commandMinisterRole
 	}
 	objective := strings.TrimSpace(candidate.objective)
 	if objective == "" {

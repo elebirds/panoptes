@@ -119,3 +119,42 @@ func TestParseMinisterResponseDropsEnglishActionProposalText(t *testing.T) {
 		t.Fatalf("English action copy should be dropped, got %#v", out.Actions[0])
 	}
 }
+
+func TestParseMinisterResponseFlattensProposalsIntoActions(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议分两步推进。",
+		"metrics":[],
+		"proposals":[
+			{
+				"title":"先修道路",
+				"summary":"先处理补给线。",
+				"rationale":"道路优先。",
+				"risk_note":"会占用一回合。",
+				"actions":[
+					{"type":"build","params":{"node_id":"A2","building_type":"road"}}
+				]
+			},
+			{
+				"title":"再整备军令",
+				"summary":"随后移动部队。",
+				"actions":[
+					{"type":"select_candidate","params":{"draft_id":"command:operation:secure_a2:4"}}
+				]
+			}
+		],
+		"actions":[],
+		"action_id":"multi_step"
+	}`)
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
+	}
+	if len(out.Actions) != 2 {
+		t.Fatalf("actions len = %d, want 2", len(out.Actions))
+	}
+	if out.Actions[0].Title != "先修道路" || out.Actions[0].Summary != "先处理补给线。" || out.Actions[0].Rationale != "道路优先。" || out.Actions[0].RiskNote != "会占用一回合。" {
+		t.Fatalf("first flattened action = %#v, want proposal copy", out.Actions[0])
+	}
+	if out.Actions[1].Title != "再整备军令" || out.Actions[1].Summary != "随后移动部队。" {
+		t.Fatalf("second flattened action = %#v, want proposal copy", out.Actions[1])
+	}
+}

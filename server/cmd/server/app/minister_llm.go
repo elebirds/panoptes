@@ -9,6 +9,7 @@ import (
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/llm"
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
 
 func buildMinisterChatClient(cfg *config.Config) chatmodule.ChatClient {
@@ -71,7 +72,7 @@ func parseMinisterEnabledRoles(raw string) []string {
 	roles := make([]string, 0, len(parts))
 	seen := make(map[string]struct{}, len(parts))
 	for _, part := range parts {
-		role := strings.ToLower(strings.TrimSpace(part))
+		role := ministerroles.Canonical(part)
 		if role == "" {
 			continue
 		}
@@ -82,7 +83,7 @@ func parseMinisterEnabledRoles(raw string) []string {
 		roles = append(roles, role)
 	}
 	if len(roles) == 0 {
-		return []string{"domestic", "military"}
+		return ministerroles.OrderedRoles()
 	}
 	return roles
 }

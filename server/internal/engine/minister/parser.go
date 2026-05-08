@@ -23,10 +23,11 @@ type MinisterOutput struct {
 
 // MinisterReportResponse is the exact JSON object expected from report prompts.
 type MinisterReportResponse struct {
-	Report   string               `json:"report"`
-	Metrics  []MinisterMetricItem `json:"metrics"`
-	Actions  []MinisterActionItem `json:"actions"`
-	ActionID string               `json:"action_id"`
+	Report    string                 `json:"report"`
+	Metrics   []MinisterMetricItem   `json:"metrics"`
+	Actions   []MinisterActionItem   `json:"actions"`
+	Proposals []MinisterProposalItem `json:"proposals"`
+	ActionID  string                 `json:"action_id"`
 }
 
 // MinisterMetricItem is the JSON shape for one report metric item.
@@ -45,6 +46,17 @@ type MinisterActionItem struct {
 	Summary   string         `json:"summary,omitempty"`
 	Rationale string         `json:"rationale,omitempty"`
 	RiskNote  string         `json:"risk_note,omitempty"`
+}
+
+// MinisterProposalItem lets the model group one approval card around one or
+// more executable actions. The runtime flattens it into the existing draft
+// stream until the wire protocol grows first-class grouped proposals.
+type MinisterProposalItem struct {
+	Title     string               `json:"title,omitempty"`
+	Summary   string               `json:"summary,omitempty"`
+	Rationale string               `json:"rationale,omitempty"`
+	RiskNote  string               `json:"risk_note,omitempty"`
+	Actions   []MinisterActionItem `json:"actions"`
 }
 
 const (
@@ -71,19 +83,53 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 			IsDelayed:  m.IsDelayed,
 		})
 	}
-	out.Actions = make([]MinisterActionItem, 0, len(raw.Actions))
+	out.Actions = make([]MinisterActionItem, 0, len(raw.Actions)+proposalActionCount(raw.Proposals))
 	for _, a := range raw.Actions {
-		out.Actions = append(out.Actions, MinisterActionItem{
-			Type:      a.Type,
-			Params:    a.Params,
-			Title:     sanitizeOptionalPlayerVisibleChinese(a.Title),
-			Summary:   sanitizeOptionalPlayerVisibleChinese(a.Summary),
-			Rationale: sanitizeOptionalPlayerVisibleChinese(a.Rationale),
-			RiskNote:  sanitizeOptionalPlayerVisibleChinese(a.RiskNote),
-		})
+		out.Actions = append(out.Actions, sanitizeMinisterAction(a))
+	}
+	for _, proposal := range raw.Proposals {
+		for _, action := range proposal.Actions {
+			out.Actions = append(out.Actions, sanitizeMinisterActionWithFallback(action, proposal))
+		}
 	}
 	out.Report = sanitizePlayerVisibleChinese(out.Report, chineseReportFallback)
 	return out, nil
+}
+
+func proposalActionCount(proposals []MinisterProposalItem) int {
+	total := 0
+	for _, proposal := range proposals {
+		total += len(proposal.Actions)
+	}
+	return total
+}
+
+func sanitizeMinisterAction(action MinisterActionItem) MinisterActionItem {
+	return MinisterActionItem{
+		Type:      strings.TrimSpace(action.Type),
+		Params:    action.Params,
+		Title:     sanitizeOptionalPlayerVisibleChinese(action.Title),
+		Summary:   sanitizeOptionalPlayerVisibleChinese(action.Summary),
+		Rationale: sanitizeOptionalPlayerVisibleChinese(action.Rationale),
+		RiskNote:  sanitizeOptionalPlayerVisibleChinese(action.RiskNote),
+	}
+}
+
+func sanitizeMinisterActionWithFallback(action MinisterActionItem, proposal MinisterProposalItem) MinisterActionItem {
+	sanitized := sanitizeMinisterAction(action)
+	if sanitized.Title == "" {
+		sanitized.Title = sanitizeOptionalPlayerVisibleChinese(proposal.Title)
+	}
+	if sanitized.Summary == "" {
+		sanitized.Summary = sanitizeOptionalPlayerVisibleChinese(proposal.Summary)
+	}
+	if sanitized.Rationale == "" {
+		sanitized.Rationale = sanitizeOptionalPlayerVisibleChinese(proposal.Rationale)
+	}
+	if sanitized.RiskNote == "" {
+		sanitized.RiskNote = sanitizeOptionalPlayerVisibleChinese(proposal.RiskNote)
+	}
+	return sanitized
 }
 
 func sanitizeOptionalPlayerVisibleChinese(text string) string {
