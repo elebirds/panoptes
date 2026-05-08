@@ -1,0 +1,7 @@
+﻿{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend package entrypoint for Unity client asset/tooling constraints."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Audio assets and any optional client integration must stay in established client folders."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "If Unity-facing scripts are added later, preserve component boundaries and serialization conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Ensure audio tooling/client use stays presentation-only and does not add gameplay authority."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Apply project quality rules and verification expectations."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Search for existing patterns before introducing tool helpers or config constants."}
+{"file": ".trellis/tasks/05-08-audio-production-tool-layer/prd.md", "reason": "Implementation requirements for the audio production tool layer."}

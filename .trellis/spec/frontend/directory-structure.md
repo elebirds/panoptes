@@ -131,3 +131,90 @@ Use descriptive helper names that state the owned responsibility:
 - `Presentation/UI/Turn/RecipeSynthesisRenderedItemRegistry.cs`
 - `Presentation/Map/MapSourceResolver.cs`
 - `Core/Application/Cache/GameStateCacheReadQueries.cs`
+
+---
+
+## Audio Tooling and Assets
+
+### 1. Scope / Trigger
+
+Use this contract when adding or regenerating client audio placeholder assets
+for music or sound effects. Audio generation is a presentation asset workflow;
+it must not add gameplay authority, protocol changes, or new runtime command
+validation in the Unity client.
+
+### 2. Signatures
+
+Run audio tooling from the repository root:
+
+```bash
+node tools/audio/generate-audio.mjs
+node tools/audio/generate-audio.mjs verify
+node tools/audio/generate-audio.mjs list
+```
+
+### 3. Contracts
+
+- Tool location: `tools/audio/generate-audio.mjs`.
+- Tool documentation: `tools/audio/README.md`.
+- Unity audio asset root: `client/Assets/Art/Audio/`.
+- Runtime-loadable output root: `client/Assets/Art/Audio/Resources/Audio/`.
+- Music output: `client/Assets/Art/Audio/Resources/Audio/BGM/*.wav`.
+- UI sound effects: `client/Assets/Art/Audio/Resources/Audio/SFX/UI/*.wav`.
+- Attack sound effects: `client/Assets/Art/Audio/Resources/Audio/SFX/Attack/*.wav`.
+- Manifest: `client/Assets/Art/Audio/manifest.json`.
+- Runtime clip paths must use manifest `resourcesPath` values such as
+  `Audio/SFX/UI/click_confirm`, because Unity resolves them through the nested
+  `Resources` folder.
+- MVP format: PCM signed 16-bit mono WAV at 44100 Hz.
+- Local generator dependencies: Node.js standard library only; do not add npm
+  packages for the local procedural path.
+
+### 4. Validation & Error Matrix
+
+- Missing generated audio file -> `verify` must fail.
+- Invalid RIFF/WAVE PCM header -> `verify` must fail.
+- Wrong channel count, sample rate, bit depth, or sample length -> `verify`
+  must fail.
+- New third-party package dependency for local generation -> reject the change
+  unless the task explicitly approves a provider migration.
+- Changes under generated protocol paths -> reject the change.
+
+### 5. Good/Base/Bad Cases
+
+- Good: regenerate all local placeholders with `node tools/audio/generate-audio.mjs`,
+  commit the WAVs, manifest, and deterministic Unity `.meta` files together.
+- Base: run `node tools/audio/generate-audio.mjs verify` after editing the
+  catalog or synthesis code.
+- Bad: hand-place ad hoc audio files outside `client/Assets/Art/Audio/` without
+  updating the manifest.
+
+### 6. Tests Required
+
+- Run `node --check tools/audio/generate-audio.mjs`.
+- Run `node tools/audio/generate-audio.mjs verify`.
+- Confirm no dependency manifest changes unless the task explicitly adds a new
+  provider.
+- Confirm no generated protocol files changed.
+- When Unity Editor is available, import/audition generated WAVs before treating
+  them as production-quality assets.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```text
+client/Assets/Audio/click.wav
+```
+
+The file is outside the documented audio root and has no manifest entry.
+
+#### Correct
+
+```text
+client/Assets/Art/Audio/Resources/Audio/SFX/UI/click_confirm.wav
+client/Assets/Art/Audio/manifest.json
+```
+
+The file sits in the runtime-loadable category folder and is discoverable
+through the generated manifest.

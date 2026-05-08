@@ -8,9 +8,11 @@
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Presentation.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -39,7 +41,14 @@ namespace Panoptes.Presentation.UI.Common
 
         private Action _onConfirm;
         private Action _onCancel;
+        private PresentationAudioService _audioService;
         private bool _buttonHandlersBound;
+
+        [Inject]
+        private void Construct(PresentationAudioService audioService)
+        {
+            _audioService = audioService;
+        }
 
         private void Awake()
         {
@@ -168,6 +177,7 @@ namespace Panoptes.Presentation.UI.Common
 
         private void HandleConfirmClicked()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             var callback = _onConfirm;
             Hide();
             callback?.Invoke();
@@ -175,6 +185,7 @@ namespace Panoptes.Presentation.UI.Common
 
         private void HandleCancelClicked()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Back);
             var callback = _onCancel;
             Hide();
             callback?.Invoke();

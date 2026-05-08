@@ -1,0 +1,28 @@
+﻿{
+  "id": "audio-production-tool-layer",
+  "name": "audio-production-tool-layer",
+  "title": "build audio production tool layer",
+  "description": "Create a local tool layer for producing three background music tracks plus UI click and attack sound effect assets for Panoptes.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "client",
+  "package": "frontend",
+  "priority": "P2",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-05-08",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "manual_task_bootstrap": "python unavailable in this environment; files created directly"
+  }
+}

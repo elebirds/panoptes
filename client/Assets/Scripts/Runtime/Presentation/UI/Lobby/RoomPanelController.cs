@@ -3,6 +3,7 @@ using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Panoptes.Presentation.UI.Lobby
         private SessionManager _sessionManager;
         private ConfirmDialog _confirmDialog;
         private ErrorToast _errorToast;
+        private PresentationAudioService _audioService;
         private Coroutine _countdownCoroutine;
         private Coroutine _statusResetCoroutine;
         private TextMeshProUGUI _readyButtonText;
@@ -48,7 +50,8 @@ namespace Panoptes.Presentation.UI.Lobby
             SessionManager sessionManager,
             ConfirmDialog confirmDialog,
             ErrorToast errorToast,
-            LobbySceneController sceneController)
+            LobbySceneController sceneController,
+            PresentationAudioService audioService)
         {
             _lobbySvc = lobbyService;
             _cache = roomCache;
@@ -57,6 +60,7 @@ namespace Panoptes.Presentation.UI.Lobby
             _confirmDialog = confirmDialog;
             _errorToast = errorToast;
             _sceneController = sceneController;
+            _audioService = audioService;
             SubscribeStores();
         }
 
@@ -221,6 +225,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnClickReady()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Soft);
             _lobbySvc.ReadyUp();
         }
 
@@ -228,9 +233,11 @@ namespace Panoptes.Presentation.UI.Lobby
         {
             if (!CanAddBot())
             {
+                _audioService?.PlayUiClick(UiClickAudioKind.Disabled);
                 return;
             }
 
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             _lobbySvc.AddBot();
         }
 
@@ -238,9 +245,11 @@ namespace Panoptes.Presentation.UI.Lobby
         {
             if (!CanStartGame())
             {
+                _audioService?.PlayUiClick(UiClickAudioKind.Disabled);
                 return;
             }
 
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             ShowConfirmation(
                 "开始游戏",
                 "确认以当前准备状态开始游戏吗？",
@@ -249,6 +258,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnClickLeave()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Back);
             var message = _cache != null && _cache.IsHost
                 ? "你是房主，离开后当前房间会解散。确认离开吗？"
                 : "确认离开当前房间吗？";
@@ -482,9 +492,11 @@ namespace Panoptes.Presentation.UI.Lobby
         {
             if (string.IsNullOrWhiteSpace(playerId))
             {
+                _audioService?.PlayUiClick(UiClickAudioKind.Disabled);
                 return;
             }
 
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             var username = ResolvePlayerDisplayName(playerId);
             var message = string.IsNullOrWhiteSpace(username)
                 ? "确认将这名玩家移出房间吗？"

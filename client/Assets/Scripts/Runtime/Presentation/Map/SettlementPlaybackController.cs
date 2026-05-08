@@ -11,6 +11,7 @@ using System.Collections;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Animation;
+using Panoptes.Presentation.Audio;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -35,6 +36,7 @@ namespace Panoptes.Presentation.Map
         private SettlementStore _settlementStore;
         private MapRenderer _mapRenderer;
         private AnimationQueue _animationQueue;
+        private PresentationAudioService _audioService;
         private IDisposable _settlementSubscription;
         private Coroutine _playbackCoroutine;
         private UnitView _playbackSelectedUnit;
@@ -46,11 +48,13 @@ namespace Panoptes.Presentation.Map
             SettlementStore settlementStore,
             MapRenderer mapRenderer,
             AnimationQueue animationQueue,
-            DamageNumberPopupController injectedDamagePopupController)
+            DamageNumberPopupController injectedDamagePopupController,
+            PresentationAudioService audioService)
         {
             _settlementStore = settlementStore;
             _mapRenderer = mapRenderer;
             _animationQueue = animationQueue;
+            _audioService = audioService;
             if (damagePopupController == null)
             {
                 damagePopupController = injectedDamagePopupController;
@@ -280,11 +284,13 @@ namespace Panoptes.Presentation.Map
         {
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
+                PlayDamageAudio(evt, isBuilding: false);
                 TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
             ApplyUnitHpAfter(evt);
+            PlayDamageAudio(evt, isBuilding: false);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
         }
@@ -295,6 +301,7 @@ namespace Panoptes.Presentation.Map
             {
                 if (showDamageCue)
                 {
+                    PlayDamageAudio(evt, isBuilding: false);
                     TryShowUnitDamagePopupFallback(evt);
                 }
                 yield break;
@@ -303,6 +310,7 @@ namespace Panoptes.Presentation.Map
             if (showDamageCue)
             {
                 ApplyUnitHpAfter(evt);
+                PlayDamageAudio(evt, isBuilding: false);
                 TryShowDamagePopup(unit.transform, evt, isBuilding: false);
                 yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             }
@@ -318,6 +326,7 @@ namespace Panoptes.Presentation.Map
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
             ApplyBuildingHpAfter(evt);
+            PlayDamageAudio(evt, isBuilding: true);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
@@ -497,6 +506,16 @@ namespace Panoptes.Presentation.Map
             }
 
             damagePopupController.ShowDamage(target, damage, isBuilding);
+        }
+
+        private void PlayDamageAudio(TurnEventDto evt, bool isBuilding)
+        {
+            if (ResolveDamageValue(evt) <= 0)
+            {
+                return;
+            }
+
+            _audioService?.PlayAttack(isBuilding ? AttackAudioKind.Siege : AttackAudioKind.Blade);
         }
 
         private void TryShowUnitDamagePopupFallback(TurnEventDto evt)
