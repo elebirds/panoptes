@@ -75,6 +75,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _groups.Clear();
             if (!state.HasGroups)
             {
+                SetText(_empty, IsInstitutionsTitle(state.Title)
+                    ? "\u73b0\u5728\u6ca1\u6709\u53ef\u9881\u5e03\u7684\u5236\u5ea6\uff0c\u63d0\u5347\u79d1\u6280\u6c34\u5e73\u518d\u6765\u770b\u770b\u5427"
+                    : "\u6682\u65e0\u5185\u5bb9");
                 SetDisplay(_empty, DisplayStyle.Flex);
                 return;
             }

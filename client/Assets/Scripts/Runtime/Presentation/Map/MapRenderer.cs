@@ -849,9 +849,6 @@ namespace Panoptes.Presentation.Map
                 visual.IsVisible = previous.IsVisible;
                 visual.IsMemory = previous.IsMemory;
                 visual.LastObservedTurn = previous.LastObservedTurn;
-                visual.HasRoad = previous.HasRoad;
-                visual.IsResourcePoint = previous.IsResourcePoint;
-                visual.ResourceType = previous.ResourceType;
             }
 
             return visual;
@@ -891,6 +888,10 @@ namespace Panoptes.Presentation.Map
                 IsMemory = source.IsMemory,
                 LastObservedTurn = source.LastObservedTurn,
                 HasRoad = source.HasRoad,
+                RoadStatus = source.RoadStatus,
+                NetworkStatus = source.NetworkStatus,
+                NetworkCityId = source.NetworkCityId,
+                IsNetworkConnected = source.IsNetworkConnected,
                 Terrain = source.Terrain,
                 IsResourcePoint = source.IsResourcePoint,
                 ResourceType = source.ResourceType,
@@ -1077,7 +1078,7 @@ namespace Panoptes.Presentation.Map
         private void BuildFromBackendNodes(List<NodeDto> nodes)
         {
             _jsonUnits.Clear();
-            BuildFromNodes(nodes);
+            BuildFromNodes(nodes, allowResourcePointInjection: false);
         }
 
         public void RefreshNode(string nodeId)
@@ -1095,6 +1096,7 @@ namespace Panoptes.Presentation.Map
             if (_nodeStates.TryGetValue(nodeId, out var node))
             {
                 view.Bind(node);
+                RefreshRoadConnections();
             }
         }
 
@@ -1112,6 +1114,7 @@ namespace Panoptes.Presentation.Map
                 view.Bind(node);
             }
 
+            RefreshRoadConnections();
             RefreshObservationPresentation(fullRebuildFog: false, snapshotNode: node);
 
             return true;
@@ -1459,7 +1462,7 @@ namespace Panoptes.Presentation.Map
             BuildFromNodes(nodes);
         }
 
-        private void BuildFromNodes(IEnumerable<NodeDto> nodes)
+        private void BuildFromNodes(IEnumerable<NodeDto> nodes, bool allowResourcePointInjection = true)
         {
             if (nodeTilePrefab == null)
             {
@@ -1482,7 +1485,10 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            EnsureMinimumResourcePoints(nodeList);
+            if (allowResourcePointInjection)
+            {
+                EnsureMinimumResourcePoints(nodeList);
+            }
 
             foreach (var node in nodeList)
             {
@@ -1504,6 +1510,7 @@ namespace Panoptes.Presentation.Map
 
             RebuildTerrainDecorations(nodeList);
             RebuildMapBackdrop();
+            RefreshRoadConnections();
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
             if (!GamePhases.IsResolving(GetGameStateSnapshot().Phase))
@@ -1512,6 +1519,53 @@ namespace Panoptes.Presentation.Map
             }
             PublishCameraContext();
             StatePresentationRefreshed?.Invoke();
+        }
+
+        private void RefreshRoadConnections()
+        {
+            if (_tileViews.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _tileViews)
+            {
+                var nodeId = pair.Key;
+                var tile = pair.Value;
+                if (tile == null ||
+                    string.IsNullOrWhiteSpace(nodeId) ||
+                    !_nodeStates.TryGetValue(nodeId, out var node) ||
+                    !IsRoadPresent(node))
+                {
+                    tile?.SetRoadConnectionDirections(null);
+                    continue;
+                }
+
+                var directions = new List<Vector3>(HexGrid.AxialDirections.Length);
+                for (var i = 0; i < HexGrid.AxialDirections.Length; i++)
+                {
+                    var neighborGrid = tile.GridPos + HexGrid.AxialDirections[i];
+                    if (!_tileViewsByGrid.TryGetValue(neighborGrid, out var neighborTile) ||
+                        neighborTile == null ||
+                        string.IsNullOrWhiteSpace(neighborTile.NodeId) ||
+                        !_nodeStates.TryGetValue(neighborTile.NodeId, out var neighborNode) ||
+                        !IsRoadPresent(neighborNode))
+                    {
+                        continue;
+                    }
+
+                    directions.Add(neighborTile.transform.localPosition - tile.transform.localPosition);
+                }
+
+                tile.SetRoadConnectionDirections(directions);
+            }
+        }
+
+        private static bool IsRoadPresent(NodeDto node)
+        {
+            return node != null &&
+                   node.HasRoad &&
+                   !string.Equals(node.RoadStatus, "destroyed", StringComparison.OrdinalIgnoreCase);
         }
 
         private void PublishCameraContext()
@@ -2157,6 +2211,10 @@ namespace Panoptes.Presentation.Map
                    left.IsMemory == right.IsMemory &&
                    left.LastObservedTurn == right.LastObservedTurn &&
                    left.HasRoad == right.HasRoad &&
+                   string.Equals(left.RoadStatus, right.RoadStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkStatus, right.NetworkStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkCityId, right.NetworkCityId, StringComparison.Ordinal) &&
+                   left.IsNetworkConnected == right.IsNetworkConnected &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&
                    string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&

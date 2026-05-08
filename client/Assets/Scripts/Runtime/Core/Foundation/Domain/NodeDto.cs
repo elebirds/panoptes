@@ -27,6 +27,10 @@ namespace Panoptes.Core.Domain
         public bool IsMemory;
         public int LastObservedTurn;
         public bool HasRoad;
+        public string RoadStatus;
+        public string NetworkStatus;
+        public string NetworkCityId;
+        public bool IsNetworkConnected;
         public string Terrain;
         public bool IsResourcePoint;
         public string ResourceType;

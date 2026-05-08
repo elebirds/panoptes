@@ -201,6 +201,7 @@ namespace Panoptes.Core.Application.Cache
             public sealed class UnitFlagsJson
             {
                 public bool can_attack_structures;
+                public bool can_destroy_road;
             }
 
             public string id;
@@ -1297,7 +1298,8 @@ namespace Panoptes.Core.Application.Cache
                     prefab_key = item != null ? item.PrefabKey : string.Empty,
                     flags = new UnitEntryJson.UnitFlagsJson
                     {
-                        can_attack_structures = item != null && item.CanAttackStructures
+                        can_attack_structures = item != null && item.CanAttackStructures,
+                        can_destroy_road = false
                     },
                     tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
                 };

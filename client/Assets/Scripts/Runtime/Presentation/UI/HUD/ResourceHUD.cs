@@ -24,6 +24,8 @@ namespace Panoptes.Presentation.UI.HUD
     {
         private const string MinisterAttentionBadgeName = "MinisterAttentionBadge";
         private const string InstitutionAttentionBadgeName = "InstitutionAttentionBadge";
+        private const string MinisterThinkingFeedbackCode = "minister_thinking";
+        private const string MinisterThinkingFeedbackMessage = "大臣正在思考中";
 
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
@@ -61,8 +63,11 @@ namespace Panoptes.Presentation.UI.HUD
         private InstitutionViewModel _institutionViewModel;
         private GameObject _ministerAttentionBadge;
         private IDisposable _ministerAttentionSubscription;
+        private IDisposable _ministerTurnSubscription;
+        private GameplayFeedbackStore _feedbackStore;
         private PlanningDraftStore _planningDraftStore;
         private IDisposable _stateSubscription;
+        private TurnStore _turnStore;
         private ResourceHudViewModel _viewModel;
 
         [Inject]
@@ -81,6 +86,17 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _planningDraftStore = planningDraftStore;
             SubscribeMinisterAttention();
+            UpdateMinisterAttentionBadge();
+        }
+
+        [Inject]
+        private void ConstructMinisterGate(
+            TurnStore turnStore,
+            GameplayFeedbackStore feedbackStore)
+        {
+            _turnStore = turnStore;
+            _feedbackStore = feedbackStore;
+            SubscribeMinisterTurn();
             UpdateMinisterAttentionBadge();
         }
 
@@ -113,6 +129,7 @@ namespace Panoptes.Presentation.UI.HUD
             SubscribeState();
             SubscribeInstitutionAttention();
             SubscribeMinisterAttention();
+            SubscribeMinisterTurn();
             BindManagementButtons();
             ApplyGeneratedPanelArt();
             _binder?.Render(_viewModel?.Current ?? new ResourceHudState());
@@ -125,12 +142,14 @@ namespace Panoptes.Presentation.UI.HUD
             UnsubscribeState();
             UnsubscribeInstitutionAttention();
             UnsubscribeMinisterAttention();
+            UnsubscribeMinisterTurn();
             UnbindTechButton();
             _binder?.StopAllHideCoroutines();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeMinisterTurn();
             UnsubscribeMinisterAttention();
             UnsubscribeInstitutionAttention();
             _binder?.Dispose();
@@ -328,6 +347,24 @@ namespace Panoptes.Presentation.UI.HUD
             _ministerAttentionSubscription = null;
         }
 
+        private void SubscribeMinisterTurn()
+        {
+            if (_turnStore == null || _ministerTurnSubscription != null)
+            {
+                return;
+            }
+
+            _ministerTurnSubscription = _turnStore.State.Subscribe(
+                this,
+                static (_, self) => self.UpdateMinisterAttentionBadge());
+        }
+
+        private void UnsubscribeMinisterTurn()
+        {
+            _ministerTurnSubscription?.Dispose();
+            _ministerTurnSubscription = null;
+        }
+
         private void SubscribeInstitutionAttention()
         {
             if (_institutionViewModel == null || _institutionAttentionSubscription != null)
@@ -406,6 +443,12 @@ namespace Panoptes.Presentation.UI.HUD
                 {
                     PanoptesLog.Warning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
                 }
+                return;
+            }
+
+            if (!HasCurrentTurnMinisterDrafts(_planningDraftStore?.Snapshot, _turnStore?.Snapshot))
+            {
+                PublishMinisterThinkingFeedback();
                 return;
             }
 
@@ -525,13 +568,28 @@ namespace Panoptes.Presentation.UI.HUD
         private void UpdateMinisterAttentionBadge(PlanningDraftState state)
         {
             EnsureMinisterAttentionBadge();
+            var turn = _turnStore?.Snapshot;
+            if (!HasCurrentTurnMinisterDrafts(state, turn) &&
+                _managementPanelVisibilityStore?.IsVisible(ManagementPanelId.MinisterReport) == true)
+            {
+                _managementPanelVisibilityStore.Hide();
+            }
+
             if (_ministerAttentionBadge != null)
             {
-                _ministerAttentionBadge.SetActive(HasInteractiveMinisterDrafts(state?.MinisterDrafts));
+                _ministerAttentionBadge.SetActive(HasCurrentTurnInteractiveMinisterDrafts(state, turn));
             }
         }
 
-        private static bool HasInteractiveMinisterDrafts(System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts)
+        private static bool HasCurrentTurnMinisterDrafts(PlanningDraftState state, TurnState turn)
+        {
+            return HasCurrentTurnMinisterDrafts(state?.MinisterDrafts, ResolveCurrentTurn(state, turn), state?.SnapshotTurn ?? 0);
+        }
+
+        private static bool HasCurrentTurnMinisterDrafts(
+            System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts,
+            int currentTurn,
+            int snapshotTurn)
         {
             if (drafts == null)
             {
@@ -540,13 +598,79 @@ namespace Panoptes.Presentation.UI.HUD
 
             for (var i = 0; i < drafts.Count; i++)
             {
-                if (drafts[i]?.IsInteractive == true)
+                if (IsCurrentTurnDraft(drafts[i], currentTurn, snapshotTurn))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool HasCurrentTurnInteractiveMinisterDrafts(PlanningDraftState state, TurnState turn)
+        {
+            return HasCurrentTurnInteractiveMinisterDrafts(state?.MinisterDrafts, ResolveCurrentTurn(state, turn), state?.SnapshotTurn ?? 0);
+        }
+
+        private static bool HasCurrentTurnInteractiveMinisterDrafts(
+            System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts,
+            int currentTurn,
+            int snapshotTurn)
+        {
+            if (drafts == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < drafts.Count; i++)
+            {
+                var draft = drafts[i];
+                if (draft?.IsInteractive == true && IsCurrentTurnDraft(draft, currentTurn, snapshotTurn))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsCurrentTurnDraft(MinisterDraftDto draft, int currentTurn, int snapshotTurn)
+        {
+            if (draft == null)
+            {
+                return false;
+            }
+
+            if (currentTurn <= 0)
+            {
+                return true;
+            }
+
+            if (draft.Turn == currentTurn)
+            {
+                return true;
+            }
+
+            return draft.Turn <= 0 && snapshotTurn == currentTurn;
+        }
+
+        private static int ResolveCurrentTurn(PlanningDraftState state, TurnState turn)
+        {
+            if (turn != null && turn.Turn > 0)
+            {
+                return turn.Turn;
+            }
+
+            return state != null && state.SnapshotTurn > 0 ? state.SnapshotTurn : 0;
+        }
+
+        private void PublishMinisterThinkingFeedback()
+        {
+            _feedbackStore?.PublishFeedback(
+                "minister",
+                MinisterThinkingFeedbackCode,
+                MinisterThinkingFeedbackMessage,
+                false);
         }
 
         private static Sprite CreateMinisterAttentionSprite()

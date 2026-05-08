@@ -95,6 +95,11 @@ namespace Panoptes.Core.Application.Services
             return IssueUnitOrder(unitId, "attack", targetNodeId, null, secondaryNodeId);
         }
 
+        public bool DestroyRoad(string unitId, string fromNodeId, string toNodeId)
+        {
+            return IssueUnitOrder(unitId, "destroy_road", fromNodeId, null, toNodeId);
+        }
+
         public bool HoldUnit(string unitId)
         {
             return IssueUnitOrder(unitId, "hold", null, null, null);

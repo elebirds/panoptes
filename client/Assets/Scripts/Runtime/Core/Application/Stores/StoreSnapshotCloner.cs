@@ -293,10 +293,13 @@ namespace Panoptes.Core.Application.Stores
                 Id = source.Id,
                 IsCityCore = source.IsCityCore,
                 IsMemory = source.IsMemory,
+                IsNetworkConnected = source.IsNetworkConnected,
                 IsResourcePoint = source.IsResourcePoint,
                 IsSafeZone = source.IsSafeZone,
                 IsVisible = source.IsVisible,
                 LastObservedTurn = source.LastObservedTurn,
+                NetworkCityId = source.NetworkCityId,
+                NetworkStatus = source.NetworkStatus,
                 OperationBaseProgress = source.OperationBaseProgress,
                 OperationBlockedMessage = source.OperationBlockedMessage,
                 OperationBlockedReason = source.OperationBlockedReason,
@@ -307,6 +310,7 @@ namespace Panoptes.Core.Application.Stores
                 Q = source.Q,
                 R = source.R,
                 ResourceType = source.ResourceType,
+                RoadStatus = source.RoadStatus,
                 ServiceCityId = source.ServiceCityId,
                 TakeoverProgress = source.TakeoverProgress,
                 TakeoverRequired = source.TakeoverRequired,
@@ -726,7 +730,8 @@ namespace Panoptes.Core.Application.Stores
                 Description = source.Description,
                 Flags = source.Flags == null ? null : new CatalogUnitFlagsDto
                 {
-                    CanAttackStructures = source.Flags.CanAttackStructures
+                    CanAttackStructures = source.Flags.CanAttackStructures,
+                    CanDestroyRoad = source.Flags.CanDestroyRoad
                 },
                 IconKey = source.IconKey,
                 Id = source.Id,

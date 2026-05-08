@@ -138,6 +138,7 @@ namespace Panoptes.Core.Domain
     public sealed class CatalogUnitFlagsDto
     {
         public bool CanAttackStructures;
+        public bool CanDestroyRoad;
     }
 
     public sealed class CatalogUnitDto

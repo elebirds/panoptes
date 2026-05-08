@@ -54,23 +54,10 @@ namespace Panoptes.Presentation.ViewModels
                 return Array.Empty<string>();
             }
 
-            var slotCount = hasAuthoritativeInstitutionState
-                ? Math.Max(0, institutionState?.SlotCount ?? 0)
-                : Math.Max(1, current.Count + 1);
-            if (slotCount <= 0)
-            {
-                return Array.Empty<string>();
-            }
-
             var result = new List<string>();
             var seenCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var i = 0; i < current.Count; i++)
             {
-                if (result.Count >= slotCount - 1)
-                {
-                    break;
-                }
-
                 var currentId = Normalize(current[i]);
                 if (string.IsNullOrEmpty(currentId) || !snapshot.Institutions.TryGetValue(currentId, out var currentInstitution))
                 {
@@ -108,18 +95,25 @@ namespace Panoptes.Presentation.ViewModels
             for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
             {
                 var rows = groups[groupIndex]?.Rows;
-                if (rows == null)
+                if (rows == null || rows.Count == 0)
                 {
                     continue;
                 }
 
+                var hasSelectedOption = false;
                 for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
                 {
                     var row = rows[rowIndex];
-                    if (row != null && row.HasAction && string.IsNullOrWhiteSpace(row.Status))
+                    if (row != null && !string.IsNullOrWhiteSpace(row.Status))
                     {
-                        return true;
+                        hasSelectedOption = true;
+                        break;
                     }
+                }
+
+                if (!hasSelectedOption)
+                {
+                    return true;
                 }
             }
 
@@ -142,7 +136,7 @@ namespace Panoptes.Presentation.ViewModels
             var activeLoadout = BuildIdSet(institutionState?.ActiveInstitutionIds);
             var candidateLoadout = BuildIdSet(institutionState?.CandidateInstitutionIds);
             var filterByCandidates = _gameStateCache != null;
-            if (filterByCandidates && (candidateLoadout.Count == 0 || (institutionState?.SlotCount ?? 0) <= 0))
+            if (filterByCandidates && candidateLoadout.Count == 0)
             {
                 return new ManagementPanelState("制度");
             }

@@ -236,7 +236,8 @@ namespace Panoptes.Core.Application.Stores
                 ChargeBonus = entry.charge_bonus,
                 Flags = new CatalogUnitFlagsDto
                 {
-                    CanAttackStructures = entry.flags != null && entry.flags.can_attack_structures
+                    CanAttackStructures = entry.flags != null && entry.flags.can_attack_structures,
+                    CanDestroyRoad = entry.flags != null && entry.flags.can_destroy_road
                 },
                 Tags = ToList(entry.tags)
             });

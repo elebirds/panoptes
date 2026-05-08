@@ -1105,6 +1105,10 @@ namespace Panoptes.Core.Application.Cache
                 IsMemory = source.IsMemory,
                 LastObservedTurn = source.LastObservedTurn,
                 HasRoad = source.HasRoad,
+                RoadStatus = source.RoadStatus,
+                NetworkStatus = source.NetworkStatus,
+                NetworkCityId = source.NetworkCityId,
+                IsNetworkConnected = source.IsNetworkConnected,
                 Terrain = source.Terrain,
                 IsResourcePoint = source.IsResourcePoint,
                 ResourceType = source.ResourceType,
@@ -1149,6 +1153,10 @@ namespace Panoptes.Core.Application.Cache
                    left.IsMemory == right.IsMemory &&
                    (ignoreLastObservedTurn || left.LastObservedTurn == right.LastObservedTurn) &&
                    left.HasRoad == right.HasRoad &&
+                   string.Equals(left.RoadStatus, right.RoadStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkStatus, right.NetworkStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkCityId, right.NetworkCityId, StringComparison.Ordinal) &&
+                   left.IsNetworkConnected == right.IsNetworkConnected &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&
                    string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&

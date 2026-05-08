@@ -710,7 +710,6 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null ||
                 _inputState.CombatActionMode != CombatActionMode.Attack ||
-                !CanSelectedUnitAttackStructures() ||
                 !TryRaycastNode(out var node) ||
                 node == null ||
                 string.IsNullOrWhiteSpace(node.NodeId))
@@ -718,7 +717,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return true;
+            return CanSelectedUnitAttackStructures() && IsEnemyStructureNode(node.NodeId);
         }
 
         private void HandleCombatSelectionClick()
@@ -1153,7 +1152,9 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null ||
                 _inputState.CombatActionMode != CombatActionMode.Attack ||
-                string.IsNullOrWhiteSpace(nodeId))
+                string.IsNullOrWhiteSpace(nodeId) ||
+                !CanSelectedUnitAttackStructures() ||
+                !IsEnemyStructureNode(nodeId))
             {
                 return false;
             }
@@ -2353,6 +2354,10 @@ namespace Panoptes.Presentation.Map
                    left.IsMemory == right.IsMemory &&
                    left.LastObservedTurn == right.LastObservedTurn &&
                    left.HasRoad == right.HasRoad &&
+                   string.Equals(left.RoadStatus, right.RoadStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkStatus, right.NetworkStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkCityId, right.NetworkCityId, StringComparison.Ordinal) &&
+                   left.IsNetworkConnected == right.IsNetworkConnected &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&
                    string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&

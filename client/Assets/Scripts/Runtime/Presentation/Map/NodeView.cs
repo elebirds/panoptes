@@ -36,6 +36,18 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Transform buildingAnchor;
         [SerializeField] private Transform unitAnchor;
 
+        [Header("Road")]
+        [SerializeField] private bool autoCreateRoadOverlay = true;
+        [SerializeField] private string roadOverlayTextureResourcesPath = "Textures/Map/road_overlay";
+        [SerializeField] private Texture2D roadOverlayTexture;
+        [SerializeField] private float roadOverlayLocalY = 0.045f;
+        [SerializeField] private Vector2 roadOverlayScale = new Vector2(0.56f, 0.56f);
+        [SerializeField] private float roadConnectionWidth = 0.34f;
+        [SerializeField] private float roadConnectionLengthScale = 0.58f;
+        [SerializeField] private Color roadConnectedColor = new Color(1f, 1f, 1f, 0.94f);
+        [SerializeField] private Color roadDisconnectedColor = new Color(0.58f, 0.55f, 0.5f, 0.62f);
+        [SerializeField] private Color roadDamagedColor = new Color(0.95f, 0.68f, 0.34f, 0.75f);
+
         [Header("Terrain Materials")]
         [SerializeField] private Material plainMaterial;
         [SerializeField] private Material mountainMaterial;
@@ -147,6 +159,12 @@ namespace Panoptes.Presentation.Map
         private bool _resourceVisibleWanted;
         private bool _isCurrentlyVisible = true;
         private bool _isMemoryVisible;
+        private Renderer _roadOverlayRenderer;
+        private MaterialPropertyBlock _roadOverlayBlock;
+        private readonly List<GameObject> _roadConnectionOverlays = new List<GameObject>();
+        private readonly List<Renderer> _roadConnectionRenderers = new List<Renderer>();
+        private int _roadConnectionVisibleCount;
+        private Color _roadOverlayColor = Color.white;
         private MaterialPropertyBlock _highlightBlock;
         private Transform _moveMarkerRoot;
         private Transform _moveArrowRoot;
@@ -167,6 +185,7 @@ namespace Panoptes.Presentation.Map
         private float _currentFogAlpha;
         private float _nextFogUvUpdateTime;
         private bool _fogTextureLoadAttempted;
+        private bool _roadTextureLoadAttempted;
         private bool _moveArrowSpriteLoadAttempted;
         private bool _moveDestinationSpriteLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
@@ -181,6 +200,7 @@ namespace Panoptes.Presentation.Map
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static Material SharedFogOverlayMaterial;
+        private static Material SharedRoadOverlayMaterial;
 
         private void Awake()
         {
@@ -233,8 +253,9 @@ namespace Panoptes.Presentation.Map
             IsSafeZoneNode = node.IsSafeZone;
 
             SetTerrain(string.IsNullOrWhiteSpace(node.Terrain) ? node.Type : node.Terrain);
-            SetRoadVisible(node.HasRoad);
-            SetResource(node.IsResourcePoint, node.ResourceType);
+            SetRoadState(node.HasRoad, node.RoadStatus, node.NetworkStatus, node.IsNetworkConnected);
+            SetResource(node.IsResourcePoint, node.ResourceType, node.IsNetworkConnected);
+            ApplyResourceNetworkState(node);
             SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, node.BuildingMaxHp, false);
             if (_buildingInstance != null)
             {
@@ -282,12 +303,305 @@ namespace Panoptes.Presentation.Map
 
         public void SetRoadVisible(bool isVisible)
         {
-            _roadVisibleWanted = isVisible;
-            if (roadOverlay != null)
+            SetRoadState(isVisible, isVisible ? "intact" : "destroyed", string.Empty, false);
+        }
+
+        public void SetRoadState(bool hasRoad, string roadStatus, string networkStatus, bool isNetworkConnected)
+        {
+            var normalizedRoadStatus = NormalizeToken(roadStatus);
+            _roadVisibleWanted = hasRoad && normalizedRoadStatus != "destroyed";
+            if (_roadVisibleWanted)
             {
-                roadOverlay.SetActive(isVisible);
+                EnsureRoadOverlay();
+                UpdateRoadOverlayVisual(normalizedRoadStatus, NormalizeToken(networkStatus), isNetworkConnected);
             }
             ApplyObservationDetailVisibility();
+        }
+
+        public void SetRoadConnectionDirections(IReadOnlyList<Vector3> localDirections)
+        {
+            if (!_roadVisibleWanted)
+            {
+                SetRoadConnectionCount(0);
+                ApplyObservationDetailVisibility();
+                return;
+            }
+
+            EnsureRoadOverlay();
+            var count = localDirections != null ? localDirections.Count : 0;
+            SetRoadConnectionCount(count);
+
+            for (var i = 0; i < count; i++)
+            {
+                var overlay = _roadConnectionOverlays[i];
+                if (overlay == null)
+                {
+                    continue;
+                }
+
+                var direction = localDirections[i];
+                direction.y = 0f;
+                var distance = direction.magnitude;
+                if (distance <= 0.0001f)
+                {
+                    overlay.SetActive(false);
+                    continue;
+                }
+
+                var normalized = direction / distance;
+                var length = Mathf.Max(0.05f, distance * Mathf.Clamp01(roadConnectionLengthScale));
+                overlay.transform.localPosition = new Vector3(
+                    normalized.x * length * 0.5f,
+                    roadOverlayLocalY - 0.001f,
+                    normalized.z * length * 0.5f);
+                overlay.transform.localRotation = Quaternion.LookRotation(normalized, Vector3.up);
+                overlay.transform.localScale = new Vector3(
+                    Mathf.Max(0.01f, roadConnectionWidth),
+                    0.012f,
+                    length);
+                overlay.SetActive(true);
+            }
+
+            ApplyObservationDetailVisibility();
+        }
+
+        private void SetRoadConnectionCount(int count)
+        {
+            count = Mathf.Max(0, count);
+            _roadConnectionVisibleCount = count;
+            for (var i = _roadConnectionOverlays.Count; i < count; i++)
+            {
+                var overlay = CreateRoadConnectionOverlay(i);
+                _roadConnectionOverlays.Add(overlay);
+                _roadConnectionRenderers.Add(overlay != null ? overlay.GetComponentInChildren<Renderer>() : null);
+            }
+
+            for (var i = 0; i < _roadConnectionOverlays.Count; i++)
+            {
+                var overlay = _roadConnectionOverlays[i];
+                if (overlay == null)
+                {
+                    continue;
+                }
+
+                overlay.SetActive(i < count);
+                if (i < count)
+                {
+                    ConfigureRoadConnectionRenderer(i);
+                }
+            }
+        }
+
+        private GameObject CreateRoadConnectionOverlay(int index)
+        {
+            var roadGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            roadGo.name = $"RoadConnection_{index}";
+            roadGo.transform.SetParent(transform, false);
+            roadGo.transform.localPosition = new Vector3(0f, roadOverlayLocalY - 0.001f, 0f);
+            DestroyRuntimeCollider(roadGo);
+            return roadGo;
+        }
+
+        private void ConfigureRoadConnectionRenderer(int index)
+        {
+            if (index < 0 || index >= _roadConnectionOverlays.Count)
+            {
+                return;
+            }
+
+            if (index >= _roadConnectionRenderers.Count)
+            {
+                _roadConnectionRenderers.Add(null);
+            }
+
+            var renderer = _roadConnectionRenderers[index];
+            if (renderer == null && _roadConnectionOverlays[index] != null)
+            {
+                renderer = _roadConnectionOverlays[index].GetComponentInChildren<Renderer>();
+                _roadConnectionRenderers[index] = renderer;
+            }
+
+            if (renderer == null)
+            {
+                return;
+            }
+
+            EnsureRoadOverlayMaterial();
+            renderer.sharedMaterial = SharedRoadOverlayMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            ApplyRoadOverlayColor(renderer, _roadOverlayColor);
+        }
+
+        private bool EnsureRoadOverlay()
+        {
+            if (roadOverlay == null && autoCreateRoadOverlay)
+            {
+                var roadGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                roadGo.name = "RoadOverlay";
+                roadGo.transform.SetParent(transform, false);
+                roadGo.transform.localPosition = new Vector3(0f, roadOverlayLocalY, 0f);
+                roadGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                roadGo.transform.localScale = new Vector3(
+                    Mathf.Max(0.01f, roadOverlayScale.x),
+                    Mathf.Max(0.01f, roadOverlayScale.y),
+                    1f);
+                DestroyRuntimeCollider(roadGo);
+                roadOverlay = roadGo;
+            }
+
+            if (roadOverlay == null)
+            {
+                return false;
+            }
+
+            if (_roadOverlayRenderer == null)
+            {
+                _roadOverlayRenderer = roadOverlay.GetComponentInChildren<Renderer>();
+            }
+
+            if (_roadOverlayRenderer == null)
+            {
+                return false;
+            }
+
+            EnsureRoadOverlayMaterial();
+            if (SharedRoadOverlayMaterial == null)
+            {
+                return false;
+            }
+
+            _roadOverlayRenderer.sharedMaterial = SharedRoadOverlayMaterial;
+            _roadOverlayRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _roadOverlayRenderer.receiveShadows = false;
+            return true;
+        }
+
+        private void EnsureRoadOverlayMaterial()
+        {
+            if (SharedRoadOverlayMaterial == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Unlit/Transparent");
+                }
+                if (shader == null)
+                {
+                    shader = Shader.Find("Sprites/Default");
+                }
+                if (shader == null)
+                {
+                    return;
+                }
+
+                SharedRoadOverlayMaterial = new Material(shader)
+                {
+                    name = "RoadOverlayMat_Runtime",
+                    hideFlags = HideFlags.DontSave,
+                    renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent
+                };
+
+                if (SharedRoadOverlayMaterial.HasProperty("_Surface"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_Surface", 1f);
+                }
+                if (SharedRoadOverlayMaterial.HasProperty("_Blend"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_Blend", 0f);
+                }
+                if (SharedRoadOverlayMaterial.HasProperty("_SrcBlend"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                }
+                if (SharedRoadOverlayMaterial.HasProperty("_DstBlend"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                }
+                if (SharedRoadOverlayMaterial.HasProperty("_ZWrite"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_ZWrite", 0f);
+                }
+                if (SharedRoadOverlayMaterial.HasProperty("_Cull"))
+                {
+                    SharedRoadOverlayMaterial.SetFloat("_Cull", 0f);
+                }
+            }
+
+            var texture = ResolveRoadOverlayTexture();
+            if (texture == null)
+            {
+                return;
+            }
+
+            if (SharedRoadOverlayMaterial.HasProperty(BaseMapId))
+            {
+                SharedRoadOverlayMaterial.SetTexture(BaseMapId, texture);
+            }
+            if (SharedRoadOverlayMaterial.HasProperty(MainTexId))
+            {
+                SharedRoadOverlayMaterial.SetTexture(MainTexId, texture);
+            }
+        }
+
+        private Texture2D ResolveRoadOverlayTexture()
+        {
+            if (roadOverlayTexture != null)
+            {
+                return roadOverlayTexture;
+            }
+
+            if (!_roadTextureLoadAttempted && !string.IsNullOrWhiteSpace(roadOverlayTextureResourcesPath))
+            {
+                _roadTextureLoadAttempted = true;
+                roadOverlayTexture = Resources.Load<Texture2D>(roadOverlayTextureResourcesPath.Trim());
+            }
+
+            return roadOverlayTexture;
+        }
+
+        private void UpdateRoadOverlayVisual(string roadStatus, string networkStatus, bool isNetworkConnected)
+        {
+            var color = ResolveRoadOverlayColor(roadStatus, networkStatus, isNetworkConnected);
+            _roadOverlayColor = color;
+            ApplyRoadOverlayColor(_roadOverlayRenderer, color);
+            for (var i = 0; i < _roadConnectionRenderers.Count; i++)
+            {
+                ApplyRoadOverlayColor(_roadConnectionRenderers[i], color);
+            }
+        }
+
+        private Color ResolveRoadOverlayColor(string roadStatus, string networkStatus, bool isNetworkConnected)
+        {
+            var color = roadConnectedColor;
+            if (roadStatus == "damaged")
+            {
+                color = roadDamagedColor;
+            }
+            else if (networkStatus == "disconnected" || (!isNetworkConnected && networkStatus == "connected"))
+            {
+                color = roadDisconnectedColor;
+            }
+
+            return color;
+        }
+
+        private void ApplyRoadOverlayColor(Renderer renderer, Color color)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            if (_roadOverlayBlock == null)
+            {
+                _roadOverlayBlock = new MaterialPropertyBlock();
+            }
+
+            renderer.GetPropertyBlock(_roadOverlayBlock);
+            _roadOverlayBlock.SetColor(BaseColorId, color);
+            _roadOverlayBlock.SetColor(ColorId, color);
+            renderer.SetPropertyBlock(_roadOverlayBlock);
         }
 
         private void ApplyObservationState(NodeDto node)
@@ -1088,6 +1402,23 @@ namespace Panoptes.Presentation.Map
             ApplyObservationDetailVisibility();
         }
 
+        private void ApplyResourceNetworkState(NodeDto node)
+        {
+            if (_resourceInstance == null || node == null || !node.IsResourcePoint)
+            {
+                return;
+            }
+
+            if (!node.IsNetworkConnected)
+            {
+                _resourceInstance.SetOwnerVisible(false);
+                return;
+            }
+
+            var owner = FirstNonEmpty(node.TerritoryOwner, node.Owner, _localPlayerId);
+            _resourceInstance.SetOwner(owner);
+        }
+
         /// <summary>
         /// Update/clear building visual according to building_type.
         /// </summary>
@@ -1418,6 +1749,25 @@ namespace Panoptes.Presentation.Map
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
+        private static string FirstNonEmpty(params string[] values)
+        {
+            if (values == null)
+            {
+                return string.Empty;
+            }
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var value = values[i];
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
         public void SetPerTileObservationFogEnabled(bool enabled)
         {
             enableObservationFogOverlay = enabled;
@@ -1452,6 +1802,14 @@ namespace Panoptes.Presentation.Map
             if (roadOverlay != null)
             {
                 roadOverlay.SetActive(_roadVisibleWanted && !hideDetails);
+            }
+
+            for (var i = 0; i < _roadConnectionOverlays.Count; i++)
+            {
+                if (_roadConnectionOverlays[i] != null)
+                {
+                    _roadConnectionOverlays[i].SetActive(i < _roadConnectionVisibleCount && _roadVisibleWanted && !hideDetails);
+                }
             }
 
             if (_resourceInstance != null)
@@ -1503,6 +1861,11 @@ namespace Panoptes.Presentation.Map
             if (highlightRenderer == null && highlight != null)
             {
                 highlightRenderer = highlight.GetComponentInChildren<Renderer>();
+            }
+
+            if (_roadOverlayRenderer == null && roadOverlay != null)
+            {
+                _roadOverlayRenderer = roadOverlay.GetComponentInChildren<Renderer>();
             }
         }
 #endif

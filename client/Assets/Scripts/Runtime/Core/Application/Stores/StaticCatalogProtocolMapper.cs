@@ -154,7 +154,8 @@ namespace Panoptes.Core.Application.Stores
                 PrefabKey = entry.PrefabKey,
                 Flags = new CatalogUnitFlagsDto
                 {
-                    CanAttackStructures = entry.CanAttackStructures
+                    CanAttackStructures = entry.CanAttackStructures,
+                    CanDestroyRoad = false
                 },
                 Tags = ToList(entry.Tags)
             });

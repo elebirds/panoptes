@@ -7,6 +7,7 @@ using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using R3;
+using UnityEngine;
 using VContainer;
 
 namespace Panoptes.Presentation.ViewModels
@@ -25,18 +26,21 @@ namespace Panoptes.Presentation.ViewModels
         private readonly HashSet<string> _locallyResolvedDraftIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _locallyActivatedSkillKeys = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<IDisposable> _subscriptions = new();
-        private readonly Random _affectionRandom = new();
-        private readonly GameStateCache _gameStateCache;
+        private readonly System.Random _affectionRandom = new();
         private readonly GameStateStore _gameStateStore;
         private readonly MinisterCommandService _ministerCommandService;
         private readonly PlanningDraftStore _planningDraftStore;
-        private readonly StaticCatalogCache _staticCatalogCache;
+        private GameStateCache _gameStateCache;
+        private StaticCatalogCache _staticCatalogCache;
         private int _lastObservedGameTurn = -1;
         private string _affectionGameKey = string.Empty;
+        private bool _gameStateCacheSubscribed;
+        private bool _staticCatalogCacheSubscribed;
         private bool _disposed;
         private MinisterReportState _current;
         private string _activeRole = string.Empty;
         private long _messageSequence;
+        private static Dictionary<string, MinisterTabSource> s_resourceMinisterProfiles;
 
         public MinisterReportViewModel(PlanningDraftStore planningDraftStore)
             : this(planningDraftStore, null, null, null, null)
@@ -52,10 +56,11 @@ namespace Panoptes.Presentation.ViewModels
             GameStateStore gameStateStore = null)
         {
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
-            _gameStateCache = gameStateCache != null ? gameStateCache : GameStateCache.Instance;
+            _gameStateCache = gameStateCache;
             _gameStateStore = gameStateStore;
-            _staticCatalogCache = staticCatalogCache != null ? staticCatalogCache : StaticCatalogCache.Instance;
+            _staticCatalogCache = staticCatalogCache;
             _ministerCommandService = ministerCommandService;
+            EnsureRuntimeSourceSubscriptions();
 
             _current = Project();
             _state = new BehaviorSubject<MinisterReportState>(_current);
@@ -66,25 +71,6 @@ namespace Panoptes.Presentation.ViewModels
                 _subscriptions.Add(_gameStateStore.State.Subscribe(this, static (state, self) => self.OnGameStateStoreChanged(state)));
             }
 
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnStateChanged += OnGameStateChanged;
-                _gameStateCache.OnMinisterChunk += OnMinisterChunk;
-                _gameStateCache.OnMinisterMetrics += OnMinisterMetrics;
-                _subscriptions.Add(new CleanupSubscription(() =>
-                {
-                    _gameStateCache.OnStateChanged -= OnGameStateChanged;
-                    _gameStateCache.OnMinisterChunk -= OnMinisterChunk;
-                    _gameStateCache.OnMinisterMetrics -= OnMinisterMetrics;
-                }));
-            }
-
-            if (_staticCatalogCache != null)
-            {
-                _staticCatalogCache.CatalogChanged += OnCatalogChanged;
-                _subscriptions.Add(new CleanupSubscription(() => _staticCatalogCache.CatalogChanged -= OnCatalogChanged));
-            }
-
             OnGameStateStoreChanged(_gameStateStore?.Snapshot);
             OnPlanningDraftStateChanged(_planningDraftStore.Snapshot);
             Publish();
@@ -92,6 +78,12 @@ namespace Panoptes.Presentation.ViewModels
 
         public MinisterReportState Current => _current;
         public Observable<MinisterReportState> State => _state;
+
+        public void RefreshFromRuntimeSources()
+        {
+            EnsureRuntimeSourceSubscriptions();
+            Publish();
+        }
 
         public void SelectMinister(string role)
         {
@@ -218,6 +210,42 @@ namespace Panoptes.Presentation.ViewModels
             Publish();
         }
 
+        private void EnsureRuntimeSourceSubscriptions()
+        {
+            if (_gameStateCache == null)
+            {
+                _gameStateCache = GameStateCache.Instance;
+            }
+
+            if (_gameStateCache != null && !_gameStateCacheSubscribed)
+            {
+                var cache = _gameStateCache;
+                cache.OnStateChanged += OnGameStateChanged;
+                cache.OnMinisterChunk += OnMinisterChunk;
+                cache.OnMinisterMetrics += OnMinisterMetrics;
+                _gameStateCacheSubscribed = true;
+                _subscriptions.Add(new CleanupSubscription(() =>
+                {
+                    cache.OnStateChanged -= OnGameStateChanged;
+                    cache.OnMinisterChunk -= OnMinisterChunk;
+                    cache.OnMinisterMetrics -= OnMinisterMetrics;
+                }));
+            }
+
+            if (_staticCatalogCache == null)
+            {
+                _staticCatalogCache = StaticCatalogCache.Instance;
+            }
+
+            if (_staticCatalogCache != null && !_staticCatalogCacheSubscribed)
+            {
+                var cache = _staticCatalogCache;
+                cache.CatalogChanged += OnCatalogChanged;
+                _staticCatalogCacheSubscribed = true;
+                _subscriptions.Add(new CleanupSubscription(() => cache.CatalogChanged -= OnCatalogChanged));
+            }
+        }
+
         private void OnMinisterMetrics(MinisterMetricsEvent evt)
         {
             if (evt == null || evt.Metrics == null || evt.Metrics.Count == 0)
@@ -307,6 +335,7 @@ namespace Panoptes.Presentation.ViewModels
 
         private MinisterReportState Project()
         {
+            EnsureRuntimeSourceSubscriptions();
             var tabs = BuildTabs();
             var activeRole = ResolveActiveRole(tabs);
             var messages = _messagesByRole.TryGetValue(activeRole, out var roleMessages)
@@ -344,6 +373,18 @@ namespace Panoptes.Presentation.ViewModels
                 }
             }
 
+            foreach (var pair in LoadResourceMinisterProfiles())
+            {
+                if (!roles.ContainsKey(pair.Key))
+                {
+                    roles[pair.Key] = pair.Value;
+                }
+                else if (!HasAttributes(roles[pair.Key].Attributes))
+                {
+                    roles[pair.Key] = pair.Value.WithNameIconFallback(roles[pair.Key]);
+                }
+            }
+
             var roster = _gameStateCache?.Ministers;
             if (roster != null)
             {
@@ -375,7 +416,7 @@ namespace Panoptes.Presentation.ViewModels
                     var role = NormalizeRole(drafts[i]?.MinisterRole);
                     if (!roles.ContainsKey(role))
                     {
-                        roles[role] = MinisterTabSource.Empty(role);
+                        roles[role] = ResourceOrEmpty(role);
                     }
                 }
             }
@@ -385,13 +426,13 @@ namespace Panoptes.Presentation.ViewModels
                 var role = NormalizeRole(pair.Key);
                 if (!roles.ContainsKey(role))
                 {
-                    roles[role] = MinisterTabSource.Empty(role);
+                    roles[role] = ResourceOrEmpty(role);
                 }
             }
 
             if (roles.Count == 0)
             {
-                roles[DefaultRole] = MinisterTabSource.Empty(DefaultRole);
+                roles[DefaultRole] = ResourceOrEmpty(DefaultRole);
             }
 
             return roles
@@ -882,6 +923,99 @@ namespace Panoptes.Presentation.ViewModels
             };
         }
 
+        private static bool HasAttributes(IReadOnlyList<MinisterAttributeState> attributes)
+        {
+            return attributes != null && attributes.Count > 0;
+        }
+
+        private static bool HasAuthoritativeProfileAttributes(MinisterProfileDto minister)
+        {
+            return minister != null &&
+                   (minister.Loyalty != 0 ||
+                    minister.Ambition != 0 ||
+                    minister.Cautiousness != 0 ||
+                    minister.Decisiveness != 0 ||
+                    minister.LoyaltyTendency != 0 ||
+                    minister.AmbitionStyle != 0);
+        }
+
+        private static MinisterTabSource ResourceOrEmpty(string role)
+        {
+            role = NormalizeRole(role);
+            return LoadResourceMinisterProfiles().TryGetValue(role, out var source)
+                ? source
+                : MinisterTabSource.Empty(role);
+        }
+
+        private static IReadOnlyDictionary<string, MinisterTabSource> LoadResourceMinisterProfiles()
+        {
+            if (s_resourceMinisterProfiles != null)
+            {
+                return s_resourceMinisterProfiles;
+            }
+
+            var result = new Dictionary<string, MinisterTabSource>(StringComparer.OrdinalIgnoreCase);
+            var asset = Resources.Load<TextAsset>("Data/sections/ministers");
+            if (asset == null || string.IsNullOrWhiteSpace(asset.text))
+            {
+                s_resourceMinisterProfiles = result;
+                return s_resourceMinisterProfiles;
+            }
+
+            try
+            {
+                var section = JsonUtility.FromJson<ResourceMinistersSection>(asset.text);
+                var ministers = section?.ministers;
+                if (ministers != null)
+                {
+                    for (var i = 0; i < ministers.Length; i++)
+                    {
+                        var minister = ministers[i];
+                        if (minister == null)
+                        {
+                            continue;
+                        }
+
+                        var role = NormalizeRole(minister.role);
+                        if (string.IsNullOrWhiteSpace(role))
+                        {
+                            continue;
+                        }
+
+                        result[role] = MinisterTabSource.FromResource(role, minister);
+                    }
+                }
+            }
+            catch (ArgumentException)
+            {
+                result.Clear();
+            }
+
+            s_resourceMinisterProfiles = result;
+            return s_resourceMinisterProfiles;
+        }
+
+        [Serializable]
+        private sealed class ResourceMinistersSection
+        {
+            public ResourceMinisterProfile[] ministers;
+        }
+
+        [Serializable]
+        private sealed class ResourceMinisterProfile
+        {
+            public string name;
+            public string role;
+            public string icon_key;
+            public int ability;
+            public int loyalty;
+            public int ambition;
+            public int cautiousness;
+            public int decisiveness;
+            public int loyalty_tendency;
+            public int ambition_style;
+        }
+
         private sealed class MinisterTabSource
         {
             public string Name;
@@ -900,6 +1034,24 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             public static MinisterTabSource FromCatalog(string role, StaticCatalogCache.MinisterJson minister)
+            {
+                return new MinisterTabSource
+                {
+                    Name = Clean(minister.name, RoleTitle(role)),
+                    Title = RoleTitle(role),
+                    IconResource = IconResourceFor(minister.icon_key, role),
+                    Attributes = BuildAttributes(
+                        minister.ability,
+                        minister.loyalty,
+                        minister.ambition,
+                        minister.cautiousness,
+                        minister.decisiveness,
+                        minister.loyalty_tendency,
+                        minister.ambition_style)
+                };
+            }
+
+            public static MinisterTabSource FromResource(string role, ResourceMinisterProfile minister)
             {
                 return new MinisterTabSource
                 {
@@ -937,19 +1089,34 @@ namespace Panoptes.Presentation.ViewModels
 
             public MinisterTabSource WithProfile(MinisterProfileDto minister)
             {
+                var profileAttributes = BuildAttributes(
+                    minister.Ability,
+                    minister.Loyalty,
+                    minister.Ambition,
+                    minister.Cautiousness,
+                    minister.Decisiveness,
+                    minister.LoyaltyTendency,
+                    minister.AmbitionStyle);
+
                 return new MinisterTabSource
                 {
                     Name = Clean(minister.Name, Name),
                     Title = Title,
                     IconResource = IconResource,
-                    Attributes = BuildAttributes(
-                        minister.Ability,
-                        minister.Loyalty,
-                        minister.Ambition,
-                        minister.Cautiousness,
-                        minister.Decisiveness,
-                        minister.LoyaltyTendency,
-                        minister.AmbitionStyle)
+                    Attributes = HasAuthoritativeProfileAttributes(minister) || !HasAttributes(Attributes)
+                        ? profileAttributes
+                        : Attributes
+                };
+            }
+
+            public MinisterTabSource WithNameIconFallback(MinisterTabSource fallback)
+            {
+                return new MinisterTabSource
+                {
+                    Name = Clean(Name, fallback?.Name),
+                    Title = Clean(Title, fallback?.Title),
+                    IconResource = Clean(IconResource, fallback?.IconResource),
+                    Attributes = Attributes
                 };
             }
         }
