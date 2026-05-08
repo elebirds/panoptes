@@ -117,13 +117,16 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
 		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
 	}
-	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.SystemPrompt, "`move_units`") || !strings.Contains(req.UserPrompt, "params.target_node") {
+	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.UserPrompt, "单位/地图行动只能通过 Action Candidates") {
 		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "`set_research`") || !strings.Contains(req.SystemPrompt, "`set_policy`") ||
-		!strings.Contains(req.SystemPrompt, "`set_institution_loadout`") || !strings.Contains(req.SystemPrompt, "`set_building_recipe`") ||
-		!strings.Contains(req.SystemPrompt, "`unit_order`") {
+		!strings.Contains(req.SystemPrompt, "`set_institution_loadout`") || !strings.Contains(req.SystemPrompt, "`set_building_recipe`") {
 		t.Fatalf("SystemPrompt = %q, want expanded report action contract", req.SystemPrompt)
+	}
+	if strings.Contains(req.SystemPrompt, "`move_units`") || strings.Contains(req.SystemPrompt, "`unit_order`") ||
+		strings.Contains(req.UserPrompt, "`move_units`") || strings.Contains(req.UserPrompt, "`unit_order`") {
+		t.Fatalf("Prompt = %q\n%s, deprecated unit action compatibility types must not be advertised", req.SystemPrompt, req.UserPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "输出必须是裸 JSON 对象") {
 		t.Fatalf("SystemPrompt = %q, want bare JSON constraint", req.SystemPrompt)

@@ -106,7 +106,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Available = view.Available && payload.available,
                 Turn = payload.turn,
                 Source = payload.source ?? string.Empty,
-                PolicyIds = payload.policy_ids ?? Array.Empty<string>(),
+                InstitutionIds = payload.institution_ids ?? Array.Empty<string>(),
                 NodeId = payload.node_id ?? string.Empty,
                 BuildingTypeId = payload.building_type_id ?? string.Empty,
                 CityId = payload.city_id ?? string.Empty,
@@ -136,7 +136,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             public bool available;
             public int turn;
             public string source;
-            public string[] policy_ids;
+            public string[] institution_ids;
             public string node_id;
             public string building_type_id;
             public string city_id;

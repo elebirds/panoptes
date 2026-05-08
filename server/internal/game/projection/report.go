@@ -270,8 +270,8 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 		data := map[string]string{
 			"player_id": strings.TrimSpace(e.PlayerID),
 		}
-		if len(e.PolicyIDs) > 0 {
-			data["policy_ids"] = strings.Join(e.PolicyIDs, ",")
+		if len(e.InstitutionIDs) > 0 {
+			data["institution_ids"] = strings.Join(e.InstitutionIDs, ",")
 		}
 		return e.Kind(), data
 	case event.TokenUsedEvent:

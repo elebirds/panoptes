@@ -13,7 +13,8 @@ namespace Panoptes.Presentation.ViewModels
         TurnSummary = 5,
         PolicyFocus = 6,
         NationalLedger = 7,
-        MinisterReport = 8
+        MinisterReport = 8,
+        Institutions = 9
     }
 
     public sealed class ManagementPanelVisibilityState

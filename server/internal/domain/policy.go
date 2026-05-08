@@ -63,9 +63,9 @@ func (p *PlanningInputs) PendingResearchTarget(playerID string) string {
 	return p.PendingResearch[playerID]
 }
 
-func (p *PlanningInputs) SetPendingInstitutionLoadout(playerID string, policyIDs []string) {
+func (p *PlanningInputs) SetPendingInstitutionLoadout(playerID string, institutionIDs []string) {
 	p.EnsureDraftMaps()
-	p.PendingInstitutions[playerID] = append([]string(nil), policyIDs...)
+	p.PendingInstitutions[playerID] = append([]string(nil), institutionIDs...)
 }
 
 func (p *PlanningInputs) PendingInstitutionLoadout(playerID string) []string {
@@ -138,12 +138,13 @@ func (p *PlanningInputs) UpsertWarDirective(playerID string, directive WarZoneDi
 }
 
 type ResolvedExplicitEffects struct {
-	UnlockBuildingIDs   []string
-	UnlockRecipeIDs     []string
-	UnlockPolicyIDs     []string
-	AddInstitutionSlots int
-	GrantResources      ResourceBag
-	GrantUnitTypes      []string
+	UnlockBuildingIDs    []string
+	UnlockRecipeIDs      []string
+	UnlockPolicyIDs      []string
+	UnlockInstitutionIDs []string
+	AddInstitutionSlots  int
+	GrantResources       ResourceBag
+	GrantUnitTypes       []string
 }
 
 func ResolveExplicitEffects(effects []staticdata.ExplicitEffect) ResolvedExplicitEffects {
@@ -163,6 +164,10 @@ func ResolveExplicitEffects(effects []staticdata.ExplicitEffect) ResolvedExplici
 		case "unlock_policy":
 			if effect.TargetID != "" {
 				resolved.UnlockPolicyIDs = append(resolved.UnlockPolicyIDs, effect.TargetID)
+			}
+		case "unlock_institution":
+			if effect.TargetID != "" {
+				resolved.UnlockInstitutionIDs = append(resolved.UnlockInstitutionIDs, effect.TargetID)
 			}
 		case "add_institution_slots":
 			if effect.InstitutionSlots > 0 {

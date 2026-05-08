@@ -6,32 +6,32 @@ func (s *InstitutionState) EnsureMaps() {
 	if s == nil {
 		return
 	}
-	if s.CandidatePolicyIDs == nil {
-		s.CandidatePolicyIDs = make(map[string]struct{})
+	if s.CandidateInstitutionIDs == nil {
+		s.CandidateInstitutionIDs = make(map[string]struct{})
 	}
-	if s.ActivePolicyIDs == nil {
-		s.ActivePolicyIDs = []string{}
+	if s.ActiveInstitutionIDs == nil {
+		s.ActiveInstitutionIDs = []string{}
 	}
-	if s.PendingPolicyIDs == nil {
-		s.PendingPolicyIDs = []string{}
+	if s.PendingInstitutionIDs == nil {
+		s.PendingInstitutionIDs = []string{}
 	}
 }
 
-func (s *InstitutionState) HasCandidate(policyID string) bool {
-	if s == nil || policyID == "" {
+func (s *InstitutionState) HasCandidate(institutionID string) bool {
+	if s == nil || institutionID == "" {
 		return false
 	}
 	s.EnsureMaps()
-	_, ok := s.CandidatePolicyIDs[policyID]
+	_, ok := s.CandidateInstitutionIDs[institutionID]
 	return ok
 }
 
-func (s *InstitutionState) UnlockCandidate(policyID string) {
-	if s == nil || policyID == "" {
+func (s *InstitutionState) UnlockCandidate(institutionID string) {
+	if s == nil || institutionID == "" {
 		return
 	}
 	s.EnsureMaps()
-	s.CandidatePolicyIDs[policyID] = struct{}{}
+	s.CandidateInstitutionIDs[institutionID] = struct{}{}
 }
 
 func (s *InstitutionState) CandidateIDs() []string {
@@ -39,15 +39,15 @@ func (s *InstitutionState) CandidateIDs() []string {
 		return nil
 	}
 	s.EnsureMaps()
-	ids := make([]string, 0, len(s.CandidatePolicyIDs))
-	for policyID := range s.CandidatePolicyIDs {
-		ids = append(ids, policyID)
+	ids := make([]string, 0, len(s.CandidateInstitutionIDs))
+	for institutionID := range s.CandidateInstitutionIDs {
+		ids = append(ids, institutionID)
 	}
 	sort.Strings(ids)
 	return ids
 }
 
-func NormalizePolicyIDList(ids []string) []string {
+func NormalizeIDList(ids []string) []string {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -65,4 +65,12 @@ func NormalizePolicyIDList(ids []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func NormalizePolicyIDList(ids []string) []string {
+	return NormalizeIDList(ids)
+}
+
+func NormalizeInstitutionIDList(ids []string) []string {
+	return NormalizeIDList(ids)
 }

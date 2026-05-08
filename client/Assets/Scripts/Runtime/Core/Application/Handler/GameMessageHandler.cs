@@ -420,21 +420,21 @@ namespace Panoptes.Core.Application.Handler
                 CommandType = "institution_loadout",
                 Action = "set_institution_loadout",
                 Success = msg.Success,
-                PrimaryId = msg.PolicyIds.Count > 0 ? msg.PolicyIds[0] : string.Empty,
+                PrimaryId = msg.InstitutionIds.Count > 0 ? msg.InstitutionIds[0] : string.Empty,
                 ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
                 Message = ResolveFailureMessage(msg.Success, string.Empty, msg.ErrorCode),
-                Details = BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))),
-                RelatedIds = new System.Collections.Generic.List<string>(msg.PolicyIds)
+                Details = BuildDetails(("institution_ids", string.Join(",", msg.InstitutionIds))),
+                RelatedIds = new System.Collections.Generic.List<string>(msg.InstitutionIds)
             });
 
             if (!msg.Success)
             {
-                PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
-                PanoptesLog.Warning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
+                PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("institution_ids", string.Join(",", msg.InstitutionIds))));
+                PanoptesLog.Warning($"[Game] 制度装填失败 institutions={string.Join(",", msg.InstitutionIds)} error={msg.ErrorCode}");
                 return;
             }
 
-            PanoptesLog.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
+            PanoptesLog.Log($"[Game] 制度装填草案已接受 institutions={string.Join(",", msg.InstitutionIds)}");
         }
 
         private void HandleSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)

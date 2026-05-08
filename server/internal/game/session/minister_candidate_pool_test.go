@@ -31,8 +31,13 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "expansion", Name: "Expansion", Layer: "national"},
 			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
-			{ID: "academy_charter", Name: "Academy Charter", Layer: "institutional"},
-			{ID: "logistics_board", Name: "Logistics Board", Layer: "institutional"},
+		},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Name: "Academy Charter", Category: "administration", ActivationTiming: "next_turn"},
+			{ID: "logistics_board", Name: "Logistics Board", Category: "administration", ActivationTiming: "next_turn"},
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
@@ -56,7 +61,7 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		ViewerID: "player-1",
 		VisibleNodes: []*pb.NodeView{
 			{Id: "C1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1", BuildingTypeId: "city_core", Operation: &pb.BuildingOperationView{}},
-			{Id: "B1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1"},
+			{Id: "B1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1", EnemyUnitCount: 1},
 		},
 		Units: []*pb.UnitView{
 			{Id: "u1", Faction: "player-1", UnitType: "infantry"},
@@ -78,8 +83,16 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		if draft.NodeID == "B2" || draft.TargetNodeID == "B2" || strings.Contains(draft.TargetID, "B2") {
 			t.Fatalf("draft = %#v, hidden node B2 must not produce a candidate", draft)
 		}
+		for _, step := range draft.OperationSteps {
+			if step.NodeID == "B2" || step.TargetNodeID == "B2" || strings.Contains(step.TargetID, "B2") {
+				t.Fatalf("operation draft = %#v, hidden node B2 must not produce a step", draft)
+			}
+		}
 		if draft.Kind == domain.MinisterDraftKindBuild && draft.BuildingTypeID == "city_core" {
 			t.Fatalf("city core must not be offered as a normal build candidate: %#v", draft)
+		}
+		if draft.Kind == domain.MinisterDraftKindOperation && len(draft.OperationSteps) == 0 {
+			t.Fatalf("operation draft must contain command steps: %#v", draft)
 		}
 	}
 
@@ -89,7 +102,7 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		domain.MinisterDraftKindInstitution: 2,
 		domain.MinisterDraftKindBuild:       2,
 		domain.MinisterDraftKindRecipe:      2,
-		domain.MinisterDraftKindUnitOrder:   2,
+		domain.MinisterDraftKindOperation:   1,
 	} {
 		if got := countByKind[kind]; got < wantAtLeast {
 			t.Fatalf("draft kind %q count = %d, want at least %d; all drafts = %#v", kind, got, wantAtLeast, drafts)
@@ -103,6 +116,12 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 	}
 	if got := len(state.TurnRuntime.Planning.UnitOrders); got != 0 {
 		t.Fatalf("unit orders = %d, want 0 before approval", got)
+	}
+	if got := countByKind[domain.MinisterDraftKindUnitOrder]; got != 0 {
+		t.Fatalf("top-level unit order candidates = %d, want 0; unit commands should be inside operations", got)
+	}
+	if got := countByKind[domain.MinisterDraftKindOperation]; got > ministerOperationCandidateLimit {
+		t.Fatalf("operation candidates = %d, limit = %d", got, ministerOperationCandidateLimit)
 	}
 	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
 		t.Fatalf("pending research = %q, want empty before approval", got)

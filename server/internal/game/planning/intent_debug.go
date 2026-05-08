@@ -37,7 +37,7 @@ func DebugIntentRecordFor(kind participant.Kind, participantID string, intent In
 	case SetInstitutionLoadoutIntent:
 		record.IntentType = "set_institution_loadout"
 		record.IntentLabel = "设置制度装配"
-		cardIDs := append([]string(nil), typed.PolicyIDs...)
+		cardIDs := append([]string(nil), typed.InstitutionIDs...)
 		record.ActionSummary = fmt.Sprintf("设置制度装配 [%s]", strings.Join(cardIDs, ", "))
 		record.Fields = map[string]any{
 			"card_ids": cardIDs,

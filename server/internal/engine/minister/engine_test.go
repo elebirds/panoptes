@@ -129,7 +129,7 @@ func TestGenerateOneReportDoesNotLeakEnglishChunksToPlayers(t *testing.T) {
 func TestGenerateOneReportForwardsActionsToRoom(t *testing.T) {
 	engine := NewMinisterEngine(&scriptedMinisterLLMClient{
 		chunks: []string{
-			`{"report":"局势稳定。","metrics":[],"actions":[{"type":"build","params":{"node_id":"A2","building_type":"farm","city_id":"A1"}},{"type":"move_units","params":{"unit_id":"u1","target_node":"A2"}}],"action_id":"build_and_move"}`,
+			`{"report":"局势稳定。","metrics":[],"actions":[{"type":"select_candidate","params":{"draft_id":"military:operation:secure_a2:3"}},{"type":"build","params":{"node_id":"A2","building_type":"farm","city_id":"A1"}}],"action_id":"candidate_and_build"}`,
 		},
 	})
 	room := &ministerEngineTestRoom{
@@ -162,8 +162,8 @@ func TestGenerateOneReportForwardsActionsToRoom(t *testing.T) {
 	if len(room.appliedActions) != 2 {
 		t.Fatalf("applied actions = %#v, want 2 parsed actions", room.appliedActions)
 	}
-	if room.appliedActions[0].Type != "build" || room.appliedActions[1].Type != "move_units" {
-		t.Fatalf("applied actions = %#v, want build then move_units", room.appliedActions)
+	if room.appliedActions[0].Type != "select_candidate" || room.appliedActions[1].Type != "build" {
+		t.Fatalf("applied actions = %#v, want candidate selection then build", room.appliedActions)
 	}
 }
 

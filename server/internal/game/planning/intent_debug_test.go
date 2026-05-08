@@ -40,7 +40,7 @@ func TestDebugIntentRecordForCoversAllPlanningIntents(t *testing.T) {
 			name:          "institution loadout",
 			kind:          participant.KindBot,
 			participantID: "bot-1",
-			intent:        SetInstitutionLoadoutIntent{PolicyIDs: []string{"card-a", "card-b"}},
+			intent:        SetInstitutionLoadoutIntent{InstitutionIDs: []string{"card-a", "card-b"}},
 			wantType:      "set_institution_loadout",
 			wantLabel:     "设置制度装配",
 			wantSource:    "ai",

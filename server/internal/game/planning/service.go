@@ -116,7 +116,7 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 	case SetPolicyIntent:
 		result, err = s.handleSetPolicy(delivery, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
 	case SetInstitutionLoadoutIntent:
-		result, err = s.handleInstitutionLoadout(delivery, room, playerID, playerState, intent.PolicyIDs)
+		result, err = s.handleInstitutionLoadout(delivery, room, playerID, playerState, intent.InstitutionIDs)
 	case BuildStructureIntent:
 		result, err = s.handleBuildRequest(delivery, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
 	case RevealNodeIntent:

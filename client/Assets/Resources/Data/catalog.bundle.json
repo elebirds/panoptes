@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "fde2cbcb6581214db70b9afb0c6eeae8cdc7070fc900da23f7b5bca4b9b513f8",
+    "bundle_hash": "cceb4182627d64a6bfd9f0c7174471ea173f5e568296a13965134a491a5666cf",
     "required_sections": [
       "resources",
       "points",
@@ -12,6 +12,7 @@
       "buildings",
       "technologies",
       "policies",
+      "institutions",
       "recipes",
       "terrains",
       "rules",
@@ -27,6 +28,10 @@
         "hash": "e13f38a5130d054008529ba2c898d19b2e0e6d6afba46e6fed2c8eb143b2e031"
       },
       {
+        "section_name": "institutions",
+        "hash": "b177ed519829a7662cfcda0a69dc51a9e591f73e80c6ff436866d33cb11a0110"
+      },
+      {
         "section_name": "maps",
         "hash": "a6ceda0bb27328a5a0e11b6d8c349722df2805dfe0a53c3f6abd503b65107fbd"
       },
@@ -40,7 +45,7 @@
       },
       {
         "section_name": "policies",
-        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
+        "hash": "f9abe81f71768cf6aa9553ff0920bfb3f85c31575c8cad1564522a41b81cb29e"
       },
       {
         "section_name": "recipes",
@@ -56,7 +61,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "ae6d0a0a0b24ecd74f995268592d96486a17a76887610b3bf27d9e84f5637e16"
+        "hash": "82572fe1339f6a7bcddfe319137146390724c52a39529624745ab30292a8850d"
       },
       {
         "section_name": "terrains",
@@ -1042,11 +1047,11 @@
       "prerequisites": [],
       "explicit_effects": [
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "academy_charter"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "logistics_corps"
         },
         {
@@ -1293,7 +1298,7 @@
           "target_id": "smelter_refined_ore"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "foundry_directives"
         }
       ],
@@ -1464,7 +1469,7 @@
           "target_id": "market_ore_contracts"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "mercantile_charter"
         }
       ],
@@ -1495,7 +1500,7 @@
           "target_id": "academy"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "research_mandate"
         }
       ],
@@ -1729,13 +1734,72 @@
       "tags": [
         "national"
       ]
+    }
+  ],
+  "institution_categories": [
+    {
+      "id": "power",
+      "name": "权力制度",
+      "description": "决定中央、地方与大臣之间的实际权力分配。",
+      "sort_order": 10,
+      "tags": [
+        "governance"
+      ]
     },
+    {
+      "id": "citizenship",
+      "name": "公民制度",
+      "description": "决定国家默认优先保护与动员的人群。",
+      "sort_order": 20,
+      "tags": [
+        "society"
+      ]
+    },
+    {
+      "id": "economy",
+      "name": "经济制度",
+      "description": "决定生产组织和短缺分配的长期规则。",
+      "sort_order": 30,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "trade",
+      "name": "贸易制度",
+      "description": "决定市场、贸易与外部资源的组织方式。",
+      "sort_order": 40,
+      "tags": [
+        "trade"
+      ]
+    },
+    {
+      "id": "military",
+      "name": "军事制度",
+      "description": "决定军队维护、动员与补给的长期结构。",
+      "sort_order": 50,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "administration",
+      "name": "行政制度",
+      "description": "决定信息汇总、报告精度与执行链条。",
+      "sort_order": 60,
+      "tags": [
+        "administration",
+        "information"
+      ]
+    }
+  ],
+  "institutions": [
     {
       "id": "academy_charter",
       "name": "学术特许",
-      "description": "制度层面的学术组织支持，提升科研产出。",
+      "description": "行政制度中的学术组织支持，提升科研产出。",
       "icon_key": "policy_academy_charter",
-      "layer": "institutional",
+      "category": "administration",
       "activation_timing": "next_turn",
       "prerequisites": [],
       "explicit_effects": [],
@@ -1753,17 +1817,25 @@
           "priority": 70
         }
       ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "research",
+          "value": 10
+        }
+      ],
       "sort_order": 50,
       "tags": [
-        "institutional"
+        "administration",
+        "research"
       ]
     },
     {
       "id": "logistics_corps",
       "name": "转运署",
-      "description": "制度层面的转运组织，提高道路基础运量。",
+      "description": "行政制度中的转运组织，提高道路基础运量。",
       "icon_key": "policy_logistics_corps",
-      "layer": "institutional",
+      "category": "administration",
       "activation_timing": "next_turn",
       "prerequisites": [],
       "explicit_effects": [],
@@ -1788,18 +1860,25 @@
           "priority": 60
         }
       ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "logistics",
+          "value": 10
+        }
+      ],
       "sort_order": 60,
       "tags": [
-        "institutional",
+        "administration",
         "logistics"
       ]
     },
     {
       "id": "foundry_directives",
       "name": "冶造敕令",
-      "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
+      "description": "经济制度中的冶造调度，提高冶炼效率并优先保障工业链。",
       "icon_key": "policy_reorganization",
-      "layer": "institutional",
+      "category": "economy",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
@@ -1826,18 +1905,25 @@
           "priority": 130
         }
       ],
+      "governance_effects": [
+        {
+          "type": "minister_autonomy",
+          "target": "economy",
+          "value": 10
+        }
+      ],
       "sort_order": 70,
       "tags": [
-        "institutional",
+        "economy",
         "industry"
       ]
     },
     {
       "id": "mercantile_charter",
       "name": "商贸特许",
-      "description": "制度层面的市集授权，提高契约调拨效率。",
+      "description": "贸易制度中的市集授权，提高契约调拨效率。",
       "icon_key": "policy_logistics_corps",
-      "layer": "institutional",
+      "category": "trade",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
@@ -1876,18 +1962,24 @@
           "priority": 80
         }
       ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "trade",
+          "value": 10
+        }
+      ],
       "sort_order": 80,
       "tags": [
-        "institutional",
         "trade"
       ]
     },
     {
       "id": "research_mandate",
       "name": "研学敕令",
-      "description": "制度层面的学术优先令，显著提高科研产出。",
+      "description": "行政制度中的学术优先令，显著提高科研产出。",
       "icon_key": "policy_academy_charter",
-      "layer": "institutional",
+      "category": "administration",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
@@ -1910,9 +2002,16 @@
           "priority": 120
         }
       ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "research",
+          "value": 15
+        }
+      ],
       "sort_order": 90,
       "tags": [
-        "institutional",
+        "administration",
         "research"
       ]
     }

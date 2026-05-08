@@ -12,6 +12,8 @@ namespace Panoptes.Core.Application.Stores
             IReadOnlyDictionary<string, CatalogRecipeDto> recipes = null,
             IReadOnlyDictionary<string, CatalogTechnologyDto> technologies = null,
             IReadOnlyDictionary<string, CatalogPolicyDto> policies = null,
+            IReadOnlyDictionary<string, CatalogInstitutionCategoryDto> institutionCategories = null,
+            IReadOnlyDictionary<string, CatalogInstitutionDto> institutions = null,
             IReadOnlyDictionary<string, CatalogUnitDto> units = null,
             CatalogMapRuntimeBundleDto defaultMap = null)
         {
@@ -21,6 +23,8 @@ namespace Panoptes.Core.Application.Stores
             Recipes = StoreSnapshotCloner.CloneCatalogRecipes(recipes);
             Technologies = StoreSnapshotCloner.CloneCatalogTechnologies(technologies);
             Policies = StoreSnapshotCloner.CloneCatalogPolicies(policies);
+            InstitutionCategories = StoreSnapshotCloner.CloneCatalogInstitutionCategories(institutionCategories);
+            Institutions = StoreSnapshotCloner.CloneCatalogInstitutions(institutions);
             Units = StoreSnapshotCloner.CloneCatalogUnits(units);
             DefaultMap = StoreSnapshotCloner.CloneCatalogMapRuntimeBundle(defaultMap);
         }
@@ -31,12 +35,14 @@ namespace Panoptes.Core.Application.Stores
         public IReadOnlyDictionary<string, CatalogRecipeDto> Recipes { get; }
         public IReadOnlyDictionary<string, CatalogTechnologyDto> Technologies { get; }
         public IReadOnlyDictionary<string, CatalogPolicyDto> Policies { get; }
+        public IReadOnlyDictionary<string, CatalogInstitutionCategoryDto> InstitutionCategories { get; }
+        public IReadOnlyDictionary<string, CatalogInstitutionDto> Institutions { get; }
         public IReadOnlyDictionary<string, CatalogUnitDto> Units { get; }
         public CatalogMapRuntimeBundleDto DefaultMap { get; }
 
         internal StaticCatalogState Clone()
         {
-            return new StaticCatalogState(Resources, Points, Buildings, Recipes, Technologies, Policies, Units, DefaultMap);
+            return new StaticCatalogState(Resources, Points, Buildings, Recipes, Technologies, Policies, InstitutionCategories, Institutions, Units, DefaultMap);
         }
     }
 }

@@ -835,10 +835,13 @@ func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 			BaseResearchOutputPerTurn: 1,
 			BaseIndustryOutputPerTurn: 2,
 		},
-		Policies: []staticdata.PolicyDefinition{
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
 			{
 				ID:               "academy_charter",
-				Layer:            "institutional",
+				Category:         "administration",
 				ActivationTiming: "next_turn",
 				ModifierEffects: []staticdata.ModifierEffect{
 					{Trigger: "point.output", PointKey: "research_output", ModifierType: "flat", Value: 1},
@@ -858,17 +861,17 @@ func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 
 	room.RunTurnResolution()
 
-	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 0 {
+	if got := room.State().Players["player-1"].Institutions.ActiveInstitutionIDs; len(got) != 0 {
 		t.Fatalf("active institutions after settlement = %#v, want empty", got)
 	}
-	if got := room.State().Players["player-1"].Institutions.PendingPolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+	if got := room.State().Players["player-1"].Institutions.PendingInstitutionIDs; len(got) != 1 || got[0] != "academy_charter" {
 		t.Fatalf("pending institutions after settlement = %#v, want [academy_charter]", got)
 	}
 
 	room.State().Turn++
 	gamesession.PreparePlanningStartState(room.State())
 
-	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+	if got := room.State().Players["player-1"].Institutions.ActiveInstitutionIDs; len(got) != 1 || got[0] != "academy_charter" {
 		t.Fatalf("active institutions after planning start = %#v, want [academy_charter]", got)
 	}
 	if got := room.State().EffectiveResearchOutput("player-1"); got != 2 {

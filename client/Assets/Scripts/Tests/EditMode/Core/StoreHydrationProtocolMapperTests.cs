@@ -168,7 +168,7 @@ namespace Panoptes.Tests.EditMode.Core
                 {
                     new QueuedRecipeSelection { NodeId = "n4", RecipeId = "grain" }
                 },
-                PlannedInstitutionPolicyIds = { "labor" }
+                PlannedInstitutionIds = { "labor" }
             });
 
             Assert.That(mapped.SnapshotTurn, Is.EqualTo(6));
@@ -178,7 +178,7 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.RecipeSelections[0].RecipeId, Is.EqualTo("grain"));
             Assert.That(mapped.PlannedResearchTargetTechnologyId, Is.EqualTo("irrigation"));
             Assert.That(mapped.PlannedNationalPolicyId, Is.EqualTo("mobilize"));
-            Assert.That(mapped.PlannedInstitutionPolicyIds, Is.EqualTo(new[] { "labor" }));
+            Assert.That(mapped.PlannedInstitutionIds, Is.EqualTo(new[] { "labor" }));
         }
 
         [Test]

@@ -395,9 +395,9 @@ func (h *stubCoordinatorHost) QueueRecipeSelection(order domain.RecipeSelectionO
 		h.State().TurnRuntime.Planning.UpsertRecipeSelection(order)
 	}
 }
-func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, policyIDs []string) {
+func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, institutionIDs []string) {
 	if h.State() != nil {
-		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, policyIDs)
+		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, institutionIDs)
 	}
 }
 func (h *stubCoordinatorHost) SetMinisterDirective(string, string)                {}

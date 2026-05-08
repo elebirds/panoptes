@@ -68,6 +68,7 @@ namespace Panoptes.Presentation.ViewModels
                 new("recipes", "Recipes", (catalog.Recipes?.Count ?? 0).ToString(), "Known production recipes"),
                 new("tech", "Technologies", (catalog.Technologies?.Count ?? 0).ToString(), "Known technologies"),
                 new("policies", "Policies", (catalog.Policies?.Count ?? 0).ToString(), "Known policies"),
+                new("institutions", "Institutions", (catalog.Institutions?.Count ?? 0).ToString(), "Known institutions"),
                 new("units", "Units", (catalog.Units?.Count ?? 0).ToString(), "Known unit definitions")
             };
         }

@@ -22,6 +22,8 @@ namespace Panoptes.Core.Application.Stores
                 recipes: MapRecipes(snapshot.Recipes),
                 technologies: MapTechnologies(snapshot.Technologies),
                 policies: MapPolicies(snapshot.Policies),
+                institutionCategories: MapInstitutionCategories(snapshot.InstitutionCategories),
+                institutions: MapInstitutions(snapshot.Institutions),
                 units: MapUnits(snapshot.Units));
         }
 
@@ -108,6 +110,35 @@ namespace Panoptes.Core.Application.Stores
                 IconKey = entry.IconKey,
                 Layer = entry.Layer,
                 ActivationTiming = entry.ActivationTiming,
+                ModifierEffects = new List<CatalogPolicyModifierEffectDto>()
+            });
+        }
+
+        private static Dictionary<string, CatalogInstitutionCategoryDto> MapInstitutionCategories(IEnumerable<InstitutionCategoryCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogInstitutionCategoryDto
+            {
+                Id = entry.Id,
+                Name = entry.Name,
+                Description = entry.Description,
+                SortOrder = entry.SortOrder,
+                Tags = ToList(entry.Tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogInstitutionDto> MapInstitutions(IEnumerable<InstitutionCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogInstitutionDto
+            {
+                Id = entry.Id,
+                Name = entry.Name,
+                Description = entry.Description,
+                IconKey = entry.IconKey,
+                Category = entry.Category,
+                ActivationTiming = entry.ActivationTiming,
+                Tags = ToList(entry.Tags),
+                Prerequisites = new List<CatalogTechnologyPrerequisiteDto>(),
+                ExplicitEffects = new List<CatalogTechnologyEffectDto>(),
                 ModifierEffects = new List<CatalogPolicyModifierEffectDto>()
             });
         }

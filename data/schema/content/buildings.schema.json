@@ -154,6 +154,25 @@
         {
           "additionalProperties": false,
           "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_institution"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "institution_slots": {
               "minimum": 1,
               "type": "integer"

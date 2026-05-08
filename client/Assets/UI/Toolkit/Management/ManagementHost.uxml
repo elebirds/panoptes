@@ -12,6 +12,7 @@
             <ui:Button name="management-host-nav-build" text="建造" class="management-host-nav-button" />
             <ui:Button name="management-host-nav-recipe" text="配方" class="management-host-nav-button" />
             <ui:Button name="management-host-nav-policy" text="国策" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-institution" text="制度" class="management-host-nav-button" />
         </ui:VisualElement>
         <ui:VisualElement name="management-host-overview-panel" class="national-overview-panel" style="display: none;">
             <ui:VisualElement class="national-overview-summary-grid">

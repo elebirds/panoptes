@@ -34,6 +34,78 @@ Questions to answer:
 
 (To be filled by the team)
 
+### Scenario: Institutions as First-Class Category Loadouts
+
+#### 1. Scope / Trigger
+- Trigger: any backend/protocol/static-data change that touches long-term `制度`
+  choices. Institutions are no longer policy-layer entries; they are separate
+  content, protocol fields, and client catalog sections.
+
+#### 2. Signatures
+- Authored content: `data/content/institutions/institutions.json`
+- UI metadata: `data/ui/catalogs/institutions.json`
+- Command: `MsgSetInstitutionLoadout.institution_ids`
+- Result: `MsgSetInstitutionLoadoutResult.institution_ids`
+- Planning snapshot: `MsgPlanningSnapshot.planned_institution_ids`
+- Player view: `InstitutionStateView.candidate_institution_ids` and
+  `active_institution_ids`
+- Static catalog: `StaticCatalogSnapshot.institution_categories` and
+  `institutions`
+
+#### 3. Contracts
+- `PolicyDefinition` and policy JSON are for short-term national policies only.
+- Every `InstitutionDefinition` must reference a known institution category.
+- A submitted institution loadout is a full category-preserving loadout, not a
+  single card toggle.
+- Each category may have at most one selected institution.
+- Technologies unlock institution candidates with `unlock_institution`; policy
+  unlocks remain `unlock_policy`.
+- Server validation is authoritative. Client UI may filter by server-provided
+  candidate/active/planned ids, but must not reimplement legality rules.
+
+#### 4. Validation & Error Matrix
+- Unknown institution id -> `invalid_target`.
+- Known policy id submitted as an institution -> `invalid_target`.
+- Institution candidate not unlocked for the player -> `invalid_directive`.
+- Duplicate selected choices in one category -> `invalid_directive`.
+- Unmet institution prerequisites -> prerequisite validator error code.
+- Valid loadout -> queue pending institution changes for next documented
+  activation point.
+
+#### 5. Good / Base / Bad Cases
+- Good: selecting `free_market` preserves the existing `power` institution and
+  replaces only the `economy` category.
+- Base: an empty loadout is valid when the rules allow no pending choices.
+- Bad: adding an institution to `policies.json` with `layer: institutional`, or
+  sending `policy_ids` through any institution command/result path.
+
+#### 6. Tests Required
+- Static-data load tests cover institution categories and entries.
+- Datagen validation rejects unknown institution categories.
+- Planning tests cover unknown ids, national policy ids, locked candidates, and
+  duplicate category choices.
+- Activation tests cover next-turn pending institution application.
+- Effect tests cover active institution modifier effects and logistics priority.
+- Client tests cover separate policy/institution catalog hydration and full
+  category-preserving loadout submission.
+
+#### 7. Wrong vs Correct
+#### Wrong
+```go
+Policies: []staticdata.PolicyDefinition{
+    {ID: "academy_charter", Layer: "institutional"},
+}
+```
+#### Correct
+```go
+InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+    {ID: "administration"},
+}
+Institutions: []staticdata.InstitutionDefinition{
+    {ID: "academy_charter", Category: "administration"},
+}
+```
+
 ### Scenario: LLM Structured JSON Output
 
 #### 1. Scope / Trigger
@@ -199,8 +271,6 @@ if ok {
 - Supported action types in the current contract:
   - `select_candidate`
   - `build`
-  - `move_units`
-  - `unit_order`
   - `set_research`
   - `set_policy`
   - `set_institution_loadout`
@@ -208,23 +278,23 @@ if ok {
 - Action param contracts:
   - `select_candidate`: `draft_id` from the report prompt Action Candidates list
   - `build`: `node_id`, `building_type`, optional `city_id`
-  - `move_units`: `unit_id`, `target_node`
-  - `unit_order`: `unit_id`, `action`, optional `target_node`, `target_unit`, `secondary_node`, `params`
   - `set_research`: `technology_id`
   - `set_policy`: `policy_id`
-  - `set_institution_loadout`: `policy_ids`
+  - `set_institution_loadout`: `institution_ids`
   - `set_building_recipe`: `node_id`, `recipe_id`
+  - Map/unit decisions: choose a `kind=operation` candidate with `select_candidate`; do not expose `move_units`, `unit_order`, or `issue_unit_order` as minister report actions.
 
 #### 3. Contracts
 - `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.
 - Report prompts should include current same-role pending minister drafts as Action Candidates when they exist.
 - If Action Candidates exist, the prompt must instruct the LLM to prefer `select_candidate` over hand-written action params for the same decision surface.
 - `select_candidate` must only be allowed to reference an existing current-turn pending draft for the same player and minister role.
+- Rule-generated map/unit action space must be folded into bounded `operation` candidates. Each operation carries a small batch of normal planning commands and hides the raw per-unit/per-node search space from the LLM prompt.
+- Accepting an operation proposal must pre-validate every contained command through the same normal planning validators, then apply the batch through normal planning state writes. If any command is invalid, no command in the operation may be applied.
 - When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role rule-only/rule+llm candidates become stale/unavailable.
 - Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
 - Build actions must be validated with the normal build-order rules before creating a pending minister draft.
-- Move actions must be validated with the normal unit-order rules before creating a pending minister draft.
-- Research, policy, institution loadout, building recipe, and generic unit-order actions must use the same validators as direct planning commands before creating a pending minister draft.
+- Research, policy, institution loadout, and building recipe actions must use the same validators as direct planning commands before creating a pending minister draft.
 - Invalid minister actions are ignored after logging; they must not mutate authority directly or bypass the normal planning checks.
 - Staged actions should be visible through `MsgGameSync.minister_proposals` and remain pending until accepted.
 
@@ -241,19 +311,20 @@ if ok {
 - Valid action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
 
 #### 5. Good/Base/Bad Cases
-- Good: the legal candidate pool generates research/policy/unit candidates from the current observed snapshot, the report prompt lists them, and the LLM returns `select_candidate` for the candidate it wants to formally recommend.
-- Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, `set_building_recipe`, or a valid `unit_order` when no suitable candidate exists, and the session creates pending minister proposals that the player can approve.
-- Base: LLM returns legacy `build` or `move_units`, and the session creates proposals that later flow through the same approve/reject path as other minister drafts.
+- Good: the legal candidate pool generates research/policy/operation candidates from the current observed snapshot, the report prompt lists them, and the LLM returns `select_candidate` for the candidate it wants to formally recommend.
+- Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, or `set_building_recipe` when no suitable candidate exists, and the session creates pending minister proposals that the player can approve.
+- Base: LLM returns `build`, and the session creates a proposal that later flows through the same approve/reject path as other minister drafts.
 - Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
 
 #### 6. Tests Required
 - Engine test confirms parsed actions are forwarded to the room callback.
 - Session test confirms valid minister build actions stage pending minister drafts.
-- Session test confirms valid minister move actions stage pending minister drafts.
-- Session test confirms expanded research, policy, institution, recipe, and generic unit-order actions stage pending minister drafts without mutating planning state before approval.
+- Session test confirms deprecated map/unit action compatibility types are ignored rather than staged.
+- Session test confirms expanded research, policy, institution, and recipe actions stage pending minister drafts without mutating planning state before approval.
 - Session test confirms `select_candidate` marks selected same-role candidates as `llm_action` and stales unselected same-role rule candidates.
 - Prompt test confirms Action Candidates are injected into report prompts and the selection contract is visible.
-- Projection/query test confirms minister proposals carry typed commands and raw JSON.
+- Projection/query test confirms minister proposals carry typed commands, operation command batches, and raw JSON.
+- Planning test confirms accepting an operation applies every step, and invalid operations reject without partial application.
 - Regression tests confirm invalid minister actions are ignored, not applied.
 
 #### 7. Wrong vs Correct

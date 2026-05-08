@@ -634,12 +634,12 @@ func (x *ResearchProgressEntry) GetRequiredProgress() int32 {
 }
 
 type InstitutionStateView struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	SlotCount          int32                  `protobuf:"varint,1,opt,name=slot_count,json=slotCount,proto3" json:"slot_count,omitempty"`
-	CandidatePolicyIds []string               `protobuf:"bytes,2,rep,name=candidate_policy_ids,json=candidatePolicyIds,proto3" json:"candidate_policy_ids,omitempty"`
-	ActivePolicyIds    []string               `protobuf:"bytes,3,rep,name=active_policy_ids,json=activePolicyIds,proto3" json:"active_policy_ids,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	SlotCount               int32                  `protobuf:"varint,1,opt,name=slot_count,json=slotCount,proto3" json:"slot_count,omitempty"`
+	CandidateInstitutionIds []string               `protobuf:"bytes,2,rep,name=candidate_institution_ids,json=candidateInstitutionIds,proto3" json:"candidate_institution_ids,omitempty"`
+	ActiveInstitutionIds    []string               `protobuf:"bytes,3,rep,name=active_institution_ids,json=activeInstitutionIds,proto3" json:"active_institution_ids,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *InstitutionStateView) Reset() {
@@ -679,16 +679,16 @@ func (x *InstitutionStateView) GetSlotCount() int32 {
 	return 0
 }
 
-func (x *InstitutionStateView) GetCandidatePolicyIds() []string {
+func (x *InstitutionStateView) GetCandidateInstitutionIds() []string {
 	if x != nil {
-		return x.CandidatePolicyIds
+		return x.CandidateInstitutionIds
 	}
 	return nil
 }
 
-func (x *InstitutionStateView) GetActivePolicyIds() []string {
+func (x *InstitutionStateView) GetActiveInstitutionIds() []string {
 	if x != nil {
-		return x.ActivePolicyIds
+		return x.ActiveInstitutionIds
 	}
 	return nil
 }
@@ -1308,12 +1308,12 @@ const file_panoptes_proto_v1_game_state_proto_rawDesc = "" +
 	"\x15ResearchProgressEntry\x12#\n" +
 	"\rtechnology_id\x18\x01 \x01(\tR\ftechnologyId\x12)\n" +
 	"\x10current_progress\x18\x02 \x01(\x05R\x0fcurrentProgress\x12+\n" +
-	"\x11required_progress\x18\x03 \x01(\x05R\x10requiredProgress\"\x93\x01\n" +
+	"\x11required_progress\x18\x03 \x01(\x05R\x10requiredProgress\"\xa7\x01\n" +
 	"\x14InstitutionStateView\x12\x1d\n" +
 	"\n" +
-	"slot_count\x18\x01 \x01(\x05R\tslotCount\x120\n" +
-	"\x14candidate_policy_ids\x18\x02 \x03(\tR\x12candidatePolicyIds\x12*\n" +
-	"\x11active_policy_ids\x18\x03 \x03(\tR\x0factivePolicyIds\"\x92\x02\n" +
+	"slot_count\x18\x01 \x01(\x05R\tslotCount\x12:\n" +
+	"\x19candidate_institution_ids\x18\x02 \x03(\tR\x17candidateInstitutionIds\x124\n" +
+	"\x16active_institution_ids\x18\x03 \x03(\tR\x14activeInstitutionIds\"\x92\x02\n" +
 	"\x15BuildingOperationView\x12,\n" +
 	"\x12selected_recipe_id\x18\x01 \x01(\tR\x10selectedRecipeId\x12)\n" +
 	"\x10current_progress\x18\x02 \x01(\x05R\x0fcurrentProgress\x12+\n" +

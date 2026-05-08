@@ -102,7 +102,7 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 	case *pb.PlanningCommand_SetPolicy:
 		envelope.Intent = SetPolicyIntent{NationalPolicyID: strings.TrimSpace(body.SetPolicy.GetNationalPolicyId())}
 	case *pb.PlanningCommand_SetInstitutionLoadout:
-		envelope.Intent = SetInstitutionLoadoutIntent{PolicyIDs: append([]string(nil), body.SetInstitutionLoadout.GetPolicyIds()...)}
+		envelope.Intent = SetInstitutionLoadoutIntent{InstitutionIDs: append([]string(nil), body.SetInstitutionLoadout.GetInstitutionIds()...)}
 	case *pb.PlanningCommand_BuildStructure:
 		envelope.Intent = BuildStructureIntent{
 			NodeID:         strings.TrimSpace(body.BuildStructure.GetNodeId()),

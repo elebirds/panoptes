@@ -56,9 +56,9 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		WarZones:               warZones,
 		Research:               buildResearchStateView(playerState.Research),
 		Institutions: &pb.InstitutionStateView{
-			SlotCount:          int32(playerState.Institutions.SlotCount),
-			CandidatePolicyIds: playerState.Institutions.CandidateIDs(),
-			ActivePolicyIds:    append([]string(nil), playerState.Institutions.ActivePolicyIDs...),
+			SlotCount:               int32(playerState.Institutions.SlotCount),
+			CandidateInstitutionIds: playerState.Institutions.CandidateIDs(),
+			ActiveInstitutionIds:    append([]string(nil), playerState.Institutions.ActiveInstitutionIDs...),
 		},
 	}
 }

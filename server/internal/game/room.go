@@ -176,9 +176,9 @@ func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	}
 }
 
-func (r *GameRoom) SetInstitutionLoadout(playerID string, policyIDs []string) {
+func (r *GameRoom) SetInstitutionLoadout(playerID string, institutionIDs []string) {
 	if state := r.State(); state != nil {
-		state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, append([]string(nil), policyIDs...))
+		state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, append([]string(nil), institutionIDs...))
 	}
 }
 

@@ -109,7 +109,7 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
-        public void PolicyFocusBinder_ShouldRouteNationalAndInstitutionCommands()
+        public void PolicyFocusBinder_ShouldRouteNationalPolicyCommand()
         {
             ActionLock.Release();
             _root = new GameObject("PolicyFocusCommandTest");
@@ -122,8 +122,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             staticCatalogStore.Replace(new StaticCatalogState(policies: new System.Collections.Generic.Dictionary<string, CatalogPolicyDto>
             {
-                ["recovery"] = new CatalogPolicyDto { Id = "recovery", Name = "Recovery", Layer = "national" },
-                ["academy_charter"] = new CatalogPolicyDto { Id = "academy_charter", Name = "Academy", Layer = "institution" }
+                ["recovery"] = new CatalogPolicyDto { Id = "recovery", Name = "Recovery", Layer = "national" }
             }));
             InjectPolicyFlow(binder, new GameIntentService(sender), viewModel, visibilityStore);
 
@@ -131,12 +130,46 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(sender.LastMessage, Is.TypeOf<MsgSetPolicy>());
             Assert.That(((MsgSetPolicy)sender.LastMessage).NationalPolicyId, Is.EqualTo("recovery"));
 
-            ActionLock.Release();
-            RequestManagementRowAction(binder, "academy_charter");
-            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetInstitutionLoadout>());
-            Assert.That(((MsgSetInstitutionLoadout)sender.LastMessage).PolicyIds, Is.EquivalentTo(new[] { "academy_charter" }));
-
             visibilityStore.Show(ManagementPanelId.PolicyFocus);
+            Assert.That(_root.GetComponent<UIDocument>().rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+        }
+
+        [Test]
+        public void InstitutionBinder_ShouldSubmitFullCategoryPreservingLoadout()
+        {
+            ActionLock.Release();
+            _root = new GameObject("InstitutionCommandTest");
+            var binder = _root.AddComponent<InstitutionUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var planningDraftStore = new PlanningDraftStore();
+            var viewModel = new InstitutionViewModel(staticCatalogStore, planningDraftStore);
+
+            staticCatalogStore.Replace(new StaticCatalogState(
+                institutionCategories: new Dictionary<string, CatalogInstitutionCategoryDto>
+                {
+                    ["power"] = new CatalogInstitutionCategoryDto { Id = "power", Name = "Power", SortOrder = 10 },
+                    ["economy"] = new CatalogInstitutionCategoryDto { Id = "economy", Name = "Economy", SortOrder = 20 }
+                },
+                institutions: new Dictionary<string, CatalogInstitutionDto>
+                {
+                    ["royal_prerogative"] = new CatalogInstitutionDto { Id = "royal_prerogative", Name = "Royal Prerogative", Category = "power" },
+                    ["estate_economy"] = new CatalogInstitutionDto { Id = "estate_economy", Name = "Estate Economy", Category = "economy" },
+                    ["free_market"] = new CatalogInstitutionDto { Id = "free_market", Name = "Free Market", Category = "economy" }
+                }));
+            planningDraftStore.Replace(new PlanningDraftState(
+                plannedInstitutionIds: new[] { "royal_prerogative", "estate_economy" }));
+            InjectInstitutionFlow(binder, new GameIntentService(sender), viewModel, visibilityStore);
+
+            RequestManagementRowAction(binder, "free_market");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetInstitutionLoadout>());
+            Assert.That(((MsgSetInstitutionLoadout)sender.LastMessage).InstitutionIds, Is.EquivalentTo(new[] { "royal_prerogative", "free_market" }));
+
+            visibilityStore.Show(ManagementPanelId.Institutions);
             Assert.That(_root.GetComponent<UIDocument>().rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             visibilityStore.Dispose();
             viewModel.Dispose();
@@ -365,6 +398,19 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var method = typeof(PolicyFocusUiToolkitBinder).GetMethod(
                 "ConstructPolicyFlow",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { gameIntentService, viewModel, visibilityStore });
+        }
+
+        private static void InjectInstitutionFlow(
+            InstitutionUiToolkitBinder binder,
+            GameIntentService gameIntentService,
+            InstitutionViewModel viewModel,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(InstitutionUiToolkitBinder).GetMethod(
+                "ConstructInstitutionFlow",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[] { gameIntentService, viewModel, visibilityStore });

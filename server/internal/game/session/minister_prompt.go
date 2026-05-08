@@ -102,13 +102,21 @@ func buildMinisterActionCandidateSummary(state *domain.GameState, playerID strin
 		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
 			continue
 		}
-		parts = append(parts, fmt.Sprintf("candidate_id=%s kind=%s target_id=%s target_label=%s source=%s",
+		line := fmt.Sprintf("candidate_id=%s kind=%s target_id=%s target_label=%s source=%s",
 			strings.TrimSpace(draft.DraftID),
 			strings.TrimSpace(string(draft.Kind)),
 			strings.TrimSpace(draft.TargetID),
 			strings.TrimSpace(draft.TargetLabel),
 			strings.TrimSpace(string(draft.Source)),
-		))
+		)
+		if draft.Kind == domain.MinisterDraftKindOperation {
+			line += fmt.Sprintf(" operation_id=%s objective=%s command_count=%d",
+				strings.TrimSpace(draft.OperationID),
+				strings.TrimSpace(draft.Objective),
+				len(draft.OperationSteps),
+			)
+		}
+		parts = append(parts, line)
 	}
 	if len(parts) == 0 {
 		return "(none)"

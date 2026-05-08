@@ -259,7 +259,7 @@ namespace Panoptes.DebugTools
                 case MsgResearchResult research:
                     return $"success={research.Success} tech={research.TechnologyId} error={research.ErrorCode}";
                 case MsgSetInstitutionLoadoutResult institution:
-                    return $"success={institution.Success} policies={institution.PolicyIds.Count} error={institution.ErrorCode}";
+                    return $"success={institution.Success} institutions={institution.InstitutionIds.Count} error={institution.ErrorCode}";
                 case MsgSetBuildingRecipeResult recipe:
                     return $"success={recipe.Success} node={recipe.NodeId} recipe={recipe.RecipeId}";
                 case MsgMinisterReportChunk reportChunk:
@@ -285,7 +285,7 @@ namespace Panoptes.DebugTools
             return message switch
             {
                 MsgSetPolicy setPolicy => $"policy={setPolicy.NationalPolicyId}",
-                MsgSetInstitutionLoadout institutionLoadout => $"policies={institutionLoadout.PolicyIds.Count}",
+                MsgSetInstitutionLoadout institutionLoadout => $"institutions={institutionLoadout.InstitutionIds.Count}",
                 MsgBuildStructure buildStructure =>
                     $"node={buildStructure.NodeId} building={buildStructure.BuildingTypeId}",
                 MsgRevealNode revealNode => $"node={revealNode.NodeId}",

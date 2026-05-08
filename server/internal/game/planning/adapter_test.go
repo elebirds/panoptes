@@ -91,11 +91,11 @@ func TestAdaptCommandEnvelopeMapsEveryBatchBody(t *testing.T) {
 		{
 			name: "set institution loadout",
 			envelope: &pb.CommandEnvelope{Body: &pb.CommandEnvelope_SetInstitutionLoadout{
-				SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: []string{"academy_charter"}},
+				SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{InstitutionIds: []string{"academy_charter"}},
 			}},
 			assert: func(t *testing.T, cmd *pb.PlanningCommand) {
 				t.Helper()
-				if got := cmd.GetSetInstitutionLoadout().GetPolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
+				if got := cmd.GetSetInstitutionLoadout().GetInstitutionIds(); len(got) != 1 || got[0] != "academy_charter" {
 					t.Fatalf("institution ids = %#v, want [academy_charter]", got)
 				}
 			},

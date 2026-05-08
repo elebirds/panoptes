@@ -31,6 +31,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.Buildings.Path, SchemaRel: filepath.Join("content", "buildings.schema.json"), Raw: data.Buildings.Raw},
 		{Path: data.Technologies.Path, SchemaRel: filepath.Join("content", "technologies.schema.json"), Raw: data.Technologies.Raw},
 		{Path: data.Policies.Path, SchemaRel: filepath.Join("content", "policies.schema.json"), Raw: data.Policies.Raw},
+		{Path: data.Institutions.Path, SchemaRel: filepath.Join("content", "institutions.schema.json"), Raw: data.Institutions.Raw},
 		{Path: data.Recipes.Path, SchemaRel: filepath.Join("content", "recipes.schema.json"), Raw: data.Recipes.Raw},
 		{Path: data.Terrains.Path, SchemaRel: filepath.Join("content", "terrains.schema.json"), Raw: data.Terrains.Raw},
 		{Path: data.Rules.Path, SchemaRel: filepath.Join("content", "rules.schema.json"), Raw: data.Rules.Raw},
@@ -42,6 +43,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.TechnologyUI.Path, SchemaRel: filepath.Join("ui", "technologies.schema.json"), Raw: data.TechnologyUI.Raw},
 		{Path: data.TechnologyTreeUI.Path, SchemaRel: filepath.Join("ui", "technology_tree.schema.json"), Raw: data.TechnologyTreeUI.Raw},
 		{Path: data.PolicyUI.Path, SchemaRel: filepath.Join("ui", "policies.schema.json"), Raw: data.PolicyUI.Raw},
+		{Path: data.InstitutionUI.Path, SchemaRel: filepath.Join("ui", "institutions.schema.json"), Raw: data.InstitutionUI.Raw},
 		{Path: data.RecipeUI.Path, SchemaRel: filepath.Join("ui", "recipes.schema.json"), Raw: data.RecipeUI.Raw},
 		{Path: data.TerrainUI.Path, SchemaRel: filepath.Join("ui", "terrains.schema.json"), Raw: data.TerrainUI.Raw},
 	}
@@ -103,6 +105,8 @@ func validateCrossReferences(data *authoredData) error {
 	buildingIDs := makeStringSetBuilding(data.Buildings.Value.Buildings)
 	technologyIDs := makeStringSetTechnology(data.Technologies.Value.Technologies)
 	policyIDs := makeStringSetPolicy(data.Policies.Value.Policies)
+	institutionIDs := makeStringSetInstitution(data.Institutions.Value.Institutions)
+	institutionCategoryIDs := makeStringSetInstitutionCategory(data.Institutions.Value.Categories)
 	recipeIDs := makeStringSetRecipe(data.Recipes.Value.Recipes)
 	unitIDs := makeStringSetUnit(data.Units.Value.Units)
 	allowedTriggers := make(map[string]struct{}, len(staticdata.AllowedModifierTriggers()))
@@ -131,7 +135,7 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePointBagKeys(building.PointCosts, pointKeys, data.Buildings.Path, "point cost"); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(building.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Buildings.Path); err != nil {
+		if err := validateExplicitEffects(building.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, institutionIDs, unitIDs, data.Buildings.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(building.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Buildings.Path); err != nil {
@@ -160,7 +164,7 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePrerequisites(technology.Prerequisites, technologyIDs, policyIDs, data.Technologies.Path); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(technology.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Technologies.Path); err != nil {
+		if err := validateExplicitEffects(technology.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, institutionIDs, unitIDs, data.Technologies.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(technology.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Technologies.Path); err != nil {
@@ -172,10 +176,25 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePrerequisites(policy.Prerequisites, technologyIDs, policyIDs, data.Policies.Path); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(policy.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Policies.Path); err != nil {
+		if err := validateExplicitEffects(policy.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, institutionIDs, unitIDs, data.Policies.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(policy.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Policies.Path); err != nil {
+			return err
+		}
+	}
+
+	for _, institution := range data.Institutions.Value.Institutions {
+		if _, ok := institutionCategoryIDs[institution.Category]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: institution %q references unknown category %q", data.Institutions.Path, institution.ID, institution.Category)
+		}
+		if err := validatePrerequisites(institution.Prerequisites, technologyIDs, policyIDs, data.Institutions.Path); err != nil {
+			return err
+		}
+		if err := validateExplicitEffects(institution.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, institutionIDs, unitIDs, data.Institutions.Path); err != nil {
+			return err
+		}
+		if err := validateModifierEffects(institution.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Institutions.Path); err != nil {
 			return err
 		}
 	}
@@ -280,7 +299,7 @@ func validatePrerequisites(prereqs []staticdata.Prerequisite, technologyIDs map[
 	return nil
 }
 
-func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs map[string]struct{}, recipeIDs map[string]struct{}, policyIDs map[string]struct{}, unitIDs map[string]struct{}, path string) error {
+func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs map[string]struct{}, recipeIDs map[string]struct{}, policyIDs map[string]struct{}, institutionIDs map[string]struct{}, unitIDs map[string]struct{}, path string) error {
 	for _, effect := range effects {
 		switch effect.Type {
 		case "unlock_building":
@@ -294,6 +313,10 @@ func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs ma
 		case "unlock_policy":
 			if _, ok := policyIDs[effect.TargetID]; !ok {
 				return fmt.Errorf("semantic validation failed for %s: unknown policy unlock target %q", path, effect.TargetID)
+			}
+		case "unlock_institution":
+			if _, ok := institutionIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown institution unlock target %q", path, effect.TargetID)
 			}
 		case "add_institution_slots":
 			if effect.InstitutionSlots < 0 {
@@ -406,6 +429,22 @@ func makeStringSetPolicy(policies []staticdata.PolicyDefinition) map[string]stru
 	values := make(map[string]struct{}, len(policies))
 	for _, policy := range policies {
 		values[policy.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetInstitution(institutions []staticdata.InstitutionDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(institutions))
+	for _, institution := range institutions {
+		values[institution.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetInstitutionCategory(categories []staticdata.InstitutionCategoryDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(categories))
+	for _, category := range categories {
+		values[category.ID] = struct{}{}
 	}
 	return values
 }

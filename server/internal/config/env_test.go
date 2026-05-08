@@ -127,6 +127,15 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "reorganization", "layer": "national", "activation_timing": "same_turn", "prerequisites": [], "explicit_effects": [], "modifier_effects": [] }
   ]
 }`,
+		"data/content/institutions/institutions.json": `{
+  "$schema": "../../schema/content/institutions.schema.json",
+  "categories": [
+    { "id": "administration", "name": "行政制度", "description": "决定中央执行链条。", "sort_order": 10, "tags": [] }
+  ],
+  "institutions": [
+    { "id": "academy_charter", "category": "administration", "activation_timing": "next_turn", "prerequisites": [], "explicit_effects": [], "modifier_effects": [] }
+  ]
+}`,
 		"data/content/recipes/recipes.json": `{
   "$schema": "../../schema/content/recipes.schema.json",
   "recipes": [
@@ -218,6 +227,12 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "war_preparedness", "name": "战备", "description": "强化战备", "icon_key": "policy_war_preparedness", "sort_order": 20, "tags": [] },
     { "id": "recovery", "name": "恢复", "description": "强调恢复", "icon_key": "policy_recovery", "sort_order": 30, "tags": [] },
     { "id": "reorganization", "name": "重组", "description": "推进重组", "icon_key": "policy_reorganization", "sort_order": 40, "tags": [] }
+  ]
+}`,
+		"data/ui/catalogs/institutions.json": `{
+  "$schema": "../../schema/ui/institutions.schema.json",
+  "institutions": [
+    { "id": "academy_charter", "name": "学术特许", "description": "提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": [] }
   ]
 }`,
 		"data/ui/catalogs/recipes.json": `{

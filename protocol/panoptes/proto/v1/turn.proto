@@ -76,7 +76,7 @@ message MsgPlanningSnapshot {
   repeated QueuedBuildOrder build_orders = 8;
   repeated QueuedRecipeSelection recipe_selections = 9;
   repeated QueuedWarZoneDirective war_zone_directives = 10;
-  repeated string planned_institution_policy_ids = 11;
+  repeated string planned_institution_ids = 11;
 }
 
 message MsgPlanningPathPreviewResponse {
@@ -166,7 +166,7 @@ message MsgSetPolicyResult {
 
 message MsgSetInstitutionLoadoutResult {
   bool success = 1;
-  repeated string policy_ids = 2;
+  repeated string institution_ids = 2;
   string error_code = 3;
 }
 
@@ -213,6 +213,16 @@ message MinisterProposalView {
   string risk_note = 7;
   CommandEnvelope proposed_command = 8;
   string raw_json = 9;
+  repeated MinisterOperationCommandView operation_commands = 10;
+  string operation_id = 11;
+  string objective = 12;
+}
+
+message MinisterOperationCommandView {
+  string label = 1;
+  string kind = 2;
+  CommandEnvelope command = 3;
+  string raw_json = 4;
 }
 
 message MsgGameSync {

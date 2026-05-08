@@ -11,6 +11,7 @@ const (
 	MinisterDraftKindBuild       MinisterDraftKind = "build"
 	MinisterDraftKindRecipe      MinisterDraftKind = "recipe"
 	MinisterDraftKindUnitOrder   MinisterDraftKind = "unit_order"
+	MinisterDraftKindOperation   MinisterDraftKind = "operation"
 )
 
 type MinisterDraftStatus string
@@ -45,7 +46,7 @@ type MinisterDraft struct {
 	Available       bool                `json:"available"`
 	Turn            int                 `json:"turn"`
 	Source          MinisterDraftSource `json:"source"`
-	PolicyIDs       []string            `json:"policy_ids,omitempty"`
+	InstitutionIDs  []string            `json:"institution_ids,omitempty"`
 	NodeID          string              `json:"node_id,omitempty"`
 	BuildingTypeID  string              `json:"building_type_id,omitempty"`
 	CityID          string              `json:"city_id,omitempty"`
@@ -56,6 +57,9 @@ type MinisterDraft struct {
 	TargetUnitID    string              `json:"target_unit_id,omitempty"`
 	SecondaryNodeID string              `json:"secondary_node_id,omitempty"`
 	Params          map[string]string   `json:"params,omitempty"`
+	OperationID     string              `json:"operation_id,omitempty"`
+	Objective       string              `json:"objective,omitempty"`
+	OperationSteps  []MinisterDraft     `json:"operation_steps,omitempty"`
 }
 
 func (p *PlanningInputs) SetMinisterDrafts(playerID string, drafts []MinisterDraft) {

@@ -297,7 +297,7 @@ namespace Panoptes.Core.Application.Stores
                     msg.ErrorCode,
                     string.Empty,
                     false,
-                    BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
+                    BuildDetails(("institution_ids", string.Join(",", msg.InstitutionIds))));
             }
         }
 

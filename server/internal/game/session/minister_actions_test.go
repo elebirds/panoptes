@@ -12,7 +12,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-func TestRuntimeApplyMinisterActionsStagesValidatedBuildAndMoveProposals(t *testing.T) {
+func TestRuntimeApplyMinisterActionsStagesValidatedBuildProposal(t *testing.T) {
 	previous := staticdata.Default()
 	t.Cleanup(func() {
 		staticdata.SetDefault(previous)
@@ -65,13 +65,6 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildAndMoveProposals(t *test
 				"city_id":       "A1",
 			},
 		},
-		{
-			Type: "move_units",
-			Params: map[string]any{
-				"unit_id":     "infantry-1",
-				"target_node": "A2",
-			},
-		},
 	})
 	if err != nil {
 		t.Fatalf("ApplyMinisterActions error = %v", err)
@@ -81,8 +74,8 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildAndMoveProposals(t *test
 		t.Fatalf("build orders = %d, want 0 before approval", got)
 	}
 	builds := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
-	if len(builds) != 2 {
-		t.Fatalf("minister drafts = %#v, want 2 proposals", builds)
+	if len(builds) != 1 {
+		t.Fatalf("minister drafts = %#v, want 1 proposal", builds)
 	}
 	for _, draft := range builds {
 		if draft.Source != domain.MinisterDraftSourceLLMAction {
@@ -102,12 +95,12 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildAndMoveProposals(t *test
 	if syncMsg == nil {
 		t.Fatalf("game sync message missing")
 	}
-	if got := len(syncMsg.GetMinisterProposals()); got != 2 {
-		t.Fatalf("minister proposals = %d, want 2", got)
+	if got := len(syncMsg.GetMinisterProposals()); got != 1 {
+		t.Fatalf("minister proposals = %d, want 1", got)
 	}
 	proposals := query.BuildMinisterProposalViews(state, "player-1")
-	if len(proposals) != 2 {
-		t.Fatalf("proposal views = %d, want 2", len(proposals))
+	if len(proposals) != 1 {
+		t.Fatalf("proposal views = %d, want 1", len(proposals))
 	}
 	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
 		t.Fatalf("active marches = %d, want 0 before approval", got)
@@ -129,7 +122,12 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 		},
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "expansion", Name: "Expansion", Layer: "national"},
-			{ID: "academy_charter", Name: "Academy Charter", Layer: "institutional"},
+		},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Name: "Academy Charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
@@ -171,17 +169,16 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 	err := runtime.ApplyMinisterActions("player-1", "domestic", []ministerengine.MinisterActionItem{
 		{Type: "set_research", Params: map[string]any{"technology_id": "bronze_working"}},
 		{Type: "set_policy", Params: map[string]any{"policy_id": "expansion"}},
-		{Type: "set_institution_loadout", Params: map[string]any{"policy_ids": []any{"academy_charter"}}},
+		{Type: "set_institution_loadout", Params: map[string]any{"institution_ids": []any{"academy_charter"}}},
 		{Type: "set_building_recipe", Params: map[string]any{"node_id": "A1", "recipe_id": "train_settler"}},
-		{Type: "unit_order", Params: map[string]any{"unit_id": "infantry-1", "action": "hold"}},
 	})
 	if err != nil {
 		t.Fatalf("ApplyMinisterActions error = %v", err)
 	}
 
 	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
-	if len(drafts) != 5 {
-		t.Fatalf("minister drafts = %#v, want 5 expanded proposals", drafts)
+	if len(drafts) != 4 {
+		t.Fatalf("minister drafts = %#v, want 4 expanded proposals", drafts)
 	}
 	seen := make(map[domain.MinisterDraftKind]bool, len(drafts))
 	for _, draft := range drafts {
@@ -198,7 +195,6 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 		domain.MinisterDraftKindPolicy,
 		domain.MinisterDraftKindInstitution,
 		domain.MinisterDraftKindRecipe,
-		domain.MinisterDraftKindUnitOrder,
 	} {
 		if !seen[want] {
 			t.Fatalf("draft kinds = %#v, missing %q", seen, want)
@@ -219,8 +215,30 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 	if got := len(state.TurnRuntime.Planning.UnitOrders); got != 0 {
 		t.Fatalf("unit orders = %d, want 0 before approval", got)
 	}
-	if got := len(query.BuildMinisterProposalViews(state, "player-1")); got != 5 {
-		t.Fatalf("proposal views = %d, want 5", got)
+	if got := len(query.BuildMinisterProposalViews(state, "player-1")); got != 4 {
+		t.Fatalf("proposal views = %d, want 4", got)
+	}
+}
+
+func TestRuntimeApplyMinisterActionsIgnoresUnitActionCompatibilityTypes(t *testing.T) {
+	state := domain.NewGameState("game-unsupported-actions", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-unsupported-actions", []*capturePlayer{player}, nil)
+	runtime.SetState(state)
+
+	err := runtime.ApplyMinisterActions("player-1", "military", []ministerengine.MinisterActionItem{
+		{Type: "move_units", Params: map[string]any{"unit_id": "u1", "target_node": "A2"}},
+		{Type: "unit_order", Params: map[string]any{"unit_id": "u1", "action": "hold"}},
+		{Type: "issue_unit_order", Params: map[string]any{"unit_id": "u1", "action": "hold"}},
+	})
+	if err != nil {
+		t.Fatalf("ApplyMinisterActions error = %v", err)
+	}
+	if got := len(state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")); got != 0 {
+		t.Fatalf("minister drafts = %d, want 0 for unsupported unit action compatibility types", got)
+	}
+	if len(player.sent) != 0 {
+		t.Fatalf("sent messages = %d, want none", len(player.sent))
 	}
 }
 
@@ -253,12 +271,12 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateAndStalesUnselectedRoleD
 			Source:       domain.MinisterDraftSourceRuleLLM,
 		},
 		{
-			DraftID:      "military:unit_order:u1_move_a2:4",
+			DraftID:      "military:operation:secure_a2:4",
 			PlayerID:     "player-1",
 			MinisterRole: "military",
-			Kind:         domain.MinisterDraftKindUnitOrder,
-			TargetID:     "u1:move:A2:",
-			TargetLabel:  "u1 move -> A2",
+			Kind:         domain.MinisterDraftKindOperation,
+			TargetID:     "secure_a2",
+			TargetLabel:  "控制或侦察 A2",
 			Status:       domain.MinisterDraftStatusPending,
 			Available:    true,
 			Turn:         4,
@@ -290,7 +308,7 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateAndStalesUnselectedRoleD
 	if unselected.Status != domain.MinisterDraftStatusStale || unselected.Available {
 		t.Fatalf("unselected same-role draft = %#v, want stale unavailable", unselected)
 	}
-	otherRole := byID["military:unit_order:u1_move_a2:4"]
+	otherRole := byID["military:operation:secure_a2:4"]
 	if otherRole.Status != domain.MinisterDraftStatusPending || !otherRole.Available || otherRole.Source != domain.MinisterDraftSourceRuleOnly {
 		t.Fatalf("other role draft = %#v, want unchanged", otherRole)
 	}

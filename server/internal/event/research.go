@@ -71,12 +71,13 @@ func (e TechnologyCompletedEvent) String() string {
 }
 
 type TechnologyActivatedEvent struct {
-	PlayerID            string
-	TechnologyID        string
-	UnlockBuildingIDs   []string
-	UnlockRecipeIDs     []string
-	UnlockPolicyIDs     []string
-	AddInstitutionSlots int
+	PlayerID             string
+	TechnologyID         string
+	UnlockBuildingIDs    []string
+	UnlockRecipeIDs      []string
+	UnlockPolicyIDs      []string
+	UnlockInstitutionIDs []string
+	AddInstitutionSlots  int
 }
 
 func (e TechnologyActivatedEvent) Apply(_ donburi.World, state *domain.GameState) {
@@ -98,9 +99,10 @@ func (e TechnologyActivatedEvent) Apply(_ donburi.World, state *domain.GameState
 	}
 	for _, policyID := range e.UnlockPolicyIDs {
 		playerState.Research.UnlockPolicyCandidate(policyID)
-		if policy, ok := staticdata.Default().GetPolicy(policyID); ok && policy.Layer == "institutional" {
-			playerState.Institutions.UnlockCandidate(policyID)
-		}
+	}
+	for _, institutionID := range e.UnlockInstitutionIDs {
+		playerState.Research.UnlockInstitutionCandidate(institutionID)
+		playerState.Institutions.UnlockCandidate(institutionID)
 	}
 	playerState.Institutions.SlotCount += e.AddInstitutionSlots
 	state.RefreshBuildingMaxHPForPlayer(e.PlayerID)

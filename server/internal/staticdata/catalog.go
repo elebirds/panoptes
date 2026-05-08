@@ -7,15 +7,17 @@
 package staticdata
 
 type Catalog struct {
-	bundle          CatalogBundle
-	resources       map[string]ResourceDescriptor
-	points          map[string]PointDescriptor
-	units           map[string]UnitDefinition
-	buildings       map[string]BuildingDefinition
-	technologies    map[string]TechnologyDefinition
-	policies        map[string]PolicyDefinition
-	recipes         map[string]RecipeDefinition
-	terrains        map[string]TerrainDefinition
-	maps            map[string]*MapRuntimeBundle
-	sectionPayloads map[string][]byte
+	bundle                CatalogBundle
+	resources             map[string]ResourceDescriptor
+	points                map[string]PointDescriptor
+	units                 map[string]UnitDefinition
+	buildings             map[string]BuildingDefinition
+	technologies          map[string]TechnologyDefinition
+	policies              map[string]PolicyDefinition
+	institutionCategories map[string]InstitutionCategoryDefinition
+	institutions          map[string]InstitutionDefinition
+	recipes               map[string]RecipeDefinition
+	terrains              map[string]TerrainDefinition
+	maps                  map[string]*MapRuntimeBundle
+	sectionPayloads       map[string][]byte
 }

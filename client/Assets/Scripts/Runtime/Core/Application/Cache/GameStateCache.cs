@@ -954,8 +954,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             projected.SlotCount = institution.SlotCount;
-            projected.CandidatePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidatePolicyIds);
-            projected.ActivePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActivePolicyIds);
+            projected.CandidateInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidateInstitutionIds);
+            projected.ActiveInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActiveInstitutionIds);
             return projected;
         }
 
@@ -1226,8 +1226,8 @@ namespace Panoptes.Core.Application.Cache
                 : new InstitutionStateDto
                 {
                     SlotCount = source.SlotCount,
-                    CandidatePolicyIds = source.CandidatePolicyIds != null ? new List<string>(source.CandidatePolicyIds) : new List<string>(),
-                    ActivePolicyIds = source.ActivePolicyIds != null ? new List<string>(source.ActivePolicyIds) : new List<string>()
+                    CandidateInstitutionIds = source.CandidateInstitutionIds != null ? new List<string>(source.CandidateInstitutionIds) : new List<string>(),
+                    ActiveInstitutionIds = source.ActiveInstitutionIds != null ? new List<string>(source.ActiveInstitutionIds) : new List<string>()
                 };
         }
 

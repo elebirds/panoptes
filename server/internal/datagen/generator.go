@@ -45,6 +45,8 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 		authored.Buildings.Value.Buildings,
 		authored.Technologies.Value.Technologies,
 		authored.Policies.Value.Policies,
+		authored.Institutions.Value.Categories,
+		authored.Institutions.Value.Institutions,
 		authored.Recipes.Value.Recipes,
 		authored.Terrains.Value.Terrains,
 	))
@@ -58,6 +60,7 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	mergeBuildingUI(authored.Buildings.Value.Buildings, authored.BuildingUI.Value)
 	mergeTechnologyUI(authored.Technologies.Value.Technologies, authored.TechnologyUI.Value)
 	mergePolicyUI(authored.Policies.Value.Policies, authored.PolicyUI.Value)
+	mergeInstitutionUI(authored.Institutions.Value.Institutions, authored.InstitutionUI.Value)
 	mergeRecipeUI(authored.Recipes.Value.Recipes, authored.RecipeUI.Value)
 	mergeTerrainUI(authored.Terrains.Value.Terrains, authored.TerrainUI.Value)
 
@@ -67,21 +70,23 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:          authored.Manifest.Value,
-		Resources:         authored.Resources.Value.Resources,
-		Points:            authored.Points.Value.Points,
-		Units:             authored.Units.Value.Units,
-		Buildings:         authored.Buildings.Value.Buildings,
-		Technologies:      authored.Technologies.Value.Technologies,
-		Policies:          authored.Policies.Value.Policies,
-		Recipes:           authored.Recipes.Value.Recipes,
-		Terrains:          authored.Terrains.Value.Terrains,
-		Rules:             authored.Rules.Value,
-		Ministers:         authored.Ministers.Value.Pool,
-		Maps:              entries,
-		UITechTreeLayout:  authored.TechnologyTreeUI.Value,
-		UIBuildMenuLayout: buildBuildMenuLayout(authored.Buildings.Value.Buildings),
-		UIRecipeLayout:    buildRecipeLayout(authored.Recipes.Value.Recipes),
+		Manifest:              authored.Manifest.Value,
+		Resources:             authored.Resources.Value.Resources,
+		Points:                authored.Points.Value.Points,
+		Units:                 authored.Units.Value.Units,
+		Buildings:             authored.Buildings.Value.Buildings,
+		Technologies:          authored.Technologies.Value.Technologies,
+		Policies:              authored.Policies.Value.Policies,
+		InstitutionCategories: authored.Institutions.Value.Categories,
+		Institutions:          authored.Institutions.Value.Institutions,
+		Recipes:               authored.Recipes.Value.Recipes,
+		Terrains:              authored.Terrains.Value.Terrains,
+		Rules:                 authored.Rules.Value,
+		Ministers:             authored.Ministers.Value.Pool,
+		Maps:                  entries,
+		UITechTreeLayout:      authored.TechnologyTreeUI.Value,
+		UIBuildMenuLayout:     buildBuildMenuLayout(authored.Buildings.Value.Buildings),
+		UIRecipeLayout:        buildRecipeLayout(authored.Recipes.Value.Recipes),
 	}
 
 	sectionPayloads, sectionHashes, err := staticdata.BuildSectionPayloads(bundle)

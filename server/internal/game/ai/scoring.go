@@ -64,12 +64,12 @@ func (p *ruleBotPlanner) scoreNationalPolicy(policy staticdata.PolicyDefinition)
 	return score
 }
 
-func (p *ruleBotPlanner) scoreInstitutionPolicy(policy staticdata.PolicyDefinition) int {
+func (p *ruleBotPlanner) scoreInstitution(institution staticdata.InstitutionDefinition) int {
 	score := 10
-	score += matchKeywordScore(policy.ID, policy.Name, policy.Description, []string{"academy", "research", "science", "knowledge"}, 50)
-	score += matchKeywordScore(policy.ID, policy.Name, policy.Description, []string{"industry", "forge", "craft"}, 30)
+	score += matchKeywordScore(institution.ID, institution.Name, institution.Description, []string{"academy", "research", "science", "knowledge"}, 50)
+	score += matchKeywordScore(institution.ID, institution.Name, institution.Description, []string{"industry", "forge", "craft"}, 30)
 	if p.threatLevel > 0 {
-		score += matchKeywordScore(policy.ID, policy.Name, policy.Description, []string{"military", "war", "drill"}, 40)
+		score += matchKeywordScore(institution.ID, institution.Name, institution.Description, []string{"military", "war", "drill"}, 40)
 	}
 	return score
 }

@@ -77,11 +77,11 @@
       "prerequisites": [],
       "explicit_effects": [
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "academy_charter"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "logistics_corps"
         },
         {
@@ -328,7 +328,7 @@
           "target_id": "smelter_refined_ore"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "foundry_directives"
         }
       ],
@@ -499,7 +499,7 @@
           "target_id": "market_ore_contracts"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "mercantile_charter"
         }
       ],
@@ -530,7 +530,7 @@
           "target_id": "academy"
         },
         {
-          "type": "unlock_policy",
+          "type": "unlock_institution",
           "target_id": "research_mandate"
         }
       ],

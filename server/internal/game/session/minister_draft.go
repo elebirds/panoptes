@@ -131,13 +131,13 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		}
 		return baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindPolicy, targetID, policyLabel(targetID)), true
 	case planning.SetInstitutionLoadoutIntent:
-		policyIDs := domain.NormalizePolicyIDList(typed.PolicyIDs)
-		if len(policyIDs) == 0 {
+		institutionIDs := domain.NormalizeInstitutionIDList(typed.InstitutionIDs)
+		if len(institutionIDs) == 0 {
 			return domain.MinisterDraft{}, false
 		}
-		targetID := strings.Join(policyIDs, ",")
-		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(policyIDs))
-		draft.PolicyIDs = policyIDs
+		targetID := strings.Join(institutionIDs, ",")
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(institutionIDs))
+		draft.InstitutionIDs = institutionIDs
 		return draft, true
 	case planning.BuildStructureIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -252,10 +252,14 @@ func policyLabel(policyID string) string {
 	return strings.TrimSpace(policyID)
 }
 
-func institutionLabel(policyIDs []string) string {
-	labels := make([]string, 0, len(policyIDs))
-	for _, policyID := range policyIDs {
-		labels = append(labels, policyLabel(policyID))
+func institutionLabel(institutionIDs []string) string {
+	labels := make([]string, 0, len(institutionIDs))
+	for _, institutionID := range institutionIDs {
+		if institution, ok := staticdata.Default().GetInstitution(strings.TrimSpace(institutionID)); ok && strings.TrimSpace(institution.Name) != "" {
+			labels = append(labels, strings.TrimSpace(institution.Name))
+			continue
+		}
+		labels = append(labels, strings.TrimSpace(institutionID))
 	}
 	return strings.Join(labels, ", ")
 }

@@ -39,7 +39,7 @@ namespace Panoptes.Core.Application.Stores
                 current.CurrentRecipePreview,
                 current.PlannedResearchTargetTechnologyId,
                 current.PlannedNationalPolicyId,
-                current.PlannedInstitutionPolicyIds));
+                current.PlannedInstitutionIds));
         }
 
         protected override PlanningDraftState CloneState(PlanningDraftState state)
@@ -63,7 +63,7 @@ namespace Panoptes.Core.Application.Stores
                    string.Equals(left.SnapshotPhase, right.SnapshotPhase, StringComparison.Ordinal) &&
                    string.Equals(left.PlannedResearchTargetTechnologyId, right.PlannedResearchTargetTechnologyId, StringComparison.Ordinal) &&
                    string.Equals(left.PlannedNationalPolicyId, right.PlannedNationalPolicyId, StringComparison.Ordinal) &&
-                   StringListEquals(left.PlannedInstitutionPolicyIds, right.PlannedInstitutionPolicyIds) &&
+                   StringListEquals(left.PlannedInstitutionIds, right.PlannedInstitutionIds) &&
                    UnitOrdersEqual(left.UnitOrders, right.UnitOrders) &&
                    BuildOrdersEqual(left.BuildOrders, right.BuildOrders) &&
                    RecipeSelectionsEqual(left.RecipeSelections, right.RecipeSelections) &&
@@ -272,7 +272,7 @@ namespace Panoptes.Core.Application.Stores
                     a.Available != b.Available ||
                     a.Turn != b.Turn ||
                     !string.Equals(a.Source, b.Source, StringComparison.Ordinal) ||
-                    !StringArrayEquals(a.PolicyIds, b.PolicyIds) ||
+                    !StringArrayEquals(a.InstitutionIds, b.InstitutionIds) ||
                     !string.Equals(a.NodeId, b.NodeId, StringComparison.Ordinal) ||
                     !string.Equals(a.BuildingTypeId, b.BuildingTypeId, StringComparison.Ordinal) ||
                     !string.Equals(a.CityId, b.CityId, StringComparison.Ordinal) ||

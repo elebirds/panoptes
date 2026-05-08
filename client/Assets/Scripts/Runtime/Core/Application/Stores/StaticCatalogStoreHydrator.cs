@@ -41,6 +41,8 @@ namespace Panoptes.Core.Application.Stores
                 recipes: MapRecipes(cache.Recipes),
                 technologies: MapTechnologies(cache.Technologies),
                 policies: MapPolicies(cache.Policies),
+                institutionCategories: MapInstitutionCategories(cache.InstitutionCategories),
+                institutions: MapInstitutions(cache.Institutions),
                 units: MapUnits(cache.Units),
                 defaultMap: MapRuntimeBundle(defaultMap));
         }
@@ -147,6 +149,38 @@ namespace Panoptes.Core.Application.Stores
                 IconKey = entry.icon_key,
                 Layer = entry.layer,
                 ActivationTiming = entry.activation_timing,
+                ModifierEffects = MapModifierEffects(entry.modifier_effects)
+            });
+        }
+
+        private static Dictionary<string, CatalogInstitutionCategoryDto> MapInstitutionCategories(
+            IReadOnlyDictionary<string, StaticCatalogCache.InstitutionCategoryEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.id, entry => new CatalogInstitutionCategoryDto
+            {
+                Id = entry.id,
+                Name = entry.name,
+                Description = entry.description,
+                SortOrder = entry.sort_order,
+                Tags = ToList(entry.tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogInstitutionDto> MapInstitutions(
+            IReadOnlyDictionary<string, StaticCatalogCache.InstitutionEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.id, entry => new CatalogInstitutionDto
+            {
+                Id = entry.id,
+                Name = entry.name,
+                Description = entry.description,
+                IconKey = entry.icon_key,
+                Category = entry.category,
+                ActivationTiming = entry.activation_timing,
+                SortOrder = entry.sort_order,
+                Tags = ToList(entry.tags),
+                Prerequisites = MapPrerequisites(entry.prerequisites),
+                ExplicitEffects = MapEffects(entry.explicit_effects),
                 ModifierEffects = MapModifierEffects(entry.modifier_effects)
             });
         }

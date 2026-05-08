@@ -79,8 +79,8 @@ message ResearchProgressEntry {
 
 message InstitutionStateView {
   int32 slot_count = 1;
-  repeated string candidate_policy_ids = 2;
-  repeated string active_policy_ids = 3;
+  repeated string candidate_institution_ids = 2;
+  repeated string active_institution_ids = 3;
 }
 
 message BuildingOperationView {

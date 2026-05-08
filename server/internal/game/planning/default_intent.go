@@ -36,7 +36,7 @@ func ApplyMinisterDefaultIntent(room Session, playerID string, intent Intent) De
 	case SetPolicyIntent:
 		return applyDefaultPolicy(room, playerID, strings.TrimSpace(typed.NationalPolicyID))
 	case SetInstitutionLoadoutIntent:
-		return applyDefaultInstitutionLoadout(room, playerID, playerState, typed.PolicyIDs)
+		return applyDefaultInstitutionLoadout(room, playerID, playerState, typed.InstitutionIDs)
 	case BuildStructureIntent:
 		return applyDefaultBuild(room, playerID, playerState, typed)
 	case SetBuildingRecipeIntent:
@@ -77,25 +77,17 @@ func applyDefaultPolicy(room Session, playerID string, policyID string) DefaultI
 	return DefaultIntentResult{Applied: true}
 }
 
-func applyDefaultInstitutionLoadout(room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) DefaultIntentResult {
+func applyDefaultInstitutionLoadout(room Session, playerID string, playerState *domain.PlayerState, institutionIDs []string) DefaultIntentResult {
 	state := room.State()
 	if state.TurnRuntime.Planning.HasPendingInstitutionLoadout(playerID) {
 		return DefaultIntentResult{}
 	}
-	normalized := domain.NormalizePolicyIDList(policyIDs)
+	normalized, errCode := ValidateInstitutionLoadout(state, playerID, playerState, institutionIDs)
 	if len(normalized) == 0 {
 		return DefaultIntentResult{}
 	}
-	if len(normalized) > playerState.Institutions.SlotCount {
-		return DefaultIntentResult{ErrorCode: "invalid_directive"}
-	}
-	for _, policyID := range normalized {
-		if _, errCode := validatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
-			return DefaultIntentResult{ErrorCode: errCode}
-		}
-		if !playerState.Institutions.HasCandidate(policyID) {
-			return DefaultIntentResult{ErrorCode: "invalid_directive"}
-		}
+	if errCode != "" {
+		return DefaultIntentResult{ErrorCode: errCode}
 	}
 	room.SetInstitutionLoadout(playerID, normalized)
 	return DefaultIntentResult{Applied: true}

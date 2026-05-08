@@ -76,6 +76,24 @@ func collectPolicyIDs(policies []staticdata.PolicyDefinition) []string {
 	return ids
 }
 
+func collectInstitutionIDs(institutions []staticdata.InstitutionDefinition) []string {
+	ids := make([]string, 0, len(institutions))
+	for _, institution := range institutions {
+		ids = append(ids, institution.ID)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+func collectInstitutionCategoryIDs(categories []staticdata.InstitutionCategoryDefinition) []string {
+	ids := make([]string, 0, len(categories))
+	for _, category := range categories {
+		ids = append(ids, category.ID)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
 func collectTerrainIDs(terrains []staticdata.TerrainDefinition) []string {
 	ids := make([]string, 0, len(terrains))
 	for _, terrain := range terrains {

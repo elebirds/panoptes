@@ -43,16 +43,16 @@ namespace Panoptes.Core.Application.Services
             });
         }
 
-        public bool SetInstitutionLoadout(params string[] policyIds)
+        public bool SetInstitutionLoadout(params string[] institutionIds)
         {
             var msg = new MsgSetInstitutionLoadout();
-            if (policyIds != null)
+            if (institutionIds != null)
             {
-                for (var i = 0; i < policyIds.Length; i++)
+                for (var i = 0; i < institutionIds.Length; i++)
                 {
-                    if (!string.IsNullOrWhiteSpace(policyIds[i]))
+                    if (!string.IsNullOrWhiteSpace(institutionIds[i]))
                     {
-                        msg.PolicyIds.Add(policyIds[i]);
+                        msg.InstitutionIds.Add(institutionIds[i]);
                     }
                 }
             }

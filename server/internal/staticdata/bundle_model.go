@@ -22,19 +22,21 @@ type CatalogSectionHash struct {
 }
 
 type CatalogBundle struct {
-	Manifest          Manifest               `json:"manifest"`
-	Resources         []ResourceDescriptor   `json:"resources"`
-	Points            []PointDescriptor      `json:"points"`
-	Units             []UnitDefinition       `json:"units"`
-	Buildings         []BuildingDefinition   `json:"buildings"`
-	Technologies      []TechnologyDefinition `json:"technologies"`
-	Policies          []PolicyDefinition     `json:"policies"`
-	Recipes           []RecipeDefinition     `json:"recipes"`
-	Terrains          []TerrainDefinition    `json:"terrains"`
-	Rules             Rules                  `json:"rules"`
-	Ministers         []Minister             `json:"ministers"`
-	Maps              []MapCatalogEntry      `json:"maps"`
-	UITechTreeLayout  TechnologyTreeLayout   `json:"ui_tech_tree_layout"`
-	UIBuildMenuLayout BuildMenuLayout        `json:"ui_build_menu_layout"`
-	UIRecipeLayout    RecipeLayout           `json:"ui_recipe_layout"`
+	Manifest              Manifest                        `json:"manifest"`
+	Resources             []ResourceDescriptor            `json:"resources"`
+	Points                []PointDescriptor               `json:"points"`
+	Units                 []UnitDefinition                `json:"units"`
+	Buildings             []BuildingDefinition            `json:"buildings"`
+	Technologies          []TechnologyDefinition          `json:"technologies"`
+	Policies              []PolicyDefinition              `json:"policies"`
+	InstitutionCategories []InstitutionCategoryDefinition `json:"institution_categories"`
+	Institutions          []InstitutionDefinition         `json:"institutions"`
+	Recipes               []RecipeDefinition              `json:"recipes"`
+	Terrains              []TerrainDefinition             `json:"terrains"`
+	Rules                 Rules                           `json:"rules"`
+	Ministers             []Minister                      `json:"ministers"`
+	Maps                  []MapCatalogEntry               `json:"maps"`
+	UITechTreeLayout      TechnologyTreeLayout            `json:"ui_tech_tree_layout"`
+	UIBuildMenuLayout     BuildMenuLayout                 `json:"ui_build_menu_layout"`
+	UIRecipeLayout        RecipeLayout                    `json:"ui_recipe_layout"`
 }

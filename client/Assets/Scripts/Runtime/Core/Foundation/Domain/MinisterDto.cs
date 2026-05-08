@@ -25,7 +25,7 @@ namespace Panoptes.Core.Domain
         public bool Available;
         public int Turn;
         public string Source;
-        public string[] PolicyIds;
+        public string[] InstitutionIds;
         public string NodeId;
         public string BuildingTypeId;
         public string CityId;
