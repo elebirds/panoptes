@@ -17,6 +17,13 @@ namespace Panoptes.Presentation.Map
         FocusedStep = 1
     }
 
+    public enum SettlementPlaybackMode
+    {
+        Full = 0,
+        Fast = 1,
+        CriticalOnly = 2
+    }
+
     public sealed class SettlementPlaybackStep
     {
         public string ActorUnitId = string.Empty;
@@ -120,7 +127,7 @@ namespace Panoptes.Presentation.Map
 
     public static class SettlementPlaybackScheduler
     {
-        public static SettlementPlaybackSchedule Build(IReadOnlyList<SettlementPlaybackStep> steps)
+        public static SettlementPlaybackSchedule Build(IReadOnlyList<SettlementPlaybackStep> steps, SettlementPlaybackMode mode = SettlementPlaybackMode.Fast)
         {
             var windows = new List<SettlementPlaybackWindow>();
             var moveBatch = new List<SettlementPlaybackStep>();
@@ -140,6 +147,11 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var tier = Classify(step);
+                if (!ShouldIncludeTier(tier, mode))
+                {
+                    continue;
+                }
+
                 if (tier == SettlementPlaybackTier.Ambient && step.IsMoveOnly && CanAddToMoveBatch(step, batchActors))
                 {
                     AddMoveBatchStep(moveBatch, batchActors, step);
@@ -182,6 +194,17 @@ namespace Panoptes.Presentation.Map
             }
 
             return SettlementPlaybackTier.Ambient;
+        }
+
+        private static bool ShouldIncludeTier(SettlementPlaybackTier tier, SettlementPlaybackMode mode)
+        {
+            switch (mode)
+            {
+                case SettlementPlaybackMode.CriticalOnly:
+                    return tier == SettlementPlaybackTier.Critical;
+                default:
+                    return true;
+            }
         }
 
         private static bool CanAddToMoveBatch(SettlementPlaybackStep step, HashSet<string> batchActors)

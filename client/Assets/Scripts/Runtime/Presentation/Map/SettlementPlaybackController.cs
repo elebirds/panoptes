@@ -30,6 +30,14 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float unitMoveDurationSeconds = 0.98f;
         [SerializeField] private float attackPlaybackSeconds = 0.55f;
         [SerializeField] private float perUnitPlaybackGapSeconds = 0.5f;
+        [SerializeField] private SettlementPlaybackMode playbackMode = SettlementPlaybackMode.Fast;
+        [SerializeField] private float fastMoveDurationSeconds = 0.35f;
+        [SerializeField] private float fastAttackPlaybackSeconds = 0.32f;
+        [SerializeField] private float fastFocusPauseSeconds = 0.08f;
+        [SerializeField] private bool useAmbientMoveProxy = true;
+        [SerializeField] private float ambientMoveProxyScale = 0.96f;
+        [SerializeField] private KeyCode skipPlaybackKey = KeyCode.Space;
+        [SerializeField] private KeyCode alternateSkipPlaybackKey = KeyCode.Escape;
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
@@ -38,10 +46,13 @@ namespace Panoptes.Presentation.Map
         private AnimationQueue _animationQueue;
         private IDisposable _settlementSubscription;
         private Coroutine _playbackCoroutine;
-        private readonly List<Coroutine> _activeBatchCoroutines = new();
+        private SettlementPlaybackRunner _runner;
         private UnitView _playbackSelectedUnit;
+        private SettlementCameraPolicy _cameraPolicy;
+        private readonly List<GameObject> _activeMoveProxies = new();
         private int _lastHandledSettlementSequence;
         private bool _inputLockedForPlayback;
+        private bool _isPlayingSettlement;
 
         [Inject]
         private void Construct(
@@ -65,6 +76,7 @@ namespace Panoptes.Presentation.Map
 
         private void OnEnable()
         {
+            EnsureRunner();
             SubscribeSettlement();
         }
 
@@ -76,6 +88,24 @@ namespace Panoptes.Presentation.Map
             SkipPlayback();
         }
 
+        private void Update()
+        {
+            if (!_isPlayingSettlement)
+            {
+                return;
+            }
+
+            if (WasSkipRequested())
+            {
+                SkipPlayback();
+            }
+        }
+
+        public void SetPlaybackMode(SettlementPlaybackMode mode)
+        {
+            playbackMode = mode;
+        }
+
         public void SkipPlayback()
         {
             if (_playbackCoroutine != null)
@@ -83,10 +113,13 @@ namespace Panoptes.Presentation.Map
                 StopCoroutine(_playbackCoroutine);
                 _playbackCoroutine = null;
             }
-            StopActiveBatchCoroutines();
+            _runner?.StopActive();
+            ClearActiveMoveProxies();
             _mapRenderer?.ReconcileUnitsToCurrentState();
             EndPlaybackInputLock();
             ClearPlaybackSelection();
+            _cameraPolicy = null;
+            _isPlayingSettlement = false;
         }
 
         private void SubscribeSettlement()
@@ -113,7 +146,7 @@ namespace Panoptes.Presentation.Map
             if (_playbackCoroutine != null)
             {
                 StopCoroutine(_playbackCoroutine);
-                StopActiveBatchCoroutines();
+                _runner?.StopActive();
                 EndPlaybackInputLock();
             }
 
@@ -123,24 +156,27 @@ namespace Panoptes.Presentation.Map
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
             BeginPlaybackInputLock();
+            _isPlayingSettlement = true;
+            _cameraPolicy = SettlementCameraPolicy.Start(playbackMode);
             _animationQueue?.CancelUnitMoves();
             try
             {
                 var steps = SettlementPlaybackPlanBuilder.Build(settlement);
-                var schedule = SettlementPlaybackScheduler.Build(steps);
+                var schedule = SettlementPlaybackScheduler.Build(steps, playbackMode);
                 if (schedule.Windows.Count == 0)
                 {
                     _mapRenderer?.ReconcileUnitsToCurrentState();
                     yield break;
                 }
 
-                _mapRenderer?.PrepareSettlementPlaybackUnits(steps);
+                var scheduledSteps = CollectScheduledSteps(schedule.Windows);
+                _mapRenderer?.PrepareSettlementPlaybackUnits(scheduledSteps);
                 if (initialPlaybackDelaySeconds > 0.0001f)
                 {
                     yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
                 }
 
-                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(steps, 0);
+                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(scheduledSteps, 0);
                 for (var windowIndex = 0; windowIndex < schedule.Windows.Count; windowIndex++)
                 {
                     yield return PlayWindow(schedule.Windows[windowIndex]);
@@ -149,9 +185,12 @@ namespace Panoptes.Presentation.Map
             finally
             {
                 _mapRenderer?.ReconcileUnitsToCurrentState();
-                StopActiveBatchCoroutines();
+                _runner?.StopActive();
+                ClearActiveMoveProxies();
                 EndPlaybackInputLock();
                 _playbackCoroutine = null;
+                _cameraPolicy = null;
+                _isPlayingSettlement = false;
             }
         }
 
@@ -162,60 +201,17 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            switch (window.Kind)
-            {
-                case SettlementPlaybackWindowKind.MoveBatch:
-                    yield return PlayMoveBatch(window.Steps);
-                    break;
-                default:
-                    for (var i = 0; i < window.Steps.Count; i++)
-                    {
-                        yield return PlayStep(window.Steps[i], window.AllowsCameraFocus);
-                    }
-                    break;
-            }
+            var allowFocus = _cameraPolicy == null
+                ? window.AllowsCameraFocus
+                : _cameraPolicy.ShouldFocus(window);
+            EnsureRunner();
+            yield return _runner.PlayWindow(window, allowFocus, PlayBatchMove, PlayStep, ClearPlaybackSelection);
         }
 
-        private IEnumerator PlayMoveBatch(IReadOnlyList<SettlementPlaybackStep> steps)
+        private IEnumerator PlayBatchMove(TurnEventDto evt)
         {
-            if (steps == null || steps.Count == 0)
-            {
-                yield break;
-            }
-
-            var remaining = 0;
-            for (var i = 0; i < steps.Count; i++)
-            {
-                var step = steps[i];
-                if (step?.MoveEvent == null)
-                {
-                    continue;
-                }
-
-                _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent);
-                remaining++;
-                _activeBatchCoroutines.Add(StartCoroutine(PlayMoveBatchItem(step.MoveEvent, () => remaining--)));
-            }
-
-            while (remaining > 0)
-            {
-                yield return null;
-            }
-
-            _activeBatchCoroutines.Clear();
-            ClearPlaybackSelection();
-        }
-
-        private IEnumerator PlayMoveBatchItem(TurnEventDto evt, Action onComplete)
-        {
-            try
-            {
-                yield return PlayMove(evt, followCamera: false, waitAfterMove: false);
-            }
-            finally
-            {
-                onComplete?.Invoke();
-            }
+            _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(evt);
+            yield return PlayMove(evt, followCamera: false, waitAfterMove: false, useProxy: useAmbientMoveProxy, ambientMove: true);
         }
 
         private IEnumerator PlayStep(SettlementPlaybackStep step, bool allowCameraFocus)
@@ -241,7 +237,7 @@ namespace Panoptes.Presentation.Map
 
             if (step.HasMove)
             {
-                yield return PlayMove(step.MoveEvent, allowCameraFocus);
+                yield return PlayMove(step.MoveEvent, allowCameraFocus, ambientMove: false);
             }
 
             if (step.HasImpacts)
@@ -257,9 +253,10 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            if (perUnitPlaybackGapSeconds > 0.0001f)
+            var stepGap = ResolveStepGap();
+            if (stepGap > 0.0001f)
             {
-                yield return new WaitForSecondsRealtime(perUnitPlaybackGapSeconds);
+                yield return new WaitForSecondsRealtime(stepGap);
             }
 
             ClearPlaybackSelection();
@@ -298,7 +295,12 @@ namespace Panoptes.Presentation.Map
             yield return PlayMove(evt, followCamera: true, waitAfterMove: true);
         }
 
-        private IEnumerator PlayMove(TurnEventDto evt, bool followCamera, bool waitAfterMove = true)
+        private IEnumerator PlayMove(
+            TurnEventDto evt,
+            bool followCamera,
+            bool waitAfterMove = true,
+            bool useProxy = false,
+            bool ambientMove = false)
         {
             if (_mapRenderer == null || evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
             {
@@ -327,10 +329,19 @@ namespace Panoptes.Presentation.Map
             }
 
             var target = nodeView.ResolveUnitAnchorWorldPosition();
+            var duration = ResolveMoveDuration(ambientMove);
+            if (useProxy)
+            {
+                var start = unitView.transform.position;
+                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
+                yield return PlayMoveProxy(unitView, start, target, duration);
+                yield break;
+            }
+
             yield return UnitMoveAnim.Play(
                 unitView,
                 target,
-                Mathf.Max(0.05f, unitMoveDurationSeconds),
+                duration,
                 Camera.main,
                 followCameraEnabled: followCamera);
             _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
@@ -338,6 +349,79 @@ namespace Panoptes.Presentation.Map
             {
                 yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, moveEventWaitSeconds * 0.25f));
             }
+        }
+
+        private IEnumerator PlayMoveProxy(UnitView sourceUnit, Vector3 start, Vector3 target, float duration)
+        {
+            if (sourceUnit == null)
+            {
+                yield break;
+            }
+
+            var proxyObject = Instantiate(sourceUnit.gameObject, start, sourceUnit.transform.rotation, sourceUnit.transform.parent);
+            proxyObject.name = sourceUnit.gameObject.name + "_PlaybackProxy";
+            proxyObject.transform.localScale = sourceUnit.transform.localScale * Mathf.Max(0.1f, ambientMoveProxyScale);
+            DisableProxyInteraction(proxyObject);
+            _activeMoveProxies.Add(proxyObject);
+
+            var proxyUnit = proxyObject.GetComponent<UnitView>();
+            if (proxyUnit == null)
+            {
+                _activeMoveProxies.Remove(proxyObject);
+                DestroyProxy(proxyObject);
+                yield break;
+            }
+
+            proxyUnit.SetSelected(false);
+            try
+            {
+                yield return UnitMoveAnim.Play(proxyUnit, target, duration);
+            }
+            finally
+            {
+                _activeMoveProxies.Remove(proxyObject);
+                DestroyProxy(proxyObject);
+            }
+        }
+
+        private static void DisableProxyInteraction(GameObject proxyObject)
+        {
+            if (proxyObject == null)
+            {
+                return;
+            }
+
+            var colliders = proxyObject.GetComponentsInChildren<Collider>(true);
+            for (var i = 0; i < colliders.Length; i++)
+            {
+                colliders[i].enabled = false;
+            }
+        }
+
+        private static void DestroyProxy(GameObject proxyObject)
+        {
+            if (proxyObject == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(proxyObject);
+                return;
+            }
+
+            DestroyImmediate(proxyObject);
+        }
+
+        private void ClearActiveMoveProxies()
+        {
+            for (var i = _activeMoveProxies.Count - 1; i >= 0; i--)
+            {
+                DestroyProxy(_activeMoveProxies[i]);
+            }
+
+            _activeMoveProxies.Clear();
         }
 
         private IEnumerator PlayConflict(TurnEventDto evt)
@@ -441,12 +525,13 @@ namespace Panoptes.Presentation.Map
 
             yield return FocusActorForPlayback(unitId, allowCameraFocus: true);
             unit.PlayAttackAnimation();
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, attackPlaybackSeconds));
+            yield return new WaitForSecondsRealtime(ResolveAttackDuration());
             ClearPlaybackSelection();
 
-            if (perUnitPlaybackGapSeconds > 0.0001f)
+            var gap = ResolveStepGap();
+            if (gap > 0.0001f)
             {
-                yield return new WaitForSecondsRealtime(perUnitPlaybackGapSeconds);
+                yield return new WaitForSecondsRealtime(gap);
             }
         }
 
@@ -463,7 +548,7 @@ namespace Panoptes.Presentation.Map
             }
 
             unit.PlayAttackAnimation();
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, attackPlaybackSeconds));
+            yield return new WaitForSecondsRealtime(ResolveAttackDuration());
         }
 
         private bool TryPlayAttackerAnimation(TurnEventDto evt)
@@ -830,7 +915,7 @@ namespace Panoptes.Presentation.Map
             if (allowCameraFocus)
             {
                 CinemachineMapCameraController.TryFocus(unit.transform.position, false);
-                yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, actorFocusPauseSeconds));
+                yield return new WaitForSecondsRealtime(ResolveFocusPause());
             }
         }
 
@@ -842,7 +927,7 @@ namespace Panoptes.Presentation.Map
             }
 
             CinemachineMapCameraController.TryFocus(node.transform.position, false);
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, actorFocusPauseSeconds));
+            yield return new WaitForSecondsRealtime(ResolveFocusPause());
         }
 
         private void ClearPlaybackSelection()
@@ -856,17 +941,14 @@ namespace Panoptes.Presentation.Map
             _playbackSelectedUnit = null;
         }
 
-        private void StopActiveBatchCoroutines()
+        private void EnsureRunner()
         {
-            for (var i = 0; i < _activeBatchCoroutines.Count; i++)
+            if (_runner != null)
             {
-                if (_activeBatchCoroutines[i] != null)
-                {
-                    StopCoroutine(_activeBatchCoroutines[i]);
-                }
+                return;
             }
 
-            _activeBatchCoroutines.Clear();
+            _runner = new SettlementPlaybackRunner(this);
         }
 
         private void BeginPlaybackInputLock()
@@ -889,6 +971,84 @@ namespace Panoptes.Presentation.Map
 
             _inputLockedForPlayback = false;
             MapPlanningInputController.SetPlaybackInputLocked(false);
+        }
+
+        private static IReadOnlyList<SettlementPlaybackStep> CollectScheduledSteps(IReadOnlyList<SettlementPlaybackWindow> windows)
+        {
+            var steps = new List<SettlementPlaybackStep>();
+            if (windows == null)
+            {
+                return steps;
+            }
+
+            for (var windowIndex = 0; windowIndex < windows.Count; windowIndex++)
+            {
+                var window = windows[windowIndex];
+                if (window?.Steps == null)
+                {
+                    continue;
+                }
+
+                for (var stepIndex = 0; stepIndex < window.Steps.Count; stepIndex++)
+                {
+                    if (window.Steps[stepIndex] != null)
+                    {
+                        steps.Add(window.Steps[stepIndex]);
+                    }
+                }
+            }
+
+            return steps;
+        }
+
+        private bool WasSkipRequested()
+        {
+            return IsKeyPressed(skipPlaybackKey) || IsKeyPressed(alternateSkipPlaybackKey);
+        }
+
+        private static bool IsKeyPressed(KeyCode key)
+        {
+            return key != KeyCode.None && Input.GetKeyDown(key);
+        }
+
+        private float ResolveMoveDuration(bool ambientMove)
+        {
+            if (playbackMode == SettlementPlaybackMode.Fast && ambientMove)
+            {
+                return Mathf.Max(0.05f, fastMoveDurationSeconds);
+            }
+
+            return Mathf.Max(0.05f, unitMoveDurationSeconds);
+        }
+
+        private float ResolveAttackDuration()
+        {
+            if (playbackMode == SettlementPlaybackMode.Fast)
+            {
+                return Mathf.Max(0.05f, fastAttackPlaybackSeconds);
+            }
+
+            return Mathf.Max(0.05f, attackPlaybackSeconds);
+        }
+
+        private float ResolveFocusPause()
+        {
+            if (playbackMode == SettlementPlaybackMode.Fast)
+            {
+                return Mathf.Max(0.02f, fastFocusPauseSeconds);
+            }
+
+            return Mathf.Max(0.02f, actorFocusPauseSeconds);
+        }
+
+        private float ResolveStepGap()
+        {
+            if (playbackMode == SettlementPlaybackMode.Fast)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(0f, perUnitPlaybackGapSeconds);
         }
 
         private static string ResolveActorUnitId(TurnEventDto evt)

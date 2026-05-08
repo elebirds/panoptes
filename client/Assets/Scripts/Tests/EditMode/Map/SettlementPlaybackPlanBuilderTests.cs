@@ -158,6 +158,39 @@ namespace Panoptes.Tests.EditMode.Map
         }
 
         [Test]
+        public void SchedulerCriticalOnlySkipsAmbientAndImportantWindows()
+        {
+            var settlement = Settlement(
+                Move("unit-a", 0, 0, 1, 0),
+                Damage("defender-1", "attacker-1"),
+                CityCoreDestroyed("A1"));
+
+            var schedule = SettlementPlaybackScheduler.Build(
+                SettlementPlaybackPlanBuilder.Build(settlement),
+                SettlementPlaybackMode.CriticalOnly);
+
+            Assert.AreEqual(1, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackTier.Critical, schedule.Windows[0].Tier);
+        }
+
+        [Test]
+        public void CameraPolicyAllowsOnlyCriticalFocusInCriticalOnlyMode()
+        {
+            var important = new SettlementPlaybackWindow(
+                SettlementPlaybackWindowKind.FocusedStep,
+                SettlementPlaybackTier.Important,
+                new[] { new SettlementPlaybackStep { ActorUnitId = "unit-a" } });
+            var critical = new SettlementPlaybackWindow(
+                SettlementPlaybackWindowKind.FocusedStep,
+                SettlementPlaybackTier.Critical,
+                new[] { new SettlementPlaybackStep { ActorUnitId = "unit-b" } });
+            var policy = new SettlementCameraPolicy(SettlementPlaybackMode.CriticalOnly, float.MaxValue);
+
+            Assert.IsFalse(policy.ShouldFocus(important));
+            Assert.IsTrue(policy.ShouldFocus(critical));
+        }
+
+        [Test]
         public void BuildCreatesAttackOnlyStep()
         {
             var settlement = Settlement(Damage("defender-1", "attacker-1"));
