@@ -112,6 +112,9 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	if !strings.Contains(req.SystemPrompt, "metrics 里的玩家可读字符串都必须是简体中文") {
 		t.Fatalf("SystemPrompt = %q, want report field Chinese constraint", req.SystemPrompt)
 	}
+	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.SystemPrompt, "`move_units`") || !strings.Contains(req.UserPrompt, "params.target_node") {
+		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)
+	}
 	if !strings.Contains(req.SystemPrompt, "输出必须是裸 JSON 对象") {
 		t.Fatalf("SystemPrompt = %q, want bare JSON constraint", req.SystemPrompt)
 	}

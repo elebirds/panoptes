@@ -13,6 +13,11 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
 - 不要机械列出数值；把数值轨迹转化为大臣视角的判断。
 - 可以强调自己角色关心的风险，但不得新增观察中不存在的事实。
 
-## MVP Action Contract
-- 当前 MVP 中 `actions` 必须输出空数组 `[]`。
-- 不要声称已经执行了任何行动。
+## Action Contract
+- `actions` 可以为空数组；没有把握时必须输出 `[]`。
+- 只有当观察摘要和记忆足以支持一个具体动作时，才输出 action。
+- 支持的 `type` 只有：
+  - `build`: `params` 必须包含 `node_id`、`building_type`，可选 `city_id`。
+  - `move_units`: `params` 必须包含 `unit_id`、`target_node`。
+- 不得发明新的 `type`、不得发明未在观察摘要中出现的单位、节点或建筑目标。
+- 规则层会再次校验 action；你可以提出主张，但不能保证非法动作会执行。

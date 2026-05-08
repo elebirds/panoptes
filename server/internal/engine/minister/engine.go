@@ -26,6 +26,7 @@ type RuntimeRoom interface {
 	HumanPlayerIDs() []string
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 	BuildMinisterReportInput(playerID string, role string) ReportPromptInput
+	ApplyMinisterActions(playerID string, actions []MinisterActionItem) error
 }
 
 type MinisterEngine struct {
@@ -139,7 +140,9 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 
 	state := room.State()
 	if len(output.Actions) > 0 {
-		slog.Info("minister actions ignored in current MVP", "player_id", playerID, "role", profile.Role, "count", len(output.Actions))
+		if err := room.ApplyMinisterActions(playerID, output.Actions); err != nil {
+			slog.Warn("apply minister actions failed", "player_id", playerID, "role", profile.Role, "count", len(output.Actions), "err", err)
+		}
 	}
 	if state != nil && state.World != nil {
 		event.MinisterActedEvent{
