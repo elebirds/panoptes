@@ -11,7 +11,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/llm"
 )
 
@@ -53,27 +52,10 @@ type ReportPromptInput struct {
 	Memory             *MinisterMemory
 }
 
-type DraftPromptInput struct {
-	Turn               int
-	PlayerID           string
-	ObservationSummary string
-	CurrentPolicy      string
-	CurrentResearch    string
-	Draft              domain.MinisterDraft
-	Memory             *MinisterMemory
-}
-
 func BuildReportPrompt(profile MinisterProfile, input ReportPromptInput) llm.CompletionRequest {
 	return llm.CompletionRequest{
 		SystemPrompt: buildReportSystemPrompt(profile),
 		UserPrompt:   buildReportUserPrompt(input),
-	}
-}
-
-func BuildDraftPrompt(profile MinisterProfile, input DraftPromptInput) llm.CompletionRequest {
-	return llm.CompletionRequest{
-		SystemPrompt: buildDraftSystemPrompt(profile),
-		UserPrompt:   buildDraftUserPrompt(input),
 	}
 }
 
@@ -85,10 +67,6 @@ func buildReportSystemPrompt(profile MinisterProfile) string {
 	return strings.TrimSpace(buildBaseSystemPrompt(profile) + "\n\n" + renderPromptTemplate("report_system.md", nil))
 }
 
-func buildDraftSystemPrompt(profile MinisterProfile) string {
-	return strings.TrimSpace(buildBaseSystemPrompt(profile) + "\n\n" + renderPromptTemplate("draft_system.md", nil))
-}
-
 func buildReportUserPrompt(input ReportPromptInput) string {
 	return renderPromptTemplate("report_user.md", reportPromptTemplateData{
 		Turn:               input.Turn,
@@ -98,22 +76,6 @@ func buildReportUserPrompt(input ReportPromptInput) string {
 		CurrentResearch:    emptyFallback(input.CurrentResearch, "(none)"),
 		ObservationSummary: emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
 		ActionCandidates:   emptyFallback(input.ActionCandidates, "(none)"),
-		Memory:             memoryPrompt(input.Memory),
-	})
-}
-
-func buildDraftUserPrompt(input DraftPromptInput) string {
-	return renderPromptTemplate("draft_user.md", draftPromptTemplateData{
-		Turn:               input.Turn,
-		PlayerID:           strings.TrimSpace(input.PlayerID),
-		DraftID:            strings.TrimSpace(input.Draft.DraftID),
-		MinisterRole:       strings.TrimSpace(input.Draft.MinisterRole),
-		Kind:               strings.TrimSpace(string(input.Draft.Kind)),
-		TargetID:           strings.TrimSpace(input.Draft.TargetID),
-		TargetLabel:        strings.TrimSpace(input.Draft.TargetLabel),
-		CurrentPolicy:      emptyFallback(input.CurrentPolicy, "(none)"),
-		CurrentResearch:    emptyFallback(input.CurrentResearch, "(none)"),
-		ObservationSummary: emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
 		Memory:             memoryPrompt(input.Memory),
 	})
 }
@@ -156,20 +118,6 @@ type reportPromptTemplateData struct {
 	CurrentResearch    string
 	ObservationSummary string
 	ActionCandidates   string
-	Memory             string
-}
-
-type draftPromptTemplateData struct {
-	Turn               int
-	PlayerID           string
-	DraftID            string
-	MinisterRole       string
-	Kind               string
-	TargetID           string
-	TargetLabel        string
-	CurrentPolicy      string
-	CurrentResearch    string
-	ObservationSummary string
 	Memory             string
 }
 

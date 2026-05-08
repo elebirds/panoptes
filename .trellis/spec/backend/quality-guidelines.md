@@ -160,66 +160,57 @@ if err := json.Unmarshal([]byte(normalized), &out); err != nil {
 ### Scenario: Minister LLM Role Enablement
 
 #### 1. Scope / Trigger
-- Trigger: any backend change that wires minister roles to LLM draft polishing or report generation.
-- Minister LLM is an expression layer. It must never become the source of executable planning targets unless a separate decision contract is designed.
+- Trigger: any backend change that wires minister roles to LLM report generation.
+- Minister LLM is a reported-expression and candidate-selection layer. It may select from rule-generated candidates through the report action contract, but it must not invent executable planning targets outside that bounded contract.
 
 #### 2. Signatures
 - Config field: `Config.MinisterLLMRoles string`
 - Environment key: `MINISTER_LLM_ENABLED_ROLES`
 - Default value: `domestic,military`
 - Role gate: `MinisterEngine.SetEnabledRoles([]string{...})`
-- Draft path: `MinisterEngine.PolishDraft(ctx, playerID, draft, input) (*DraftOutput, bool)`
+- Report path: `MinisterEngine.GenerateReports(ctx, room)`
 
 #### 3. Contracts
 - Enabled roles are comma-separated role ids and must be trimmed, lower-cased, and de-duplicated before passing to `SetEnabledRoles`.
 - Blank configured roles fall back to `[]string{"domestic", "military"}`.
-- Draft targets still come from `ai.RuleBotProvider.BuildPlanningIntents`.
-- LLM draft polish may only replace `Title`, `Summary`, `Rationale`, `RiskNote`, and `Source`.
-- LLM draft polish must not replace `DraftID`, `TargetID`, unit ids, action ids, node ids, recipe ids, policy ids, or command payload fields.
-- Draft polish prompt output must be exactly the four string fields `title`, `summary`, `rationale`, and `risk_note`; no executable fields or extra JSON keys are allowed.
+- Rule-generated draft/candidate targets come from the legal candidate pool, not from per-draft LLM calls.
+- Draft cards remain `rule_only` until selected, accepted, rejected, or staled.
+- Do not add per-candidate draft polishing; the single report prompt receives current observations plus Action Candidates, then returns narrative, metrics, and optional approval-gated actions.
 - Minister reports may include narrative text, metrics, and approval-gated report actions. Report `actions` must follow the "Minister Report Actions Become Approval-Gated Proposals" contract below.
 
 #### 4. Validation & Error Matrix
-- Role omitted from enabled roles -> `PolishDraft` returns `(nil, false)` and no report is generated for that role.
-- LLM disabled or client missing -> rule-only drafts remain usable.
-- LLM stream error -> keep existing rule-only draft text.
-- Invalid draft JSON -> keep existing rule-only draft text.
-- English or empty player-visible text -> sanitize to the Chinese fallback strings.
-- Unknown role with no profile -> `PolishDraft` returns `(nil, false)`.
+- Role omitted from enabled roles -> no report is generated for that role.
+- LLM disabled or client missing -> deterministic fallback reports are generated where applicable, and rule-only candidates remain usable.
+- LLM stream error -> use a Chinese fallback report; do not mutate draft candidates.
+- Invalid report JSON -> parse the Chinese fallback report; do not apply actions from invalid payloads.
+- English or empty player-visible report/metric text -> sanitize to the Chinese fallback strings.
+- Unknown role with no profile -> no report is generated for that role.
 
 #### 5. Good / Base / Bad Cases
-- Good: `MINISTER_LLM_ENABLED_ROLES=domestic,military`; rulebot selects a military unit order, and LLM only rewrites the visible military advice copy.
-- Base: `MINISTER_LLM_ENABLED_ROLES=domestic`; domestic drafts are polished, military drafts remain rule-only.
-- Bad: LLM output changes a military draft from `move A2` to `attack enemy-1`, or appends a new executable action from report JSON.
+- Good: `MINISTER_LLM_ENABLED_ROLES=domestic,military`; both roles produce subjective reports, and an LLM-selected legal candidate becomes an approval-gated `llm_action` proposal.
+- Base: `MINISTER_LLM_ENABLED_ROLES=domestic`; domestic report generation runs, while military candidates remain rule-only and available.
+- Bad: one LLM request per draft candidate just to rewrite card copy, or LLM output changes a military candidate from `move A2` to `attack enemy-1`.
 
 #### 6. Tests Required
 - Config/env test reads `MINISTER_LLM_ENABLED_ROLES`.
 - Role parser test covers trim, lower-case, de-duplication, and blank fallback.
-- Draft polish test verifies a military role is rejected when only domestic is enabled.
-- Draft polish test verifies military role succeeds when enabled.
-- Draft polish test verifies only display fields change after polish.
-- Draft/report tests cover invalid JSON and English visible text fallback.
+- Report generation test verifies a military role is included when enabled.
+- Report generation test verifies parsed actions are forwarded to the room callback.
+- Report parser tests cover invalid JSON/noisy JSON and English visible text fallback.
 
 #### 7. Wrong vs Correct
 #### Wrong
 ```go
-// Do not special-case one role in session code or let LLM alter command fields.
-if draft.MinisterRole != "domestic" {
-    continue
+// Do not start one LLM request per rule-generated candidate.
+for _, draft := range drafts {
+    go requestPerDraftLLMRewrite(draft)
 }
-draft.TargetNodeID = llmOutput.TargetNodeID
 ```
 #### Correct
 ```go
-// Enqueue drafts through the shared engine; role gating stays in MinisterEngine.
-output, ok := r.ministerEngine.PolishDraft(ctx, playerID, draft, input)
-if ok {
-    draft.Title = output.Title
-    draft.Summary = output.Summary
-    draft.Rationale = output.Rationale
-    draft.RiskNote = output.RiskNote
-    draft.Source = domain.MinisterDraftSourceRuleLLM
-}
+// Generate rule-only candidates once; report LLM selects from the bounded list.
+drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, state, observation)
+input.ActionCandidates = buildMinisterActionCandidateSummary(drafts)
 ```
 
 ### Scenario: Minister Subjective Report and Memory Pressure
@@ -296,7 +287,7 @@ if ok {
 - `select_candidate` must only be allowed to reference an existing current-turn pending draft for the same player and minister role.
 - Rule-generated map/unit action space must be folded into bounded `operation` candidates. Each operation carries a small batch of normal planning commands and hides the raw per-unit/per-node search space from the LLM prompt.
 - Accepting an operation proposal must pre-validate every contained command through the same normal planning validators, then apply the batch through normal planning state writes. If any command is invalid, no command in the operation may be applied.
-- When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role rule-only/rule+llm candidates become stale/unavailable.
+- When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role `rule_only` candidates become stale/unavailable.
 - Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
 - Build actions must be validated with the normal build-order rules before creating a pending minister draft.
 - Research, policy, institution loadout, and building recipe actions must use the same validators as direct planning commands before creating a pending minister draft.

@@ -268,7 +268,7 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateAndStalesUnselectedRoleD
 			Status:       domain.MinisterDraftStatusPending,
 			Available:    true,
 			Turn:         4,
-			Source:       domain.MinisterDraftSourceRuleLLM,
+			Source:       domain.MinisterDraftSourceRuleOnly,
 		},
 		{
 			DraftID:      "military:operation:secure_a2:4",

@@ -27,7 +27,6 @@ type MinisterDraftSource string
 
 const (
 	MinisterDraftSourceRuleOnly  MinisterDraftSource = "rule_only"
-	MinisterDraftSourceRuleLLM   MinisterDraftSource = "rule+llm"
 	MinisterDraftSourceLLMAction MinisterDraftSource = "llm_action"
 )
 

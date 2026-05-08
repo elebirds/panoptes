@@ -1,12 +1,10 @@
 package session
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -27,39 +25,13 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 	r.preparedMinisterDraftsMu.RUnlock()
 
 	draftsByPlayer := make(map[string][]domain.MinisterDraft, len(r.participants))
-	jobs := make([]preparedMinisterDraftPolishJob, 0, len(r.participants))
 	for _, binding := range r.participants {
 		playerID := strings.TrimSpace(binding.Participant.ID)
 		if playerID == "" {
 			continue
 		}
 		observation := r.BuildObservation(playerID)
-		drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
-		draftsByPlayer[playerID] = drafts
-		for _, draft := range drafts {
-			r.RecordMinisterMemory(playerID, draft.MinisterRole, ministerengine.MemoryEntry{
-				Turn:       turn,
-				Type:       "draft",
-				Content:    fmt.Sprintf("%s:%s", draft.Kind, strings.TrimSpace(draft.TargetLabel)),
-				Outcome:    "generated",
-				PlayerResp: "pending",
-			})
-			if r.ministerEngine == nil {
-				continue
-			}
-			jobs = append(jobs, preparedMinisterDraftPolishJob{
-				Turn:     turn,
-				PlayerID: playerID,
-				Draft:    draft,
-				Input: ministerengine.DraftPromptInput{
-					Turn:               turn,
-					PlayerID:           playerID,
-					ObservationSummary: buildMinisterObservationSummary(r.state, observation, draft.MinisterRole),
-					CurrentPolicy:      currentPolicyValue(r.state, playerID),
-					CurrentResearch:    currentResearchValue(r.state, playerID),
-				},
-			})
-		}
+		draftsByPlayer[playerID] = buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
 	}
 
 	r.preparedMinisterDraftsMu.Lock()
@@ -71,10 +43,6 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 		delete(r.preparedMinisterDrafts, cachedTurn)
 	}
 	r.preparedMinisterDraftsMu.Unlock()
-
-	for _, job := range jobs {
-		go r.polishPreparedMinisterDraft(job)
-	}
 }
 
 func (r *Runtime) ApplyPreparedMinisterDrafts(turn int) {
@@ -304,50 +272,4 @@ func cloneStringMap(src map[string]string) map[string]string {
 		dst[key] = value
 	}
 	return dst
-}
-
-type preparedMinisterDraftPolishJob struct {
-	Turn     int
-	PlayerID string
-	Draft    domain.MinisterDraft
-	Input    ministerengine.DraftPromptInput
-}
-
-func (r *Runtime) polishPreparedMinisterDraft(job preparedMinisterDraftPolishJob) {
-	if r == nil || r.ministerEngine == nil {
-		return
-	}
-	output, ok := r.ministerEngine.PolishDraft(context.Background(), job.PlayerID, job.Draft, job.Input)
-	if !ok || output == nil {
-		return
-	}
-	r.applyPreparedMinisterDraftPolish(job, output)
-}
-
-func (r *Runtime) applyPreparedMinisterDraftPolish(job preparedMinisterDraftPolishJob, output *ministerengine.DraftOutput) {
-	if r == nil || output == nil {
-		return
-	}
-	r.preparedMinisterDraftsMu.Lock()
-	defer r.preparedMinisterDraftsMu.Unlock()
-	if r.planningStartPreparedTurn == job.Turn {
-		return
-	}
-	playerDrafts, ok := r.preparedMinisterDrafts[job.Turn]
-	if !ok {
-		return
-	}
-	drafts := playerDrafts[job.PlayerID]
-	for idx := range drafts {
-		if strings.TrimSpace(drafts[idx].DraftID) != strings.TrimSpace(job.Draft.DraftID) {
-			continue
-		}
-		drafts[idx].Title = strings.TrimSpace(output.Title)
-		drafts[idx].Summary = strings.TrimSpace(output.Summary)
-		drafts[idx].Rationale = strings.TrimSpace(output.Rationale)
-		drafts[idx].RiskNote = strings.TrimSpace(output.RiskNote)
-		drafts[idx].Source = domain.MinisterDraftSourceRuleLLM
-		playerDrafts[job.PlayerID] = drafts
-		return
-	}
 }

@@ -208,7 +208,7 @@ func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string,
 			}
 			continue
 		}
-		if drafts[idx].Source == domain.MinisterDraftSourceRuleOnly || drafts[idx].Source == domain.MinisterDraftSourceRuleLLM {
+		if drafts[idx].Source == domain.MinisterDraftSourceRuleOnly {
 			drafts[idx].Status = domain.MinisterDraftStatusStale
 			drafts[idx].Available = false
 			changed = true

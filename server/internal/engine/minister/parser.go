@@ -21,13 +21,6 @@ type MinisterOutput struct {
 	ActionID string
 }
 
-type DraftOutput struct {
-	Title     string
-	Summary   string
-	Rationale string
-	RiskNote  string
-}
-
 // MinisterReportResponse is the exact JSON object expected from report prompts.
 type MinisterReportResponse struct {
 	Report   string               `json:"report"`
@@ -50,22 +43,10 @@ type MinisterActionItem struct {
 	Params map[string]any `json:"params"`
 }
 
-// MinisterDraftResponse is the exact JSON object expected from draft polish prompts.
-type MinisterDraftResponse struct {
-	Title     string `json:"title"`
-	Summary   string `json:"summary"`
-	Rationale string `json:"rationale"`
-	RiskNote  string `json:"risk_note"`
-}
-
 const (
-	chineseReportFallback        = "大臣暂未生成中文汇报，请以当前观察和既定计划为准。"
-	chineseMetricLabelFallback   = "战局指标"
-	chineseMetricValueFallback   = "待补充中文说明"
-	chineseDraftTitleFallback    = "本轮建议待补充中文标题"
-	chineseDraftSummaryFallback  = "大臣暂未生成中文摘要，请结合当前局势评估。"
-	chineseDraftReasonFallback   = "中文理由暂缺，请以现有规则目标和观察信息为准。"
-	chineseDraftRiskNoteFallback = "风险提示暂缺，请谨慎执行。"
+	chineseReportFallback      = "大臣暂未生成中文汇报，请以当前观察和既定计划为准。"
+	chineseMetricLabelFallback = "战局指标"
+	chineseMetricValueFallback = "待补充中文说明"
 )
 
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
@@ -92,20 +73,6 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	}
 	out.Report = sanitizePlayerVisibleChinese(out.Report, chineseReportFallback)
 	return out, nil
-}
-
-func ParseDraftResponse(response string) (*DraftOutput, error) {
-	response = normalizeJSONObjectPayload(response)
-	var raw MinisterDraftResponse
-	if err := json.Unmarshal([]byte(response), &raw); err != nil {
-		return nil, err
-	}
-	return &DraftOutput{
-		Title:     sanitizePlayerVisibleChinese(raw.Title, chineseDraftTitleFallback),
-		Summary:   sanitizePlayerVisibleChinese(raw.Summary, chineseDraftSummaryFallback),
-		Rationale: sanitizePlayerVisibleChinese(raw.Rationale, chineseDraftReasonFallback),
-		RiskNote:  sanitizePlayerVisibleChinese(raw.RiskNote, chineseDraftRiskNoteFallback),
-	}, nil
 }
 
 func normalizeJSONObjectPayload(response string) string {
