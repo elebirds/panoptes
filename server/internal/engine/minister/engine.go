@@ -250,7 +250,7 @@ func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemor
 	if m, ok := e.memories[key]; ok {
 		return m
 	}
-	m := &MinisterMemory{PlayerID: playerID, Role: role}
+	m := &MinisterMemory{PlayerID: playerID, Role: role, Favor: 50}
 	e.memories[key] = m
 	return m
 }
