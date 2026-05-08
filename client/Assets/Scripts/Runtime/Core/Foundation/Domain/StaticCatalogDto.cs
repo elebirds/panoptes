@@ -135,6 +135,24 @@ namespace Panoptes.Core.Domain
         public List<string> Tags;
     }
 
+    public sealed class CatalogEmoteSeriesDto
+    {
+        public string Id;
+        public string DisplayName;
+        public string IconKey;
+        public int SortOrder;
+    }
+
+    public sealed class CatalogEmoteDto
+    {
+        public string Id;
+        public string SeriesId;
+        public string DisplayName;
+        public string AssetKey;
+        public int SortOrder;
+        public List<string> Tags;
+    }
+
     public sealed class CatalogMapRuntimeNodeDto
     {
         public string Id;

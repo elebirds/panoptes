@@ -3,9 +3,11 @@ package chat
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
@@ -78,6 +80,17 @@ func isSupportedRealtimePayload(payload *pb.ChatPayload) bool {
 		return false
 	}
 	switch body := payload.GetBody().(type) {
+	case *pb.ChatPayload_EmoteId:
+		emoteID := strings.TrimSpace(body.EmoteId)
+		if emoteID == "" {
+			return false
+		}
+		catalog := staticdata.Default()
+		if catalog == nil {
+			return false
+		}
+		_, ok := catalog.GetEmote(emoteID)
+		return ok
 	case *pb.ChatPayload_Emote:
 		switch body.Emote {
 		case pb.ChatEmote_CHAT_EMOTE_THUMBS_UP,

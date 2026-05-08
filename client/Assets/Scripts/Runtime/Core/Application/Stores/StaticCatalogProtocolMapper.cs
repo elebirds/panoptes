@@ -22,7 +22,9 @@ namespace Panoptes.Core.Application.Stores
                 recipes: MapRecipes(snapshot.Recipes),
                 technologies: MapTechnologies(snapshot.Technologies),
                 policies: MapPolicies(snapshot.Policies),
-                units: MapUnits(snapshot.Units));
+                units: MapUnits(snapshot.Units),
+                emoteSeries: MapEmoteSeries(snapshot.EmoteSeries),
+                emotes: MapEmotes(snapshot.Emotes));
         }
 
         private static Dictionary<string, CatalogHudEntryDto> MapResources(IEnumerable<ResourceDescriptor> source)
@@ -125,6 +127,30 @@ namespace Panoptes.Core.Application.Stores
                 {
                     CanAttackStructures = entry.CanAttackStructures
                 },
+                Tags = ToList(entry.Tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteSeriesDto> MapEmoteSeries(IEnumerable<EmoteSeriesCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteSeriesDto
+            {
+                Id = entry.Id,
+                DisplayName = entry.DisplayName,
+                IconKey = entry.IconKey,
+                SortOrder = entry.SortOrder
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteDto> MapEmotes(IEnumerable<EmoteCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteDto
+            {
+                Id = entry.Id,
+                SeriesId = entry.SeriesId,
+                DisplayName = entry.DisplayName,
+                AssetKey = entry.AssetKey,
+                SortOrder = entry.SortOrder,
                 Tags = ToList(entry.Tags)
             });
         }

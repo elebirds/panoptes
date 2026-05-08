@@ -770,6 +770,41 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			}, []string{"id", "name", "description", "icon_key", "material_key", "sort_order", "tags"}),
 			nil,
 		),
+		filepath.Join("ui", "emotes.schema.json"): schemaDocument(
+			filepath.Join("ui", "emotes.schema.json"),
+			authoredRootSchema(
+				map[string]any{
+					"series": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":           stringSchema(nil),
+								"display_name": stringSchema(nil),
+								"icon_key":     stringSchema(nil),
+								"sort_order":   intSchema(map[string]any{"minimum": 0}),
+							},
+							[]string{"id", "display_name", "icon_key", "sort_order"},
+						),
+						map[string]any{"minItems": 1},
+					),
+					"emotes": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":           stringSchema(nil),
+								"series_id":    stringSchema(nil),
+								"display_name": stringSchema(nil),
+								"asset_key":    stringSchema(nil),
+								"sort_order":   intSchema(map[string]any{"minimum": 0}),
+								"tags":         arraySchema(stringSchema(nil), nil),
+							},
+							[]string{"id", "series_id", "display_name", "asset_key", "sort_order", "tags"},
+						),
+						map[string]any{"minItems": 1},
+					),
+				},
+				[]string{"series", "emotes"},
+			),
+			nil,
+		),
 		filepath.Join("ui", "maps", "catalog.schema.json"): schemaDocument(
 			filepath.Join("ui", "maps", "catalog.schema.json"),
 			authoredRootSchema(

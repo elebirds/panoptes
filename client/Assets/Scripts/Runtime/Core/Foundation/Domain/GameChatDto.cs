@@ -22,6 +22,7 @@ namespace Panoptes.Core.Domain
     {
         public GameChatPayloadKind Kind;
         public GameChatEmoteKind Emote;
+        public string EmoteId;
         public string Text;
     }
 

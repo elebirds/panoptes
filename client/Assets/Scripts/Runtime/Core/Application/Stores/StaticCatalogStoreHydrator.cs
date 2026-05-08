@@ -42,6 +42,8 @@ namespace Panoptes.Core.Application.Stores
                 technologies: MapTechnologies(cache.Technologies),
                 policies: MapPolicies(cache.Policies),
                 units: MapUnits(cache.Units),
+                emoteSeries: MapEmoteSeries(cache.EmoteSeries),
+                emotes: MapEmotes(cache.Emotes),
                 defaultMap: MapRuntimeBundle(defaultMap));
         }
 
@@ -204,6 +206,32 @@ namespace Panoptes.Core.Application.Stores
                 {
                     CanAttackStructures = entry.flags != null && entry.flags.can_attack_structures
                 },
+                Tags = ToList(entry.tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteSeriesDto> MapEmoteSeries(
+            IReadOnlyDictionary<string, StaticCatalogCache.EmoteSeriesEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.id, entry => new CatalogEmoteSeriesDto
+            {
+                Id = entry.id,
+                DisplayName = entry.display_name,
+                IconKey = entry.icon_key,
+                SortOrder = entry.sort_order
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteDto> MapEmotes(
+            IReadOnlyDictionary<string, StaticCatalogCache.EmoteEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.id, entry => new CatalogEmoteDto
+            {
+                AssetKey = entry.asset_key,
+                DisplayName = entry.display_name,
+                Id = entry.id,
+                SeriesId = entry.series_id,
+                SortOrder = entry.sort_order,
                 Tags = ToList(entry.tags)
             });
         }

@@ -19,6 +19,7 @@ message ChatPayload {
   oneof body {
     ChatEmote emote = 1;
     string text = 2;
+    string emote_id = 3;
   }
 }
 

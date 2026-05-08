@@ -16,6 +16,7 @@ const (
 	SectionPolicies           = "policies"
 	SectionRecipes            = "recipes"
 	SectionTerrains           = "terrains"
+	SectionEmotes             = "emotes"
 	SectionRules              = "rules"
 	SectionMinisters          = "ministers"
 	SectionMinisterSkillCards = "minister_skill_cards"
@@ -62,6 +63,11 @@ type terrainsSection struct {
 	Terrains []TerrainDefinition `json:"terrains"`
 }
 
+type emotesSection struct {
+	Series []EmoteSeriesDefinition `json:"series"`
+	Emotes []EmoteDefinition       `json:"emotes"`
+}
+
 type rulesSection struct {
 	Rules Rules `json:"rules"`
 }
@@ -88,6 +94,7 @@ func RequiredCatalogSections() []string {
 		SectionPolicies,
 		SectionRecipes,
 		SectionTerrains,
+		SectionEmotes,
 		SectionRules,
 		SectionMinisters,
 		SectionMinisterSkillCards,
@@ -114,6 +121,7 @@ func CatalogSectionValues(bundle CatalogBundle) []struct {
 		{Name: SectionPolicies, Value: policiesSection{Policies: append([]PolicyDefinition(nil), bundle.Policies...)}},
 		{Name: SectionRecipes, Value: recipesSection{Recipes: append([]RecipeDefinition(nil), bundle.Recipes...)}},
 		{Name: SectionTerrains, Value: terrainsSection{Terrains: append([]TerrainDefinition(nil), bundle.Terrains...)}},
+		{Name: SectionEmotes, Value: emotesSection{Series: append([]EmoteSeriesDefinition(nil), bundle.EmoteSeries...), Emotes: append([]EmoteDefinition(nil), bundle.Emotes...)}},
 		{Name: SectionRules, Value: rulesSection{Rules: bundle.Rules}},
 		{Name: SectionMinisters, Value: ministersSection{Ministers: append([]Minister(nil), bundle.Ministers...)}},
 		{Name: SectionMinisterSkillCards, Value: ministerSkillCardsSection{MinisterSkillCards: append([]MinisterSkillCard(nil), bundle.MinisterSkillCards...)}},

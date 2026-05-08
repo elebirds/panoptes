@@ -1,0 +1,84 @@
+{
+  "$id": "ui/emotes.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "emotes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_key": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "series_id": {
+            "type": "string"
+          },
+          "sort_order": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "series_id",
+          "display_name",
+          "asset_key",
+          "sort_order",
+          "tags"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "series": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "icon_key": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "sort_order": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "icon_key",
+          "sort_order"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "series",
+    "emotes"
+  ],
+  "type": "object"
+}

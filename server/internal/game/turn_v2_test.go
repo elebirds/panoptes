@@ -410,7 +410,84 @@ func TestHandleGameCommandChatAllowedOutsidePlanning(t *testing.T) {
 	}
 }
 
+func TestHandleGameCommandChatEmoteIDBroadcastsToAllHumanParticipants(t *testing.T) {
+	previous := staticdata.Default()
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Emotes: []staticdata.EmoteDefinition{
+			{
+				ID:          "general.thumbs_up",
+				SeriesID:    "general",
+				DisplayName: "Thumbs Up",
+			},
+		},
+	}))
+	defer staticdata.SetDefault(previous)
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewHumanParticipantSpec("player-2", "bob"),
+	}, tp, &config.Config{})
+	room.runtime.SetState(domain.NewGameState(
+		"game-1",
+		[]string{"player-1", "player-2"},
+		[]string{"alice", "bob"},
+		&domain.MapData{},
+	))
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+
+	err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID:  "player-1",
+		RequestID: "req-chat-emote-id",
+		TraceID:   "trace-chat-emote-id",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_Chat{
+			Chat: &pb.ChatCommand{
+				Body: &pb.ChatCommand_SendGameChat{
+					SendGameChat: &pb.MsgSendGameChat{
+						Payload: &pb.ChatPayload{
+							Body: &pb.ChatPayload_EmoteId{
+								EmoteId: "general.thumbs_up",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleGameCommand() error = %v", err)
+	}
+
+	for _, playerID := range []string{"player-1", "player-2"} {
+		msgs := tp.sent[playerID]
+		if len(msgs) != 1 {
+			t.Fatalf("%s send count = %d, want 1", playerID, len(msgs))
+		}
+		posted, ok := msgs[0].(*pb.MsgGameChatPosted)
+		if !ok {
+			t.Fatalf("%s message type = %T, want MsgGameChatPosted", playerID, msgs[0])
+		}
+		if posted.GetEntry().GetPayload().GetEmoteId() != "general.thumbs_up" {
+			t.Fatalf("%s emote_id = %q, want general.thumbs_up", playerID, posted.GetEntry().GetPayload().GetEmoteId())
+		}
+	}
+}
+
 func TestHandleGameCommandChatRejectsUnsupportedPayloads(t *testing.T) {
+	previous := staticdata.Default()
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Emotes: []staticdata.EmoteDefinition{
+			{
+				ID:          "general.thumbs_up",
+				SeriesID:    "general",
+				DisplayName: "Thumbs Up",
+			},
+		},
+	}))
+	defer staticdata.SetDefault(previous)
+
 	tp := newStubTransport()
 	room := NewRoom("game-1", []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}, tp, &config.Config{})
 	room.runtime = newTestRuntime("game-1", tp)
@@ -461,6 +538,24 @@ func TestHandleGameCommandChatRejectsUnsupportedPayloads(t *testing.T) {
 								Payload: &pb.ChatPayload{
 									Body: &pb.ChatPayload_Emote{
 										Emote: pb.ChatEmote(99),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "invalid emote id",
+			cmd: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_EmoteId{
+										EmoteId: "unknown.emote",
 									},
 								},
 							},

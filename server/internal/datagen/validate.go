@@ -45,6 +45,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.PolicyUI.Path, SchemaRel: filepath.Join("ui", "policies.schema.json"), Raw: data.PolicyUI.Raw},
 		{Path: data.RecipeUI.Path, SchemaRel: filepath.Join("ui", "recipes.schema.json"), Raw: data.RecipeUI.Raw},
 		{Path: data.TerrainUI.Path, SchemaRel: filepath.Join("ui", "terrains.schema.json"), Raw: data.TerrainUI.Raw},
+		{Path: data.EmoteUI.Path, SchemaRel: filepath.Join("ui", "emotes.schema.json"), Raw: data.EmoteUI.Raw},
 	}
 	for _, mapID := range data.MapIDs {
 		targets = append(targets,
@@ -184,7 +185,41 @@ func validateCrossReferences(data *authoredData) error {
 	if err := validateTechnologyTreeLayout(data.Technologies.Value.Technologies, data.TechnologyTreeUI.Value, data.TechnologyTreeUI.Path); err != nil {
 		return err
 	}
+	if err := validateEmoteCatalog(data.EmoteUI.Value, data.EmoteUI.Path); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func validateEmoteCatalog(catalog staticdata.EmoteCatalogFile, path string) error {
+	seriesIDs := make(map[string]struct{}, len(catalog.Series))
+	for _, series := range catalog.Series {
+		id := strings.TrimSpace(series.ID)
+		if id == "" {
+			return fmt.Errorf("semantic validation failed for %s: emote series missing id", path)
+		}
+		if _, exists := seriesIDs[id]; exists {
+			return fmt.Errorf("semantic validation failed for %s: duplicate emote series %q", path, id)
+		}
+		seriesIDs[id] = struct{}{}
+	}
+
+	emoteIDs := make(map[string]struct{}, len(catalog.Emotes))
+	for _, emote := range catalog.Emotes {
+		id := strings.TrimSpace(emote.ID)
+		if id == "" {
+			return fmt.Errorf("semantic validation failed for %s: emote missing id", path)
+		}
+		if _, exists := emoteIDs[id]; exists {
+			return fmt.Errorf("semantic validation failed for %s: duplicate emote %q", path, id)
+		}
+		emoteIDs[id] = struct{}{}
+		seriesID := strings.TrimSpace(emote.SeriesID)
+		if _, ok := seriesIDs[seriesID]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: emote %q references unknown series %q", path, id, seriesID)
+		}
+	}
 	return nil
 }
 

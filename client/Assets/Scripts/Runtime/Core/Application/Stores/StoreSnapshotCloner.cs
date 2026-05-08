@@ -53,6 +53,18 @@ namespace Panoptes.Core.Application.Stores
             return CloneDictionary(source, CloneCatalogUnit);
         }
 
+        public static Dictionary<string, CatalogEmoteSeriesDto> CloneCatalogEmoteSeries(
+            IReadOnlyDictionary<string, CatalogEmoteSeriesDto> source)
+        {
+            return CloneDictionary(source, CloneCatalogEmoteSeries);
+        }
+
+        public static Dictionary<string, CatalogEmoteDto> CloneCatalogEmotes(
+            IReadOnlyDictionary<string, CatalogEmoteDto> source)
+        {
+            return CloneDictionary(source, CloneCatalogEmote);
+        }
+
         public static CatalogMapRuntimeBundleDto CloneCatalogMapRuntimeBundle(CatalogMapRuntimeBundleDto source)
         {
             if (source == null)
@@ -381,6 +393,7 @@ namespace Panoptes.Core.Application.Stores
             return new GameChatPayloadDto
             {
                 Emote = source.Emote,
+                EmoteId = source.EmoteId,
                 Kind = source.Kind,
                 Text = source.Text
             };
@@ -668,6 +681,30 @@ namespace Panoptes.Core.Application.Stores
                 RoadSpeedBonus = source.RoadSpeedBonus,
                 Tags = CloneStrings(source.Tags),
                 VisionRange = source.VisionRange
+            };
+        }
+
+        private static CatalogEmoteSeriesDto CloneCatalogEmoteSeries(CatalogEmoteSeriesDto source)
+        {
+            return new CatalogEmoteSeriesDto
+            {
+                DisplayName = source.DisplayName,
+                IconKey = source.IconKey,
+                Id = source.Id,
+                SortOrder = source.SortOrder
+            };
+        }
+
+        private static CatalogEmoteDto CloneCatalogEmote(CatalogEmoteDto source)
+        {
+            return new CatalogEmoteDto
+            {
+                AssetKey = source.AssetKey,
+                DisplayName = source.DisplayName,
+                Id = source.Id,
+                SeriesId = source.SeriesId,
+                SortOrder = source.SortOrder,
+                Tags = CloneStrings(source.Tags)
             };
         }
 
