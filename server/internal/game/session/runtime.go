@@ -79,6 +79,7 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	if r.state != nil {
 		r.state.RefreshStructuredModel()
 	}
+	r.ClearMandateModes()
 	r.resetObservations()
 	r.preparedMinisterDraftsMu.Lock()
 	r.planningStartPreparedTurn = 0
@@ -234,6 +235,16 @@ func (r *Runtime) IsPlayerInMandateMode(playerID string) bool {
 	r.mandateModeMu.RLock()
 	defer r.mandateModeMu.RUnlock()
 	return r.mandateModeByPlayer[playerID]
+}
+
+// ClearMandateModes clears direct-command authority at turn/session boundaries.
+func (r *Runtime) ClearMandateModes() {
+	if r == nil {
+		return
+	}
+	r.mandateModeMu.Lock()
+	defer r.mandateModeMu.Unlock()
+	clear(r.mandateModeByPlayer)
 }
 
 func (r *Runtime) PreparePlanningStartStateIfNeeded() {
