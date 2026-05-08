@@ -15,17 +15,17 @@ func (r *Runtime) BuildMinisterReportInput(playerID string, role string) ministe
 		Turn:               r.currentTurn(),
 		Phase:              r.currentPhase(),
 		PlayerID:           strings.TrimSpace(playerID),
-		ObservationSummary: r.BuildMinisterObservationSummary(playerID),
+		ObservationSummary: r.BuildMinisterObservationSummary(playerID, role),
 		CurrentPolicy:      currentPolicyValue(r.state, playerID),
 		CurrentResearch:    currentResearchValue(r.state, playerID),
 	}
 }
 
-func (r *Runtime) BuildMinisterObservationSummary(playerID string) string {
-	return buildMinisterObservationSummary(r.state, r.BuildObservation(playerID))
+func (r *Runtime) BuildMinisterObservationSummary(playerID string, role string) string {
+	return buildMinisterObservationSummary(r.state, r.BuildObservation(playerID), role)
 }
 
-func buildMinisterObservationSummary(state *domain.GameState, observation *gamequery.ObservationSnapshot) string {
+func buildMinisterObservationSummary(state *domain.GameState, observation *gamequery.ObservationSnapshot, role string) string {
 	if observation == nil {
 		return "(暂无观察摘要)"
 	}
@@ -71,8 +71,74 @@ func buildMinisterObservationSummary(state *domain.GameState, observation *gameq
 	if len(visibleNodeIDs) > 0 {
 		parts = append(parts, "sample_visible_nodes="+strings.Join(visibleNodeIDs, ","))
 	}
+	parts = append(parts, roleObservationFocus(observation, role)...)
 
 	return strings.Join(parts, "; ")
+}
+
+func roleObservationFocus(observation *gamequery.ObservationSnapshot, role string) []string {
+	role = strings.ToLower(strings.TrimSpace(role))
+	switch role {
+	case "military":
+		return militaryObservationFocus(observation)
+	case "domestic":
+		return domesticObservationFocus(observation)
+	default:
+		return []string{"role_focus=general"}
+	}
+}
+
+func domesticObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+	resourceNodes := make([]string, 0, 4)
+	buildingNodes := make([]string, 0, 4)
+	for _, node := range observation.VisibleNodes {
+		if node == nil {
+			continue
+		}
+		nodeID := strings.TrimSpace(node.GetId())
+		if node.GetIsResourcePoint() && len(resourceNodes) < 4 {
+			resourceNodes = append(resourceNodes, nodeID+":"+strings.TrimSpace(node.GetResourceType()))
+		}
+		if strings.TrimSpace(node.GetBuildingTypeId()) != "" && len(buildingNodes) < 4 {
+			buildingNodes = append(buildingNodes, nodeID+":"+strings.TrimSpace(node.GetBuildingTypeId()))
+		}
+	}
+	return []string{
+		"role_focus=domestic",
+		"domestic_resource_nodes=" + joinOrNone(resourceNodes),
+		"domestic_building_nodes=" + joinOrNone(buildingNodes),
+	}
+}
+
+func militaryObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+	visibleUnits := make([]string, 0, 4)
+	enemyPressureNodes := make([]string, 0, 4)
+	for _, unit := range observation.Units {
+		if unit == nil || len(visibleUnits) >= 4 {
+			continue
+		}
+		visibleUnits = append(visibleUnits, strings.TrimSpace(unit.GetId())+":"+strings.TrimSpace(unit.GetFaction())+":"+strings.TrimSpace(unit.GetUnitType()))
+	}
+	for _, node := range observation.VisibleNodes {
+		if node == nil || len(enemyPressureNodes) >= 4 {
+			continue
+		}
+		if node.GetEnemyUnitCount() > 0 {
+			enemyPressureNodes = append(enemyPressureNodes, strings.TrimSpace(node.GetId()))
+		}
+	}
+	return []string{
+		"role_focus=military",
+		"military_visible_units=" + joinOrNone(visibleUnits),
+		"military_enemy_pressure_nodes=" + joinOrNone(enemyPressureNodes),
+	}
+}
+
+func joinOrNone(values []string) string {
+	if len(values) == 0 {
+		return "(none)"
+	}
+	return strings.Join(values, ",")
 }
 
 func currentPolicyValue(state *domain.GameState, playerID string) string {

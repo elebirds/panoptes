@@ -61,7 +61,7 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 				Input: ministerengine.DraftPromptInput{
 					Turn:               turn,
 					PlayerID:           playerID,
-					ObservationSummary: buildMinisterObservationSummary(r.state, observation),
+					ObservationSummary: buildMinisterObservationSummary(r.state, observation, draft.MinisterRole),
 					CurrentPolicy:      currentPolicyValue(r.state, playerID),
 					CurrentResearch:    currentResearchValue(r.state, playerID),
 				},
