@@ -149,6 +149,62 @@ if ok {
 }
 ```
 
+### Scenario: Minister Report Actions Routed Through Planning Rules
+
+#### 1. Scope / Trigger
+- Trigger: minister report generation returns structured `actions` that should be applied to the authoritative planning path instead of being ignored.
+- Minister actions remain advisory output from the LLM, but the backend must convert them into normal planning writes and let existing validation decide whether they survive.
+
+#### 2. Signatures
+- Engine callback: `RuntimeRoom.ApplyMinisterActions(playerID string, actions []MinisterActionItem) error`
+- Supported action types in the current contract:
+  - `build`
+  - `move_units`
+- Build action params:
+  - `node_id`
+  - `building_type`
+  - optional `city_id`
+- Move action params:
+  - `unit_id`
+  - `target_node`
+
+#### 3. Contracts
+- `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.
+- Session-level action application must route through existing planning validation and planning writes.
+- Build actions must be validated with the normal build-order rules before adding a planning build order.
+- Move actions must be validated with the normal unit-order rules before calling the shared planning-unit-order writer.
+- Invalid minister actions are ignored after logging; they must not mutate authority directly or bypass the normal planning checks.
+
+#### 4. Validation & Error Matrix
+- Missing action type or required params -> ignore the action.
+- Build action fails `ValidateBuildOrder` -> log warning, do not queue a build order.
+- Move action fails `ValidatePlanningUnitOrder` -> log warning, do not queue a unit order.
+- Unsupported action type -> log warning, ignore.
+- Valid build/move action -> queue through the normal planning surfaces.
+
+#### 5. Good/Base/Bad Cases
+- Good: LLM returns `build` with a valid node/building pair and the session queues a `domain.BuildOrder`.
+- Base: LLM returns `move_units` and the session uses `game/orders.ApplyPlanningUnitOrder` to keep the active march cache in sync.
+- Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
+
+#### 6. Tests Required
+- Engine test confirms parsed actions are forwarded to the room callback.
+- Session test confirms valid minister build actions queue build orders.
+- Session test confirms valid minister move actions queue unit orders and active marches.
+- Regression tests confirm invalid minister actions are ignored, not applied.
+
+#### 7. Wrong vs Correct
+#### Wrong
+```go
+state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, order)
+```
+#### Correct
+```go
+if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, cityID); errCode == "" {
+    room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
+}
+```
+
 ---
 
 ## Testing Requirements
