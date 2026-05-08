@@ -1102,7 +1102,7 @@ namespace Panoptes.Presentation.Map
         public void SetBuilding(string buildingType, string ownerId, int buildingHp, int buildingMaxHp, bool isGhost)
         {
             var normalized = NormalizeToken(buildingType);
-            if (string.IsNullOrEmpty(normalized))
+            if (string.IsNullOrEmpty(normalized) || buildingHp <= 0)
             {
                 ClearBuilding();
                 return;

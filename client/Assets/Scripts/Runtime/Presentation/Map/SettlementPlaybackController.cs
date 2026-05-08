@@ -14,6 +14,10 @@ using Panoptes.Core.Domain;
 using Panoptes.Presentation.Animation;
 using R3;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+#endif
 using VContainer;
 
 namespace Panoptes.Presentation.Map
@@ -32,9 +36,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float perUnitPlaybackGapSeconds = 0.5f;
         [SerializeField] private SettlementPlaybackMode playbackMode = SettlementPlaybackMode.Fast;
         [SerializeField] private float fastMoveDurationSeconds = 0.35f;
+        [SerializeField] private float minimumVisibleMoveDurationSeconds = 0.55f;
         [SerializeField] private float fastAttackPlaybackSeconds = 0.32f;
         [SerializeField] private float fastFocusPauseSeconds = 0.08f;
-        [SerializeField] private bool useAmbientMoveProxy = true;
         [SerializeField] private float ambientMoveProxyScale = 0.96f;
         [SerializeField] private KeyCode skipPlaybackKey = KeyCode.Space;
         [SerializeField] private KeyCode alternateSkipPlaybackKey = KeyCode.Escape;
@@ -228,13 +232,18 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var scheduledSteps = CollectScheduledSteps(schedule.Windows);
+                EnsureSettlementPlaybackImpactUnits(settlement);
                 _mapRenderer?.PrepareSettlementPlaybackUnits(scheduledSteps);
+                PrimeUnitHpBeforePlayback(scheduledSteps);
+                PrimeBuildingHpBeforePlayback(scheduledSteps);
                 if (initialPlaybackDelaySeconds > 0.0001f)
                 {
                     yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
                 }
 
-                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(scheduledSteps, 0);
+                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(scheduledSteps, 0, preserveHitPoints: true);
+                PrimeUnitHpBeforePlayback(scheduledSteps);
+                PrimeBuildingHpBeforePlayback(scheduledSteps);
                 for (var windowIndex = 0; windowIndex < schedule.Windows.Count; windowIndex++)
                 {
                     yield return PlayWindow(schedule.Windows[windowIndex]);
@@ -269,8 +278,8 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayBatchMove(TurnEventDto evt)
         {
-            _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(evt);
-            yield return PlayMove(evt, followCamera: false, waitAfterMove: false, useProxy: useAmbientMoveProxy, ambientMove: true);
+            _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(evt, preserveHitPoints: true);
+            yield return PlayMove(evt, followCamera: false, waitAfterMove: false, useProxy: false, ambientMove: true);
         }
 
         private IEnumerator PlayStep(SettlementPlaybackStep step, bool allowCameraFocus)
@@ -282,7 +291,7 @@ namespace Panoptes.Presentation.Map
 
             if (step.HasMove)
             {
-                _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent);
+                _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent, preserveHitPoints: true);
             }
 
             if (step.HasActor)
@@ -366,18 +375,12 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            _mapRenderer.PlaceSettlementPlaybackUnitAtMoveStart(evt);
+            _mapRenderer.PlaceSettlementPlaybackUnitAtMoveStart(evt, preserveHitPoints: true);
             var grid = new Vector2Int(evt.ToQ, evt.ToR);
             if (!_mapRenderer.TryGetNodeIdByGrid(grid, out var targetNodeId) ||
                 !_mapRenderer.TryGetNodeView(targetNodeId, out var nodeView) ||
                 nodeView == null)
             {
-                yield break;
-            }
-
-            if (!nodeView.IsCurrentlyVisible)
-            {
-                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
                 yield break;
             }
 
@@ -506,6 +509,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayDamage(TurnEventDto evt)
         {
+            _mapRenderer?.EnsureSettlementPlaybackUnitForEvent(evt);
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
                 TryShowUnitDamagePopupFallback(evt);
@@ -519,6 +523,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayDeath(TurnEventDto evt, bool showDamageCue)
         {
+            _mapRenderer?.EnsureSettlementPlaybackUnitForEvent(evt);
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
                 if (showDamageCue)
@@ -535,6 +540,34 @@ namespace Panoptes.Presentation.Map
                 yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             }
             _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
+        }
+
+        private void EnsureSettlementPlaybackImpactUnits(TurnSettlementDto settlement)
+        {
+            if (_mapRenderer == null || settlement?.Sections == null)
+            {
+                return;
+            }
+
+            for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
+            {
+                var events = settlement.Sections[sectionIndex]?.Events;
+                if (events == null)
+                {
+                    continue;
+                }
+
+                for (var eventIndex = 0; eventIndex < events.Count; eventIndex++)
+                {
+                    var evt = events[eventIndex];
+                    if (!IsUnitDamageOrDeathEvent(evt))
+                    {
+                        continue;
+                    }
+
+                    _mapRenderer.EnsureSettlementPlaybackUnitForEvent(evt);
+                }
+            }
         }
 
         private IEnumerator PlayBuildingDamage(TurnEventDto evt)
@@ -760,6 +793,48 @@ namespace Panoptes.Presentation.Map
             _mapRenderer.ApplySettlementUnitHitPoints(evt.UnitId, hpAfter);
         }
 
+        private void PrimeUnitHpBeforePlayback(IReadOnlyList<SettlementPlaybackStep> steps)
+        {
+            if (_mapRenderer == null || steps == null || steps.Count == 0)
+            {
+                return;
+            }
+
+            var primedUnitIds = new HashSet<string>();
+            for (var stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+            {
+                var step = steps[stepIndex];
+                if (step?.Impacts == null)
+                {
+                    continue;
+                }
+
+                for (var impactIndex = 0; impactIndex < step.Impacts.Count; impactIndex++)
+                {
+                    var impact = step.Impacts[impactIndex];
+                    var evt = impact?.DamageEvent ?? impact?.DeathEvent;
+                    if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+                    {
+                        continue;
+                    }
+
+                    var unitId = evt.UnitId.Trim();
+                    if (!primedUnitIds.Add(unitId))
+                    {
+                        continue;
+                    }
+
+                    var hpBefore = ResolveHpBefore(evt);
+                    if (hpBefore < 0)
+                    {
+                        continue;
+                    }
+
+                    _mapRenderer.ApplySettlementUnitHitPoints(unitId, hpBefore);
+                }
+            }
+        }
+
         private void ApplyBuildingHpAfter(TurnEventDto evt)
         {
             if (evt == null || _mapRenderer == null)
@@ -774,6 +849,45 @@ namespace Panoptes.Presentation.Map
             }
 
             _mapRenderer.ApplySettlementBuildingHitPoints(evt, hpAfter);
+        }
+
+        private void PrimeBuildingHpBeforePlayback(IReadOnlyList<SettlementPlaybackStep> steps)
+        {
+            if (_mapRenderer == null || steps == null || steps.Count == 0)
+            {
+                return;
+            }
+
+            var primedNodeIds = new HashSet<string>();
+            for (var stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+            {
+                var step = steps[stepIndex];
+                if (step?.Impacts == null)
+                {
+                    continue;
+                }
+
+                for (var impactIndex = 0; impactIndex < step.Impacts.Count; impactIndex++)
+                {
+                    var evt = step.Impacts[impactIndex]?.BuildingEvent;
+                    if (evt == null)
+                    {
+                        continue;
+                    }
+
+                    var hpBefore = ResolveHpBefore(evt);
+                    if (hpBefore <= 0 ||
+                        !TryResolveNodeForEvent(evt, out var node) ||
+                        node == null ||
+                        string.IsNullOrWhiteSpace(node.NodeId) ||
+                        !primedNodeIds.Add(node.NodeId))
+                    {
+                        continue;
+                    }
+
+                    _mapRenderer.ApplySettlementBuildingHitPoints(evt, hpBefore);
+                }
+            }
         }
 
         private bool TryResolveUnitPopupPosition(TurnEventDto evt, out Vector3 position)
@@ -825,6 +939,17 @@ namespace Panoptes.Presentation.Map
                    evt.Data.ContainsKey(key);
         }
 
+        private static bool IsUnitDamageOrDeathEvent(TurnEventDto evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return false;
+            }
+
+            return string.Equals(evt.Type, "unit_damaged", StringComparison.Ordinal) ||
+                   string.Equals(evt.Type, "unit_died", StringComparison.Ordinal);
+        }
+
         private static int ResolveDamageValue(TurnEventDto evt)
         {
             if (evt == null)
@@ -848,6 +973,29 @@ namespace Panoptes.Presentation.Map
             }
 
             return 0;
+        }
+
+        private static int ResolveHpBefore(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return -1;
+            }
+
+            var explicitHpBefore = ReadEventInt(evt, "hp_before", "unit_hp_before", "building_hp_before");
+            if (explicitHpBefore > 0)
+            {
+                return explicitHpBefore;
+            }
+
+            var hpAfter = ResolveHpAfter(evt);
+            var damage = ResolveDamageValue(evt);
+            if (hpAfter >= 0 && damage > 0)
+            {
+                return hpAfter + damage;
+            }
+
+            return -1;
         }
 
         private static int ResolveHpAfter(TurnEventDto evt)
@@ -1120,17 +1268,112 @@ namespace Panoptes.Presentation.Map
 
         private static bool IsKeyPressed(KeyCode key)
         {
+#if ENABLE_INPUT_SYSTEM
+            if (key == KeyCode.None)
+            {
+                return false;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return false;
+            }
+
+            var control = ResolveKeyboardControl(keyboard, key);
+            return control != null && control.wasPressedThisFrame;
+#else
             return key != KeyCode.None && Input.GetKeyDown(key);
+#endif
         }
+
+#if ENABLE_INPUT_SYSTEM
+        private static ButtonControl ResolveKeyboardControl(Keyboard keyboard, KeyCode key)
+        {
+            return key switch
+            {
+                KeyCode.Space => keyboard.spaceKey,
+                KeyCode.Escape => keyboard.escapeKey,
+                KeyCode.Return => keyboard.enterKey,
+                KeyCode.KeypadEnter => keyboard.numpadEnterKey,
+                KeyCode.Tab => keyboard.tabKey,
+                KeyCode.Backspace => keyboard.backspaceKey,
+                KeyCode.Delete => keyboard.deleteKey,
+                KeyCode.Insert => keyboard.insertKey,
+                KeyCode.Home => keyboard.homeKey,
+                KeyCode.End => keyboard.endKey,
+                KeyCode.PageUp => keyboard.pageUpKey,
+                KeyCode.PageDown => keyboard.pageDownKey,
+                KeyCode.UpArrow => keyboard.upArrowKey,
+                KeyCode.DownArrow => keyboard.downArrowKey,
+                KeyCode.LeftArrow => keyboard.leftArrowKey,
+                KeyCode.RightArrow => keyboard.rightArrowKey,
+                KeyCode.A => keyboard.aKey,
+                KeyCode.B => keyboard.bKey,
+                KeyCode.C => keyboard.cKey,
+                KeyCode.D => keyboard.dKey,
+                KeyCode.E => keyboard.eKey,
+                KeyCode.F => keyboard.fKey,
+                KeyCode.G => keyboard.gKey,
+                KeyCode.H => keyboard.hKey,
+                KeyCode.I => keyboard.iKey,
+                KeyCode.J => keyboard.jKey,
+                KeyCode.K => keyboard.kKey,
+                KeyCode.L => keyboard.lKey,
+                KeyCode.M => keyboard.mKey,
+                KeyCode.N => keyboard.nKey,
+                KeyCode.O => keyboard.oKey,
+                KeyCode.P => keyboard.pKey,
+                KeyCode.Q => keyboard.qKey,
+                KeyCode.R => keyboard.rKey,
+                KeyCode.S => keyboard.sKey,
+                KeyCode.T => keyboard.tKey,
+                KeyCode.U => keyboard.uKey,
+                KeyCode.V => keyboard.vKey,
+                KeyCode.W => keyboard.wKey,
+                KeyCode.X => keyboard.xKey,
+                KeyCode.Y => keyboard.yKey,
+                KeyCode.Z => keyboard.zKey,
+                KeyCode.Alpha0 => keyboard.digit0Key,
+                KeyCode.Alpha1 => keyboard.digit1Key,
+                KeyCode.Alpha2 => keyboard.digit2Key,
+                KeyCode.Alpha3 => keyboard.digit3Key,
+                KeyCode.Alpha4 => keyboard.digit4Key,
+                KeyCode.Alpha5 => keyboard.digit5Key,
+                KeyCode.Alpha6 => keyboard.digit6Key,
+                KeyCode.Alpha7 => keyboard.digit7Key,
+                KeyCode.Alpha8 => keyboard.digit8Key,
+                KeyCode.Alpha9 => keyboard.digit9Key,
+                KeyCode.Keypad0 => keyboard.numpad0Key,
+                KeyCode.Keypad1 => keyboard.numpad1Key,
+                KeyCode.Keypad2 => keyboard.numpad2Key,
+                KeyCode.Keypad3 => keyboard.numpad3Key,
+                KeyCode.Keypad4 => keyboard.numpad4Key,
+                KeyCode.Keypad5 => keyboard.numpad5Key,
+                KeyCode.Keypad6 => keyboard.numpad6Key,
+                KeyCode.Keypad7 => keyboard.numpad7Key,
+                KeyCode.Keypad8 => keyboard.numpad8Key,
+                KeyCode.Keypad9 => keyboard.numpad9Key,
+                KeyCode.LeftShift => keyboard.leftShiftKey,
+                KeyCode.RightShift => keyboard.rightShiftKey,
+                KeyCode.LeftControl => keyboard.leftCtrlKey,
+                KeyCode.RightControl => keyboard.rightCtrlKey,
+                KeyCode.LeftAlt => keyboard.leftAltKey,
+                KeyCode.RightAlt => keyboard.rightAltKey,
+                _ => null
+            };
+        }
+#endif
 
         private float ResolveMoveDuration(bool ambientMove)
         {
+            var minimumDuration = Mathf.Max(0.05f, minimumVisibleMoveDurationSeconds);
             if (playbackMode == SettlementPlaybackMode.Fast && ambientMove)
             {
-                return Mathf.Max(0.05f, fastMoveDurationSeconds);
+                return Mathf.Max(minimumDuration, fastMoveDurationSeconds);
             }
 
-            return Mathf.Max(0.05f, unitMoveDurationSeconds);
+            return Mathf.Max(minimumDuration, unitMoveDurationSeconds);
         }
 
         private float ResolveAttackDuration()

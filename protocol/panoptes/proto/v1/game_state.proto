@@ -105,6 +105,12 @@ message MinisterView {
   string name = 2;
   int32 ability = 3;
   string personality = 4;
+  int32 loyalty = 5;
+  int32 ambition = 6;
+  int32 cautiousness = 7;
+  int32 decisiveness = 8;
+  int32 loyalty_tendency = 9;
+  int32 ambition_style = 10;
 }
 
 message InformationReportView {

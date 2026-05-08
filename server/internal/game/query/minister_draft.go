@@ -172,10 +172,16 @@ func BuildMinisterRosterViews() []*pb.MinisterView {
 			continue
 		}
 		out = append(out, &pb.MinisterView{
-			Role:        role,
-			Name:        strings.TrimSpace(minister.Name),
-			Ability:     int32(minister.Ability),
-			Personality: strings.TrimSpace(minister.Personality),
+			Role:            role,
+			Name:            strings.TrimSpace(minister.Name),
+			Ability:         int32(minister.Ability),
+			Personality:     strings.TrimSpace(minister.Personality),
+			Loyalty:         int32(minister.Loyalty),
+			Ambition:        int32(minister.Ambition),
+			Cautiousness:    int32(minister.Cautiousness),
+			Decisiveness:    int32(minister.Decisiveness),
+			LoyaltyTendency: int32(minister.LoyaltyTendency),
+			AmbitionStyle:   int32(minister.AmbitionStyle),
 		})
 	}
 	return out

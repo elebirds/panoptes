@@ -36,21 +36,48 @@ namespace Panoptes.Presentation.ViewModels
         public IReadOnlyList<string> BuildLoadoutForSelection(string institutionId)
         {
             var snapshot = _staticCatalogStore.Snapshot;
+            var institutionState = _gameStateCache?.GetInstitutionState();
+            var candidateLoadout = BuildIdSet(institutionState?.CandidateInstitutionIds);
+            var hasAuthoritativeInstitutionState = _gameStateCache != null;
             var current = GetCurrentLoadout();
-            var institution = snapshot.Institutions != null && snapshot.Institutions.TryGetValue(Normalize(institutionId), out var value)
+            var normalizedInstitutionId = Normalize(institutionId);
+            var institution = snapshot.Institutions != null && snapshot.Institutions.TryGetValue(normalizedInstitutionId, out var value)
                 ? value
                 : null;
             if (institution == null || string.IsNullOrWhiteSpace(institution.Id))
             {
-                return current;
+                return Array.Empty<string>();
+            }
+
+            if (hasAuthoritativeInstitutionState && !candidateLoadout.Contains(normalizedInstitutionId))
+            {
+                return Array.Empty<string>();
+            }
+
+            var slotCount = hasAuthoritativeInstitutionState
+                ? Math.Max(0, institutionState?.SlotCount ?? 0)
+                : Math.Max(1, current.Count + 1);
+            if (slotCount <= 0)
+            {
+                return Array.Empty<string>();
             }
 
             var result = new List<string>();
             var seenCategories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var i = 0; i < current.Count; i++)
             {
+                if (result.Count >= slotCount - 1)
+                {
+                    break;
+                }
+
                 var currentId = Normalize(current[i]);
                 if (string.IsNullOrEmpty(currentId) || !snapshot.Institutions.TryGetValue(currentId, out var currentInstitution))
+                {
+                    continue;
+                }
+
+                if (hasAuthoritativeInstitutionState && !candidateLoadout.Contains(currentId))
                 {
                     continue;
                 }
@@ -70,6 +97,35 @@ namespace Panoptes.Presentation.ViewModels
             return result;
         }
 
+        public bool HasSelectableCandidate()
+        {
+            var groups = Current?.Groups;
+            if (groups == null)
+            {
+                return false;
+            }
+
+            for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
+            {
+                var rows = groups[groupIndex]?.Rows;
+                if (rows == null)
+                {
+                    continue;
+                }
+
+                for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+                {
+                    var row = rows[rowIndex];
+                    if (row != null && row.HasAction && string.IsNullOrWhiteSpace(row.Status))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         protected override ManagementPanelState Project()
         {
             var catalog = _staticCatalogStore.Snapshot;
@@ -81,15 +137,21 @@ namespace Panoptes.Presentation.ViewModels
             var categoryMap = catalog.InstitutionCategories ?? new Dictionary<string, CatalogInstitutionCategoryDto>();
             var categories = categoryMap.Values.OrderBy(category => category.SortOrder).ThenBy(category => category.Id, StringComparer.OrdinalIgnoreCase).ToList();
             var draft = _planningDraftStore.Snapshot;
+            var institutionState = _gameStateCache?.GetInstitutionState();
             var plannedLoadout = BuildIdSet(draft.PlannedInstitutionIds);
-            var activeLoadout = BuildIdSet(_gameStateCache?.GetInstitutionState()?.ActiveInstitutionIds);
-            var candidateLoadout = BuildIdSet(_gameStateCache?.GetInstitutionState()?.CandidateInstitutionIds);
+            var activeLoadout = BuildIdSet(institutionState?.ActiveInstitutionIds);
+            var candidateLoadout = BuildIdSet(institutionState?.CandidateInstitutionIds);
+            var filterByCandidates = _gameStateCache != null;
+            if (filterByCandidates && (candidateLoadout.Count == 0 || (institutionState?.SlotCount ?? 0) <= 0))
+            {
+                return new ManagementPanelState("制度");
+            }
 
             var groups = new List<ManagementPanelGroupState>();
             for (var i = 0; i < categories.Count; i++)
             {
                 var category = categories[i];
-                var rows = BuildCategoryRows(category.Id, catalog, plannedLoadout, activeLoadout, candidateLoadout);
+                var rows = BuildCategoryRows(category.Id, catalog, plannedLoadout, activeLoadout, candidateLoadout, filterByCandidates);
                 if (rows.Count == 0)
                 {
                     continue;
@@ -109,7 +171,8 @@ namespace Panoptes.Presentation.ViewModels
             StaticCatalogState catalog,
             HashSet<string> plannedLoadout,
             HashSet<string> activeLoadout,
-            HashSet<string> candidateLoadout)
+            HashSet<string> candidateLoadout,
+            bool filterByCandidates)
         {
             var rows = new List<ManagementPanelRowState>();
             foreach (var pair in catalog.Institutions)
@@ -121,8 +184,7 @@ namespace Panoptes.Presentation.ViewModels
                 }
 
                 var institutionId = Normalize(institution.Id);
-                var visible = candidateLoadout.Count == 0 || candidateLoadout.Contains(institutionId) || plannedLoadout.Contains(institutionId) || activeLoadout.Contains(institutionId);
-                if (!visible)
+                if (filterByCandidates && !candidateLoadout.Contains(institutionId))
                 {
                     continue;
                 }
@@ -139,8 +201,28 @@ namespace Panoptes.Presentation.ViewModels
                     institution.IconKey));
             }
 
-            rows.Sort((left, right) => string.Compare(left?.Id, right?.Id, StringComparison.OrdinalIgnoreCase));
+            rows.Sort((left, right) =>
+            {
+                var leftOrder = TryGetInstitutionSortOrder(catalog, left?.Id);
+                var rightOrder = TryGetInstitutionSortOrder(catalog, right?.Id);
+                var orderComparison = leftOrder.CompareTo(rightOrder);
+                return orderComparison != 0
+                    ? orderComparison
+                    : string.Compare(left?.Id, right?.Id, StringComparison.OrdinalIgnoreCase);
+            });
             return rows;
+        }
+
+        private static int TryGetInstitutionSortOrder(StaticCatalogState catalog, string institutionId)
+        {
+            if (catalog?.Institutions == null || string.IsNullOrWhiteSpace(institutionId))
+            {
+                return int.MaxValue;
+            }
+
+            return catalog.Institutions.TryGetValue(Normalize(institutionId), out var institution)
+                ? institution.SortOrder
+                : int.MaxValue;
         }
 
         private IReadOnlyList<string> GetCurrentLoadout()

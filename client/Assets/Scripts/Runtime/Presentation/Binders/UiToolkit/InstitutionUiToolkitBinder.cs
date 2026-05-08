@@ -51,6 +51,32 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void MarkInstitutionSelected(string institutionId)
         {
             var root = GetComponent<UIDocument>()?.rootVisualElement;
+            if (root == null)
+            {
+                return;
+            }
+
+            var rows = _viewModel?.Current?.Groups;
+            for (var groupIndex = 0; rows != null && groupIndex < rows.Count; groupIndex++)
+            {
+                var groupRows = rows[groupIndex]?.Rows;
+                for (var rowIndex = 0; groupRows != null && rowIndex < groupRows.Count; rowIndex++)
+                {
+                    var row = root.Q<VisualElement>("management-panel-row-" + SafeName(groupRows[rowIndex]?.Id));
+                    if (row != null)
+                    {
+                        row.style.borderBottomColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+                        row.style.borderLeftColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+                        row.style.borderRightColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+                        row.style.borderTopColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+                        row.style.borderBottomWidth = 1f;
+                        row.style.borderLeftWidth = 1f;
+                        row.style.borderRightWidth = 1f;
+                        row.style.borderTopWidth = 1f;
+                    }
+                }
+            }
+
             var selected = root?.Q<VisualElement>("management-panel-row-" + SafeName(institutionId));
             if (selected == null)
             {

@@ -7,6 +7,7 @@ using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using R3;
+using VContainer;
 
 namespace Panoptes.Presentation.ViewModels
 {
@@ -42,6 +43,7 @@ namespace Panoptes.Presentation.ViewModels
         {
         }
 
+        [Inject]
         public MinisterReportViewModel(
             PlanningDraftStore planningDraftStore,
             GameStateCache gameStateCache,
@@ -50,9 +52,9 @@ namespace Panoptes.Presentation.ViewModels
             GameStateStore gameStateStore = null)
         {
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
-            _gameStateCache = gameStateCache;
+            _gameStateCache = gameStateCache != null ? gameStateCache : GameStateCache.Instance;
             _gameStateStore = gameStateStore;
-            _staticCatalogCache = staticCatalogCache;
+            _staticCatalogCache = staticCatalogCache != null ? staticCatalogCache : StaticCatalogCache.Instance;
             _ministerCommandService = ministerCommandService;
 
             _current = Project();
@@ -325,23 +327,43 @@ namespace Panoptes.Presentation.ViewModels
 
         private List<MinisterTabState> BuildTabs()
         {
-            var roles = new Dictionary<string, (string Name, string Title, string IconResource)>(StringComparer.OrdinalIgnoreCase);
-            var ministers = _staticCatalogCache?.Ministers;
-            if (ministers != null)
+            var roles = new Dictionary<string, MinisterTabSource>(StringComparer.OrdinalIgnoreCase);
+            var catalogMinisters = _staticCatalogCache?.Ministers;
+            if (catalogMinisters != null)
             {
-                for (var i = 0; i < ministers.Count; i++)
+                for (var i = 0; i < catalogMinisters.Count; i++)
                 {
-                    var minister = ministers[i];
+                    var minister = catalogMinisters[i];
                     if (minister == null)
                     {
                         continue;
                     }
 
                     var role = NormalizeRole(minister.role);
-                    roles[role] = (
-                        Clean(minister.name, RoleTitle(role)),
-                        RoleTitle(role),
-                        IconResourceFor(minister.icon_key, role));
+                    roles[role] = MinisterTabSource.FromCatalog(role, minister);
+                }
+            }
+
+            var roster = _gameStateCache?.Ministers;
+            if (roster != null)
+            {
+                for (var i = 0; i < roster.Count; i++)
+                {
+                    var minister = roster[i];
+                    if (minister == null)
+                    {
+                        continue;
+                    }
+
+                    var role = NormalizeRole(minister.Role);
+                    if (roles.TryGetValue(role, out var existing))
+                    {
+                        roles[role] = existing.WithProfile(minister);
+                    }
+                    else
+                    {
+                        roles[role] = MinisterTabSource.FromProfile(role, minister, IconResourceFor(string.Empty, role));
+                    }
                 }
             }
 
@@ -353,7 +375,7 @@ namespace Panoptes.Presentation.ViewModels
                     var role = NormalizeRole(drafts[i]?.MinisterRole);
                     if (!roles.ContainsKey(role))
                     {
-                        roles[role] = (RoleTitle(role), RoleTitle(role), IconResourceFor(string.Empty, role));
+                        roles[role] = MinisterTabSource.Empty(role);
                     }
                 }
             }
@@ -363,13 +385,13 @@ namespace Panoptes.Presentation.ViewModels
                 var role = NormalizeRole(pair.Key);
                 if (!roles.ContainsKey(role))
                 {
-                    roles[role] = (RoleTitle(role), RoleTitle(role), IconResourceFor(string.Empty, role));
+                    roles[role] = MinisterTabSource.Empty(role);
                 }
             }
 
             if (roles.Count == 0)
             {
-                roles[DefaultRole] = (RoleTitle(DefaultRole), RoleTitle(DefaultRole), IconResourceFor(string.Empty, DefaultRole));
+                roles[DefaultRole] = MinisterTabSource.Empty(DefaultRole);
             }
 
             return roles
@@ -384,7 +406,8 @@ namespace Panoptes.Presentation.ViewModels
                     string.Equals(pair.Key, _activeRole, StringComparison.OrdinalIgnoreCase),
                     AffectionFor(pair.Key),
                     AffectionPulseSequenceFor(pair.Key),
-                    AffectionPulseDeltaFor(pair.Key)))
+                    AffectionPulseDeltaFor(pair.Key),
+                    pair.Value.Attributes))
                 .ToList();
         }
 
@@ -838,6 +861,99 @@ namespace Panoptes.Presentation.ViewModels
             return string.IsNullOrWhiteSpace(value) ? (fallback ?? string.Empty) : value.Trim();
         }
 
+        private static IReadOnlyList<MinisterAttributeState> BuildAttributes(
+            int ability,
+            int loyalty,
+            int ambition,
+            int cautiousness,
+            int decisiveness,
+            int loyaltyTendency,
+            int ambitionStyle)
+        {
+            return new[]
+            {
+                new MinisterAttributeState("ability", "能力", ability),
+                new MinisterAttributeState("loyalty", "忠诚", loyalty),
+                new MinisterAttributeState("ambition", "野心", ambition),
+                new MinisterAttributeState("cautiousness", "谨慎", cautiousness),
+                new MinisterAttributeState("decisiveness", "果断", decisiveness),
+                new MinisterAttributeState("loyalty_tendency", "忠诚倾向", loyaltyTendency),
+                new MinisterAttributeState("ambition_style", "野心表现", ambitionStyle)
+            };
+        }
+
+        private sealed class MinisterTabSource
+        {
+            public string Name;
+            public string Title;
+            public string IconResource;
+            public IReadOnlyList<MinisterAttributeState> Attributes = Array.Empty<MinisterAttributeState>();
+
+            public static MinisterTabSource Empty(string role)
+            {
+                return new MinisterTabSource
+                {
+                    Name = RoleTitle(role),
+                    Title = RoleTitle(role),
+                    IconResource = IconResourceFor(string.Empty, role)
+                };
+            }
+
+            public static MinisterTabSource FromCatalog(string role, StaticCatalogCache.MinisterJson minister)
+            {
+                return new MinisterTabSource
+                {
+                    Name = Clean(minister.name, RoleTitle(role)),
+                    Title = RoleTitle(role),
+                    IconResource = IconResourceFor(minister.icon_key, role),
+                    Attributes = BuildAttributes(
+                        minister.ability,
+                        minister.loyalty,
+                        minister.ambition,
+                        minister.cautiousness,
+                        minister.decisiveness,
+                        minister.loyalty_tendency,
+                        minister.ambition_style)
+                };
+            }
+
+            public static MinisterTabSource FromProfile(string role, MinisterProfileDto minister, string iconResource)
+            {
+                return new MinisterTabSource
+                {
+                    Name = Clean(minister.Name, RoleTitle(role)),
+                    Title = RoleTitle(role),
+                    IconResource = Clean(iconResource, IconResourceFor(string.Empty, role)),
+                    Attributes = BuildAttributes(
+                        minister.Ability,
+                        minister.Loyalty,
+                        minister.Ambition,
+                        minister.Cautiousness,
+                        minister.Decisiveness,
+                        minister.LoyaltyTendency,
+                        minister.AmbitionStyle)
+                };
+            }
+
+            public MinisterTabSource WithProfile(MinisterProfileDto minister)
+            {
+                return new MinisterTabSource
+                {
+                    Name = Clean(minister.Name, Name),
+                    Title = Title,
+                    IconResource = IconResource,
+                    Attributes = BuildAttributes(
+                        minister.Ability,
+                        minister.Loyalty,
+                        minister.Ambition,
+                        minister.Cautiousness,
+                        minister.Decisiveness,
+                        minister.LoyaltyTendency,
+                        minister.AmbitionStyle)
+                };
+            }
+        }
+
         private sealed class CleanupSubscription : IDisposable
         {
             private Action _cleanup;
@@ -925,11 +1041,13 @@ namespace Panoptes.Presentation.ViewModels
             bool selected,
             int affection = 0,
             int affectionPulseSequence = 0,
-            int affectionPulseDelta = 0)
+            int affectionPulseDelta = 0,
+            IReadOnlyList<MinisterAttributeState> attributes = null)
         {
             Affection = Math.Clamp(affection, 0, 100);
             AffectionPulseDelta = affectionPulseDelta;
             AffectionPulseSequence = Math.Max(0, affectionPulseSequence);
+            Attributes = attributes != null ? new List<MinisterAttributeState>(attributes) : new List<MinisterAttributeState>();
             AvatarText = avatarText ?? string.Empty;
             IconResource = iconResource ?? string.Empty;
             IsSelected = selected;
@@ -941,12 +1059,27 @@ namespace Panoptes.Presentation.ViewModels
         public int Affection { get; }
         public int AffectionPulseDelta { get; }
         public int AffectionPulseSequence { get; }
+        public IReadOnlyList<MinisterAttributeState> Attributes { get; }
         public string AvatarText { get; }
         public string IconResource { get; }
         public bool IsSelected { get; }
         public string Name { get; }
         public string Role { get; }
         public string Title { get; }
+    }
+
+    public sealed class MinisterAttributeState
+    {
+        public MinisterAttributeState(string key, string label, int value)
+        {
+            Key = key ?? string.Empty;
+            Label = label ?? string.Empty;
+            Value = value;
+        }
+
+        public string Key { get; }
+        public string Label { get; }
+        public int Value { get; }
     }
 
     public sealed class MinisterChatMessageState

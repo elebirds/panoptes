@@ -1,5 +1,8 @@
 using System;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
@@ -103,16 +106,25 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitInfoUguiBinder.References _unitInfoBinderReferences;
         private bool _unitInfoBinderReferencesSet;
         private bool _reactiveBinderReady;
+        private bool _builtInActionsRegistered;
+        private bool _registeringBuiltInActions;
+        private bool _refreshingActionButtons;
+        private GameStateStore _gameStateStore;
+        private PlanningIntentService _planningIntentService;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _slideAnimator != null && _slideAnimator.IsOpen;
 
         [Inject]
         private void Construct(
             UnitInfoViewModel unitInfoViewModel,
-            MapPlanningInputController injectedMapPlanningInputController)
+            MapPlanningInputController injectedMapPlanningInputController,
+            GameStateStore gameStateStore,
+            PlanningIntentService planningIntentService)
         {
             _unitInfoViewModel = unitInfoViewModel;
             _injectedMapPlanningInputController = injectedMapPlanningInputController;
+            _gameStateStore = gameStateStore;
+            _planningIntentService = planningIntentService;
             ResolveInjectedMapPlanningInputController();
             if (_reactiveBinderReady)
             {
@@ -123,6 +135,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void Awake()
         {
             ResolveReferences();
+            RegisterBuiltInActions();
             if (slideCurve == null || slideCurve.length == 0)
             {
                 slideCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -206,6 +219,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (actionRegistry == null)
             {
                 ResolveReferences();
+                RegisterBuiltInActions();
                 TrySubscribeActionRegistry();
             }
 
@@ -287,6 +301,11 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnActionRegistryChanged()
         {
+            if (_registeringBuiltInActions || _refreshingActionButtons)
+            {
+                return;
+            }
+
             if (_currentUnit == null || !IsOpen)
             {
                 return;
@@ -457,7 +476,18 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RefreshActionButtons()
         {
-            _actionListBinder.Refresh(actionButtons, actionRegistry, _currentUnit);
+            _refreshingActionButtons = true;
+            try
+            {
+                PositionActionButtonsForCurrentUnit();
+                _actionListBinder.Refresh(actionButtons, actionRegistry, _currentUnit);
+                RegisterBuiltInActions(force: true);
+                _actionListBinder.Refresh(actionButtons, actionRegistry, _currentUnit);
+            }
+            finally
+            {
+                _refreshingActionButtons = false;
+            }
         }
 
         private void HideLegacyPlanningTexts()
@@ -509,6 +539,128 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 ResolveInjectedMapPlanningInputController();
             }
+        }
+
+        private void RegisterBuiltInActions(bool force = false)
+        {
+            if ((!force && _builtInActionsRegistered) || actionRegistry == null)
+            {
+                return;
+            }
+
+            _registeringBuiltInActions = true;
+            try
+            {
+                actionRegistry.RegisterAction(
+                    "expand_territory",
+                    OnBuiltInExpandTerritoryClicked,
+                    "建立城堡",
+                    IsTerritoryExpansionUnit);
+                actionRegistry.RegisterAction(
+                    "settle_city",
+                    OnBuiltInExpandTerritoryClicked,
+                    "建立城堡",
+                    IsTerritoryExpansionUnit);
+                _builtInActionsRegistered = true;
+            }
+            finally
+            {
+                _registeringBuiltInActions = false;
+            }
+        }
+
+        private void OnBuiltInExpandTerritoryClicked(UnitView unit)
+        {
+            if (unit == null || !IsTerritoryExpansionUnit(unit))
+            {
+                return;
+            }
+
+            ResolveInjectedMapPlanningInputController();
+            if (mapPlanningInputController != null &&
+                mapPlanningInputController.RequestExpandTerritory(unit.UnitId))
+            {
+                return;
+            }
+
+            if (_planningIntentService == null)
+            {
+                PanoptesLog.Warning("[UnitInfoPanelController] PlanningIntentService missing, cannot send expand request.");
+                return;
+            }
+
+            if (!TryResolveCenterNodeId(unit, out var centerNodeId))
+            {
+                centerNodeId = string.Empty;
+            }
+
+            _planningIntentService.ExpandTerritory(unit.UnitId, centerNodeId);
+            PanoptesLog.Log($"[UnitInfoPanelController] territory action sent. unit={unit.UnitId} center={centerNodeId}");
+        }
+
+        private static bool IsTerritoryExpansionUnit(UnitView unit)
+        {
+            var unitType = NormalizeToken(unit != null ? unit.UnitType : string.Empty);
+            return string.Equals(unitType, "settler", StringComparison.Ordinal) ||
+                   string.Equals(unitType, "pioneer", StringComparison.Ordinal) ||
+                   string.Equals(unitType, "expander", StringComparison.Ordinal) ||
+                   string.Equals(unitType, "engineer", StringComparison.Ordinal);
+        }
+
+        private bool TryResolveCenterNodeId(UnitView unit, out string centerNodeId)
+        {
+            centerNodeId = string.Empty;
+            var state = _gameStateStore?.Snapshot;
+            if (unit == null ||
+                state?.Units == null ||
+                state.Nodes == null ||
+                !TryGetUnitState(state, unit.UnitId, out var unitState))
+            {
+                return false;
+            }
+
+            foreach (var node in state.Nodes.Values)
+            {
+                if (node == null ||
+                    node.Q != unitState.Q ||
+                    node.R != unitState.R ||
+                    string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                centerNodeId = node.Id.Trim();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetUnitState(GameStateStoreState state, string unitId, out UnitDto unit)
+        {
+            unit = null;
+            if (state?.Units == null || string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            if (state.Units.TryGetValue(normalizedUnitId, out unit) && unit != null)
+            {
+                return true;
+            }
+
+            foreach (var candidate in state.Units.Values)
+            {
+                if (candidate != null &&
+                    string.Equals(candidate.Id?.Trim(), normalizedUnitId, StringComparison.OrdinalIgnoreCase))
+                {
+                    unit = candidate;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ResolveInjectedMapPlanningInputController()
@@ -763,6 +915,7 @@ namespace Panoptes.Presentation.UI.HUD
                 string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal))
             {
                 RefreshUnitIcon();
+                RefreshActionButtons();
                 return;
             }
 
@@ -857,11 +1010,28 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RepairActionButtonLayoutAndVisuals()
         {
+            PositionActionButtonsForCurrentUnit();
             _actionListBinder.RepairLayoutAndVisuals(
                 actionButtons,
                 actionButtonsRoot,
                 defaultActionButtonSize,
                 defaultActionButtonColor);
+        }
+
+        private void PositionActionButtonsForCurrentUnit()
+        {
+            if (actionButtonsRoot == null)
+            {
+                return;
+            }
+
+            actionButtonsRoot.anchorMin = new Vector2(0f, 1f);
+            actionButtonsRoot.anchorMax = new Vector2(0f, 1f);
+            actionButtonsRoot.pivot = new Vector2(0f, 1f);
+            actionButtonsRoot.anchoredPosition = IsTerritoryExpansionUnit(_currentUnit)
+                ? new Vector2(112f, -10f)
+                : new Vector2(14f, -10f);
+            actionButtonsRoot.SetAsLastSibling();
         }
 
         private static string NormalizeToken(string value)

@@ -156,10 +156,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private UguiButton CreateTab(MinisterTabState minister)
         {
             var rect = CreateUiObject("minister-tab-" + SafeName(minister.Role), _tabsContent);
-            rect.sizeDelta = new Vector2(0f, 82f);
+            rect.sizeDelta = new Vector2(0f, 130f);
             var layout = rect.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = 82f;
-            layout.preferredHeight = 82f;
+            layout.minHeight = 130f;
+            layout.preferredHeight = 130f;
 
             var image = rect.gameObject.AddComponent<UguiImage>();
             image.color = minister.IsSelected
@@ -192,11 +192,71 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
             Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -51f), new Vector2(-10f, -31f));
 
-            var affection = CreateText(rect, "Affection", "好感 " + minister.Affection, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
-            affection.color = new Color(1f, 0.77f, 0.88f, 1f);
-            Anchor(affection.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(74f, 8f), new Vector2(-10f, 26f));
+            CreateAttributeGrid(rect, minister);
 
             return button;
+        }
+
+        private static void CreateAttributeGrid(RectTransform parent, MinisterTabState minister)
+        {
+            var attributes = minister.Attributes;
+            if (attributes == null || attributes.Count == 0)
+            {
+                return;
+            }
+
+            var grid = CreateUiObject("Attributes", parent);
+            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(74f, 8f), new Vector2(-10f, 68f));
+
+            const float rowHeight = 13f;
+            const float rowGap = 2f;
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                var row = i / 2;
+                var column = i % 2;
+                var xMin = column == 0 ? 0f : 0.5f;
+                var xMax = column == 0 ? 0.5f : 1f;
+                var top = -(row * (rowHeight + rowGap));
+                var leftInset = column == 0 ? 0f : 4f;
+                var rightInset = column == 0 ? -4f : 0f;
+                var text = CreateAttributeText(grid, attributes[i]);
+                Anchor(
+                    text.rectTransform,
+                    new Vector2(xMin, 1f),
+                    new Vector2(xMax, 1f),
+                    new Vector2(leftInset, top - rowHeight),
+                    new Vector2(rightInset, top));
+            }
+        }
+
+        private static TextMeshProUGUI CreateAttributeText(RectTransform parent, MinisterAttributeState attribute)
+        {
+            var text = CreateText(
+                parent,
+                "Attribute-" + SafeName(attribute.Key),
+                attribute.Label + " " + attribute.Value,
+                9.6f,
+                FontStyles.Bold,
+                TextAlignmentOptions.Left);
+            text.color = AttributeColor(attribute.Key);
+            text.enableWordWrapping = false;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            return text;
+        }
+
+        private static Color AttributeColor(string key)
+        {
+            return (key ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "ability" => new Color(0.66f, 0.88f, 1f, 1f),
+                "loyalty" => new Color(0.98f, 0.84f, 0.32f, 1f),
+                "ambition" => new Color(0.95f, 0.42f, 0.55f, 1f),
+                "cautiousness" => new Color(0.61f, 0.88f, 0.66f, 1f),
+                "decisiveness" => new Color(1f, 0.56f, 0.25f, 1f),
+                "loyalty_tendency" => new Color(0.79f, 0.69f, 1f, 1f),
+                "ambition_style" => new Color(1f, 0.72f, 0.46f, 1f),
+                _ => new Color(0.86f, 0.91f, 0.94f, 1f)
+            };
         }
 
         private void RenderMessages(MinisterReportState state)
@@ -491,7 +551,19 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     .Append(item.IsSelected).Append('|')
                     .Append(item.Affection).Append('|')
                     .Append(item.AffectionPulseSequence).Append('|')
-                    .Append(item.AffectionPulseDelta).Append('\n');
+                    .Append(item.AffectionPulseDelta).Append('|');
+                if (item.Attributes != null)
+                {
+                    for (var j = 0; j < item.Attributes.Count; j++)
+                    {
+                        var attribute = item.Attributes[j];
+                        builder.Append(attribute?.Key).Append('=')
+                            .Append(attribute?.Label).Append(':')
+                            .Append(attribute?.Value).Append(';');
+                    }
+                }
+
+                builder.Append('\n');
             }
 
             return builder.ToString();

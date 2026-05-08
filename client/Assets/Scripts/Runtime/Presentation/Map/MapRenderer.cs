@@ -375,7 +375,7 @@ namespace Panoptes.Presentation.Map
             return result;
         }
 
-        private void RefreshRenderedGameState(GameStateStoreState state)
+        private void RefreshRenderedGameState(GameStateStoreState state, bool forceAuthoritativeVisuals = false)
         {
             if (!HasBackendNodes(state))
             {
@@ -403,11 +403,11 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var isResolving = GamePhases.IsResolving(state.Phase);
+                var isResolving = GamePhases.IsResolving(state.Phase) && !forceAuthoritativeVisuals;
                 var visualNode = isResolving
                     ? CreateResolvingVisualNode(node, previousNode)
                     : node;
-                _nodeStates[node.Id] = node;
+                _nodeStates[node.Id] = visualNode;
                 if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
                 {
                     view.SetLocalPlayerId(GetLocalPlayerId());
@@ -415,7 +415,7 @@ namespace Panoptes.Presentation.Map
                     view.Bind(visualNode);
                 }
 
-                _scratchChangedNodes.Add(node);
+                _scratchChangedNodes.Add(visualNode);
             }
 
             if (_scratchChangedNodes.Count > 0)
@@ -423,7 +423,7 @@ namespace Panoptes.Presentation.Map
                 RefreshObservationPresentationForChangedNodes(_scratchChangedNodes);
             }
 
-            var unitsChanged = GamePhases.IsResolving(state.Phase)
+            var unitsChanged = GamePhases.IsResolving(state.Phase) && !forceAuthoritativeVisuals
                 ? false
                 : RefreshUnitsForCurrentSource();
             if (_scratchChangedNodes.Count > 0 || unitsChanged)
@@ -435,14 +435,7 @@ namespace Panoptes.Presentation.Map
 
         public void ReconcileUnitsToCurrentState()
         {
-            var unitsChanged = RefreshUnitsForCurrentSource();
-            if (!unitsChanged)
-            {
-                return;
-            }
-
-            PublishCameraContext();
-            StatePresentationRefreshed?.Invoke();
+            RefreshRenderedGameState(GetGameStateSnapshot(), forceAuthoritativeVisuals: true);
         }
 
         public void PrepareSettlementPlaybackUnits(IReadOnlyList<SettlementPlaybackStep> steps)
@@ -476,7 +469,10 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        public void PlaceSettlementPlaybackUnitsAtMoveStarts(IReadOnlyList<SettlementPlaybackStep> steps, int startStepIndex)
+        public void PlaceSettlementPlaybackUnitsAtMoveStarts(
+            IReadOnlyList<SettlementPlaybackStep> steps,
+            int startStepIndex,
+            bool preserveHitPoints = false)
         {
             if (steps == null || steps.Count == 0)
             {
@@ -499,33 +495,113 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                PlaceSettlementPlaybackUnitAtMoveStart(moveEvent);
+                PlaceSettlementPlaybackUnitAtMoveStart(moveEvent, preserveHitPoints);
             }
         }
 
-        public bool PlaceSettlementPlaybackUnitAtMoveStart(TurnEventDto moveEvent)
+        public bool PlaceSettlementPlaybackUnitAtMoveStart(TurnEventDto moveEvent, bool preserveHitPoints = false)
         {
             if (moveEvent == null || string.IsNullOrWhiteSpace(moveEvent.UnitId))
             {
                 return false;
             }
 
-            var startGrid = new Vector2Int(moveEvent.FromQ, moveEvent.FromR);
+            var startGrid = ResolveSettlementMoveStartGrid(moveEvent);
             if (!TryGetNodeIdByGrid(startGrid, out var startNodeId))
             {
                 PanoptesLog.Warning($"[MapRenderer] Cannot place settlement unit '{moveEvent.UnitId}' at move start ({moveEvent.FromQ},{moveEvent.FromR}); node not found.");
                 return false;
             }
 
-            EnsureSettlementPlaybackUnit(moveEvent.UnitId, hasGrid: true, grid: startGrid, forceGrid: true);
-            if (!_unitViews.TryGetValue(moveEvent.UnitId.Trim(), out var unitView) || unitView == null)
+            var unitId = moveEvent.UnitId.Trim();
+            var preservedHp = 0;
+            var preservedMaxHp = 0;
+            UnitView existingView = null;
+            var shouldRestoreHp = preserveHitPoints && _unitViews.TryGetValue(unitId, out existingView) && existingView != null;
+            if (shouldRestoreHp)
+            {
+                preservedHp = existingView.HitPoints;
+                preservedMaxHp = existingView.MaxHitPoints;
+            }
+
+            EnsureSettlementPlaybackUnit(unitId, hasGrid: true, grid: startGrid, forceGrid: true);
+            if (!_unitViews.TryGetValue(unitId, out var unitView) || unitView == null)
             {
                 PanoptesLog.Warning($"[MapRenderer] Cannot place settlement unit '{moveEvent.UnitId}' at move start; unit view not found.");
                 return false;
             }
 
-            SetUnitNode(moveEvent.UnitId.Trim(), startNodeId);
+            SetUnitNode(unitId, startNodeId);
+            if (shouldRestoreHp)
+            {
+                ApplySettlementUnitHitPoints(unitId, preservedHp, preservedMaxHp);
+            }
             return true;
+        }
+
+        private Vector2Int ResolveSettlementMoveStartGrid(TurnEventDto moveEvent)
+        {
+            if (moveEvent == null || string.IsNullOrWhiteSpace(moveEvent.UnitId))
+            {
+                return default;
+            }
+
+            var targetGrid = new Vector2Int(moveEvent.ToQ, moveEvent.ToR);
+            var explicitGrid = new Vector2Int(moveEvent.FromQ, moveEvent.FromR);
+            if (HasExplicitMoveStartGrid(moveEvent))
+            {
+                if (TryUseMoveStartGrid(explicitGrid, targetGrid, out var explicitStart))
+                {
+                    return explicitStart;
+                }
+            }
+
+            var unitId = moveEvent.UnitId.Trim();
+            if (_settlementPlaybackUnitSnapshots.TryGetValue(unitId, out var snapshot) && snapshot != null)
+            {
+                var snapshotGrid = new Vector2Int(snapshot.Q, snapshot.R);
+                if (TryUseMoveStartGrid(snapshotGrid, targetGrid, out var snapshotStart))
+                {
+                    return snapshotStart;
+                }
+            }
+
+            if (_unitViews.TryGetValue(unitId, out var view) && view != null)
+            {
+                if (TryUseMoveStartGrid(view.GridPos, targetGrid, out var currentStart))
+                {
+                    return currentStart;
+                }
+            }
+
+            if (TryGetNodeIdByGrid(explicitGrid, out _))
+            {
+                return explicitGrid;
+            }
+
+            if (_settlementPlaybackUnitSnapshots.TryGetValue(unitId, out snapshot) && snapshot != null)
+            {
+                return new Vector2Int(snapshot.Q, snapshot.R);
+            }
+
+            return explicitGrid;
+        }
+
+        private bool TryUseMoveStartGrid(Vector2Int candidate, Vector2Int targetGrid, out Vector2Int startGrid)
+        {
+            startGrid = candidate;
+            return candidate != targetGrid && TryGetNodeIdByGrid(candidate, out _);
+        }
+
+        private static bool HasExplicitMoveStartGrid(TurnEventDto moveEvent)
+        {
+            if (moveEvent?.Data != null &&
+                (moveEvent.Data.ContainsKey("from_q") || moveEvent.Data.ContainsKey("from_r")))
+            {
+                return true;
+            }
+
+            return moveEvent != null && (moveEvent.FromQ != 0 || moveEvent.FromR != 0);
         }
 
         public bool ApplySettlementUnitHitPoints(string unitId, int hpAfter, int maxHp = 0)
@@ -555,9 +631,40 @@ namespace Panoptes.Presentation.Map
                 maxHp = parsedMaxHp;
             }
 
+            if (hpAfter <= 0)
+            {
+                nodeView.ClearBuilding();
+                if (_nodeStates.TryGetValue(nodeView.NodeId, out var state) && state != null)
+                {
+                    state.BuildingType = string.Empty;
+                    state.BuildingHp = 0;
+                    state.BuildingMaxHp = 0;
+                }
+                StatePresentationRefreshed?.Invoke();
+                return true;
+            }
+
             nodeView.BuildingInstance.SetHitPoints(hpAfter, maxHp);
             StatePresentationRefreshed?.Invoke();
             return true;
+        }
+
+        public bool EnsureSettlementPlaybackUnitForEvent(TurnEventDto evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return false;
+            }
+
+            var unitId = evt.UnitId.Trim();
+            if (_unitViews.TryGetValue(unitId, out var existingView) && existingView != null)
+            {
+                return true;
+            }
+
+            var hasGrid = TryGetEventGrid(evt, out var grid);
+            EnsureSettlementPlaybackUnit(unitId, hasGrid, grid, forceGrid: hasGrid);
+            return _unitViews.TryGetValue(unitId, out var restoredView) && restoredView != null;
         }
 
         private bool TryResolveNodeForSettlementEvent(TurnEventDto evt, out NodeView nodeView)
@@ -735,6 +842,16 @@ namespace Panoptes.Presentation.Map
             {
                 visual.BuildingHp = previous.BuildingHp;
                 visual.BuildingMaxHp = previous.BuildingMaxHp;
+            }
+
+            if (previous != null)
+            {
+                visual.IsVisible = previous.IsVisible;
+                visual.IsMemory = previous.IsMemory;
+                visual.LastObservedTurn = previous.LastObservedTurn;
+                visual.HasRoad = previous.HasRoad;
+                visual.IsResourcePoint = previous.IsResourcePoint;
+                visual.ResourceType = previous.ResourceType;
             }
 
             return visual;

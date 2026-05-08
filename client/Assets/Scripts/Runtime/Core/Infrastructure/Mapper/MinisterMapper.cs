@@ -9,6 +9,28 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class MinisterMapper
     {
+        public static MinisterProfileDto ToProfileDto(MinisterView view)
+        {
+            if (view == null)
+            {
+                return null;
+            }
+
+            return new MinisterProfileDto
+            {
+                Role = view.Role ?? string.Empty,
+                Name = view.Name ?? string.Empty,
+                Ability = view.Ability,
+                Personality = view.Personality ?? string.Empty,
+                Loyalty = view.Loyalty,
+                Ambition = view.Ambition,
+                Cautiousness = view.Cautiousness,
+                Decisiveness = view.Decisiveness,
+                LoyaltyTendency = view.LoyaltyTendency,
+                AmbitionStyle = view.AmbitionStyle
+            };
+        }
+
         public static MinisterMetricDto ToDto(MetricItem item)
         {
             if (item == null)

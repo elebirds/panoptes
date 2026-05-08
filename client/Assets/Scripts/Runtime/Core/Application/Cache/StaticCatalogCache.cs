@@ -275,6 +275,10 @@ namespace Panoptes.Core.Application.Cache
             public string personality_desc;
             public int loyalty;
             public int ambition;
+            public int cautiousness;
+            public int decisiveness;
+            public int loyalty_tendency;
+            public int ambition_style;
         }
 
         [Serializable]

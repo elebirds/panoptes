@@ -49,8 +49,8 @@ namespace Panoptes.Core.Application.Cache
         public PlayerView MyPlayer { get; private set; }
         public IReadOnlyList<TurnEventDto> LastPlanningStartEvents => _lastPlanningStartEvents;
 
-        private readonly List<MinisterView> _ministers = new();
-        public IReadOnlyList<MinisterView> Ministers => _ministers;
+        private readonly List<MinisterProfileDto> _ministers = new();
+        public IReadOnlyList<MinisterProfileDto> Ministers => _ministers;
 
         public int TokensLeft { get; private set; }
         public int EnemyCityCoreHP { get; private set; }
@@ -140,7 +140,11 @@ namespace Panoptes.Core.Application.Cache
                 {
                     if (msg.Ministers[i] != null)
                     {
-                        _ministers.Add(msg.Ministers[i].Clone());
+                        var minister = MinisterMapper.ToProfileDto(msg.Ministers[i]);
+                        if (minister != null)
+                        {
+                            _ministers.Add(minister);
+                        }
                     }
                 }
             }

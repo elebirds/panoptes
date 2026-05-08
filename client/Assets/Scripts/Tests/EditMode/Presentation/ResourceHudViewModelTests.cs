@@ -43,6 +43,8 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(rows.Select(row => row.Amount), Is.EqualTo(new[] { 3, 5, 2 }));
             Assert.That(rows[0].IconKey, Is.EqualTo("ore_icon"));
             Assert.That(rows[2].IsPoint, Is.True);
+            Assert.That(rows[2].DisplayName, Is.EqualTo("industry_output name"));
+            Assert.That(rows[2].Description, Is.EqualTo("industry_output description"));
         }
 
         [Test]
@@ -142,6 +144,8 @@ namespace Panoptes.Tests.EditMode.Presentation
             return new CatalogHudEntryDto
             {
                 Key = key,
+                Name = $"{key} name",
+                Description = $"{key} description",
                 IconKey = iconKey,
                 SortOrder = sortOrder,
                 VisibleInHud = visible

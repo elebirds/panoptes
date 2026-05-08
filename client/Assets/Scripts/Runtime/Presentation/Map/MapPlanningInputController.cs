@@ -723,6 +723,32 @@ namespace Panoptes.Presentation.Map
 
         private void HandleCombatSelectionClick()
         {
+            if (TryRaycastUnit(out var unit) && unit != null)
+            {
+                if (IsHostileTarget(unit))
+                {
+                    TryIssueUnitTargetOrder(unit);
+                    return;
+                }
+
+                if (_inputState.CombatActionMode == CombatActionMode.Attack &&
+                    TryFindHostileUnitOnClickedNode(out var expansionTargetUnderUnit, territoryExpansionOnly: true))
+                {
+                    TryIssueUnitTargetOrder(expansionTargetUnderUnit);
+                    return;
+                }
+
+                SelectUnit(unit);
+                return;
+            }
+
+            if (_inputState.CombatActionMode == CombatActionMode.Attack &&
+                TryFindHostileUnitOnClickedNode(out var expansionTarget, territoryExpansionOnly: true))
+            {
+                TryIssueUnitTargetOrder(expansionTarget);
+                return;
+            }
+
             if (_inputState.CombatActionMode == CombatActionMode.Attack &&
                 TryGetClickedNodeContext(out var attackNodeView, out _) &&
                 attackNodeView != null &&
@@ -737,15 +763,9 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (TryRaycastUnit(out var unit) && unit != null)
+            if (TryFindHostileUnitOnClickedNode(out var nodeTarget, territoryExpansionOnly: false))
             {
-                if (IsHostileTarget(unit))
-                {
-                    TryIssueUnitTargetOrder(unit);
-                    return;
-                }
-
-                SelectUnit(unit);
+                TryIssueUnitTargetOrder(nodeTarget);
                 return;
             }
 
@@ -962,6 +982,11 @@ namespace Panoptes.Presentation.Map
 
         bool IMapPlanningInputCoordinatorContext.TryIssueAttackStructureFromCurrentClick()
         {
+            if (TryFindHostileUnitOnClickedNode(out _, territoryExpansionOnly: true))
+            {
+                return false;
+            }
+
             if (TryGetClickedNodeContext(out var attackNode, out _) &&
                 attackNode != null &&
                 !string.IsNullOrWhiteSpace(attackNode.NodeId) &&
@@ -1051,6 +1076,42 @@ namespace Panoptes.Presentation.Map
             }
 
             return !CanControlUnit(unit);
+        }
+
+        private bool TryFindHostileUnitOnClickedNode(out UnitView targetUnit, bool territoryExpansionOnly)
+        {
+            targetUnit = null;
+            if (_selectedUnit == null ||
+                (_inputState.CombatActionMode != CombatActionMode.Attack &&
+                 _inputState.CombatActionMode != CombatActionMode.Charge) ||
+                !TryGetClickedNodeContext(out var nodeView, out _) ||
+                nodeView == null ||
+                string.IsNullOrWhiteSpace(nodeView.NodeId))
+            {
+                return false;
+            }
+
+            var map = _mapRenderer;
+            if (map == null || !map.TryGetUnitsOnNode(nodeView.NodeId, _nodeClickUnits))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _nodeClickUnits.Count; i++)
+            {
+                var candidate = _nodeClickUnits[i];
+                if (candidate == null ||
+                    !IsHostileTarget(candidate) ||
+                    (territoryExpansionOnly && !IsTerritoryExpansionUnitType(candidate.UnitType)))
+                {
+                    continue;
+                }
+
+                targetUnit = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         private bool CanSelectedUnitAttack()

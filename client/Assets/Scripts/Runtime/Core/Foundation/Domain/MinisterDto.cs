@@ -10,6 +10,20 @@ namespace Panoptes.Core.Domain
         public string Label;
     }
 
+    public sealed class MinisterProfileDto
+    {
+        public string Role;
+        public string Name;
+        public int Ability;
+        public string Personality;
+        public int Loyalty;
+        public int Ambition;
+        public int Cautiousness;
+        public int Decisiveness;
+        public int LoyaltyTendency;
+        public int AmbitionStyle;
+    }
+
     public sealed class MinisterDraftDto
     {
         public string DraftId;

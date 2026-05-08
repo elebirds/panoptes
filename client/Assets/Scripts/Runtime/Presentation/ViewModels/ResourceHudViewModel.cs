@@ -114,7 +114,13 @@ namespace Panoptes.Presentation.ViewModels
             {
                 var key = NormalizeKey(entry.Key);
                 amounts.TryGetValue(key, out var amount);
-                rows.Add(new ResourceHudRowState(key, amount, entry.IconKey, isPoint));
+                rows.Add(new ResourceHudRowState(
+                    key,
+                    amount,
+                    entry.IconKey,
+                    isPoint,
+                    entry.Name,
+                    entry.Description));
             }
         }
 

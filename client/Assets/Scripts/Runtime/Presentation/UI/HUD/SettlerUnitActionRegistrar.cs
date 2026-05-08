@@ -13,8 +13,9 @@ namespace Panoptes.Presentation.UI.HUD
     /// </summary>
     public sealed class SettlerUnitActionRegistrar : UnitInfoActionProviderBase
     {
-        [SerializeField] private string actionId = "settle_city";
-        [SerializeField] private string actionLabel = "坐城";
+        [SerializeField] private string actionId = "expand_territory";
+        [SerializeField] private string legacyActionId = "settle_city";
+        [SerializeField] private string actionLabel = "建立城堡";
         [SerializeField] private bool planningPhaseOnly = true;
         [SerializeField] private string[] supportedUnitTypes = { "settler", "pioneer", "expander", "engineer" };
 
@@ -39,7 +40,17 @@ namespace Panoptes.Presentation.UI.HUD
                 actionId,
                 OnExpandClicked,
                 string.IsNullOrWhiteSpace(actionLabel) ? actionId : actionLabel,
-                IsSupportedSettlerUnit);
+                IsSupportedSettlerUnitType);
+
+            if (!string.IsNullOrWhiteSpace(legacyActionId) &&
+                !string.Equals(actionId, legacyActionId, StringComparison.OrdinalIgnoreCase))
+            {
+                registry.RegisterAction(
+                    legacyActionId,
+                    OnExpandClicked,
+                    string.IsNullOrWhiteSpace(actionLabel) ? legacyActionId : actionLabel,
+                    IsSupportedSettlerUnitType);
+            }
         }
 
         private void OnExpandClicked(UnitView unit)
@@ -71,7 +82,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private bool IsSupportedSettlerUnit(UnitView unit)
         {
-            if (unit == null || supportedUnitTypes == null || supportedUnitTypes.Length == 0)
+            if (!IsSupportedSettlerUnitType(unit))
             {
                 return false;
             }
@@ -85,7 +96,17 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
-            var unitType = NormalizeToken(unit.UnitType);
+            return true;
+        }
+
+        private bool IsSupportedSettlerUnitType(UnitView unit)
+        {
+            if (unit == null || supportedUnitTypes == null || supportedUnitTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var unitType = ResolveUnitType(unit);
             if (string.IsNullOrEmpty(unitType))
             {
                 return false;
@@ -100,6 +121,25 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return false;
+        }
+
+        private string ResolveUnitType(UnitView unit)
+        {
+            var unitType = NormalizeToken(unit != null ? unit.UnitType : string.Empty);
+            if (!string.IsNullOrEmpty(unitType))
+            {
+                return unitType;
+            }
+
+            var state = _gameStateStore?.Snapshot;
+            if (unit == null || state?.Units == null || string.IsNullOrWhiteSpace(unit.UnitId))
+            {
+                return string.Empty;
+            }
+
+            return TryGetUnit(state, unit.UnitId, out var unitState)
+                ? NormalizeToken(unitState.Type)
+                : string.Empty;
         }
 
         private bool TryResolveCenterNodeId(UnitView unit, out string centerNodeId)

@@ -15,6 +15,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string GroupsName = "management-panel-groups";
         private const string TechTreeBackgroundResource = "Textures/UI/tech_tree_background";
         private const string PolicyFocusBackgroundResource = "Textures/UI/policy_focus_background";
+        private const string InstitutionImagePrefix = "institution_";
         private static readonly TechConnectorColors[] TechConnectorPalette =
         {
             new(new Color(0.98f, 0.98f, 0.92f, 0.95f), new Color(1f, 1f, 0.96f, 1f)),
@@ -31,6 +32,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private VisualElement _root;
         private Label _title;
         private Action _closeRequested;
+        private int _institutionPageIndex;
 
         public void Cache(VisualElement root, Action closeRequested = null)
         {
@@ -90,6 +92,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 ConfigurePolicyFocusOuterScroll();
                 _groups.Add(CreatePolicyFocusList(state, rowActionRequested));
+                return;
+            }
+
+            if (IsInstitutionsTitle(state.Title))
+            {
+                ConfigurePolicyFocusOuterScroll();
+                _groups.Add(CreateInstitutionCarousel(state, rowActionRequested));
                 return;
             }
 
@@ -342,6 +351,262 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             return rowElement;
+        }
+
+        private VisualElement CreateInstitutionCarousel(ManagementPanelState state, Action<string> rowActionRequested)
+        {
+            var groups = BuildInstitutionPages(state);
+            if (groups.Count == 0)
+            {
+                return new VisualElement { name = "management-panel-institution-empty" };
+            }
+
+            _institutionPageIndex = Mathf.Clamp(_institutionPageIndex, 0, groups.Count - 1);
+            var group = groups[_institutionPageIndex];
+
+            var frame = new VisualElement { name = "management-panel-institution-carousel" };
+            frame.AddToClassList("management-panel-institution-carousel");
+            frame.style.flexGrow = 1f;
+            frame.style.minHeight = 0f;
+            frame.style.flexDirection = FlexDirection.Row;
+            frame.style.alignItems = Align.Stretch;
+
+            var previous = CreateInstitutionNavButton("<", () =>
+            {
+                _institutionPageIndex = (_institutionPageIndex + groups.Count - 1) % groups.Count;
+                Render(state, rowActionRequested);
+            });
+            previous.SetEnabled(groups.Count > 1);
+            frame.Add(previous);
+
+            var body = new VisualElement { name = "management-panel-institution-body" };
+            body.style.flexGrow = 1f;
+            body.style.minWidth = 0f;
+            body.style.flexDirection = FlexDirection.Column;
+            body.style.alignItems = Align.Center;
+            body.style.justifyContent = Justify.SpaceBetween;
+            body.style.paddingLeft = 26f;
+            body.style.paddingRight = 26f;
+            frame.Add(body);
+
+            var image = CreateInstitutionHeroImage(group);
+            body.Add(image);
+
+            var title = CreateLabel(group.Title, "management-panel-institution-title", "management-panel-institution-title");
+            title.style.fontSize = 32f;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.unityTextAlign = TextAnchor.MiddleCenter;
+            title.style.marginTop = 16f;
+            title.style.marginBottom = 18f;
+            title.style.color = new Color(1f, 0.86f, 0.55f, 1f);
+            body.Add(title);
+
+            var options = new VisualElement { name = "management-panel-institution-options" };
+            options.style.flexDirection = FlexDirection.Row;
+            options.style.alignItems = Align.Stretch;
+            options.style.justifyContent = Justify.Center;
+            options.style.width = Length.Percent(100f);
+            options.style.minHeight = 230f;
+            options.style.marginTop = 8f;
+            var maxOptions = Mathf.Min(3, group.Rows.Count);
+            for (var i = 0; i < maxOptions; i++)
+            {
+                options.Add(CreateInstitutionOption(group.Rows[i], rowActionRequested));
+            }
+
+            body.Add(options);
+
+            var next = CreateInstitutionNavButton(">", () =>
+            {
+                _institutionPageIndex = (_institutionPageIndex + 1) % groups.Count;
+                Render(state, rowActionRequested);
+            });
+            next.SetEnabled(groups.Count > 1);
+            frame.Add(next);
+            return frame;
+        }
+
+        private static List<ManagementPanelGroupState> BuildInstitutionPages(ManagementPanelState state)
+        {
+            var groups = new List<ManagementPanelGroupState>();
+            if (state?.Groups == null)
+            {
+                return groups;
+            }
+
+            for (var i = 0; i < state.Groups.Count; i++)
+            {
+                var group = state.Groups[i];
+                if (group?.Rows != null && group.Rows.Count > 0)
+                {
+                    groups.Add(group);
+                }
+            }
+
+            return groups;
+        }
+
+        private static Button CreateInstitutionNavButton(string text, Action clicked)
+        {
+            var button = new Button(clicked) { name = "management-panel-institution-nav", text = text };
+            button.style.width = 72f;
+            button.style.minWidth = 72f;
+            button.style.height = Length.Percent(100f);
+            button.style.flexShrink = 0f;
+            button.style.fontSize = 34f;
+            button.style.unityFontStyleAndWeight = FontStyle.Bold;
+            button.style.backgroundColor = new Color(0.12f, 0.07f, 0.045f, 0.88f);
+            button.style.color = new Color(1f, 0.82f, 0.52f, 1f);
+            button.style.borderBottomColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            button.style.borderLeftColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            button.style.borderRightColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            button.style.borderTopColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            button.style.borderBottomWidth = 1f;
+            button.style.borderLeftWidth = 1f;
+            button.style.borderRightWidth = 1f;
+            button.style.borderTopWidth = 1f;
+            return button;
+        }
+
+        private static VisualElement CreateInstitutionHeroImage(ManagementPanelGroupState group)
+        {
+            Sprite sprite = null;
+            var featuredRow = ResolveFeaturedInstitutionRow(group);
+            if (featuredRow != null)
+            {
+                sprite = LoadIconSprite(
+                    featuredRow.IconKey,
+                    featuredRow.Id,
+                    "Icons/Policies");
+            }
+
+            if (sprite == null)
+            {
+                sprite = LoadIconSprite(
+                    InstitutionImagePrefix + group?.Id,
+                    group?.Id,
+                    "Icons/Policies");
+            }
+
+            var image = new VisualElement { name = "management-panel-institution-image" };
+            image.style.width = 560f;
+            image.style.height = 300f;
+            image.style.maxWidth = Length.Percent(72f);
+            image.style.flexShrink = 0f;
+            image.style.backgroundColor = new Color(0.13f, 0.08f, 0.055f, 0.95f);
+            image.style.borderBottomColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            image.style.borderLeftColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            image.style.borderRightColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            image.style.borderTopColor = new Color(0.72f, 0.43f, 0.16f, 0.9f);
+            image.style.borderBottomWidth = 1f;
+            image.style.borderLeftWidth = 1f;
+            image.style.borderRightWidth = 1f;
+            image.style.borderTopWidth = 1f;
+            image.style.alignItems = Align.Center;
+            image.style.justifyContent = Justify.Center;
+            if (sprite != null)
+            {
+                image.style.backgroundImage = new StyleBackground(sprite);
+            }
+            else
+            {
+                var fallback = CreateLabel(ResolveInitials(group?.Title), "management-panel-institution-image-fallback", "management-panel-institution-image-fallback");
+                fallback.style.fontSize = 54f;
+                fallback.style.unityFontStyleAndWeight = FontStyle.Bold;
+                fallback.style.color = new Color(1f, 0.82f, 0.52f, 1f);
+                image.Add(fallback);
+            }
+
+            return image;
+        }
+
+        private static ManagementPanelRowState ResolveFeaturedInstitutionRow(ManagementPanelGroupState group)
+        {
+            if (group?.Rows == null || group.Rows.Count == 0)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < group.Rows.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(group.Rows[i]?.Status))
+                {
+                    return group.Rows[i];
+                }
+            }
+
+            return group.Rows[0];
+        }
+
+        private static VisualElement CreateInstitutionOption(ManagementPanelRowState row, Action<string> rowActionRequested)
+        {
+            var option = row != null && row.HasAction
+                ? new Button(() => rowActionRequested?.Invoke(row.Id))
+                : new VisualElement();
+            option.name = "management-panel-row-" + SafeName(row?.Id);
+            option.AddToClassList("management-panel-institution-option");
+            option.style.flexGrow = 1f;
+            option.style.flexBasis = Length.Percent(30f);
+            option.style.maxWidth = Length.Percent(32f);
+            option.style.minWidth = 0f;
+            option.style.marginLeft = 10f;
+            option.style.marginRight = 10f;
+            option.style.paddingBottom = 16f;
+            option.style.paddingLeft = 16f;
+            option.style.paddingRight = 16f;
+            option.style.paddingTop = 16f;
+            option.style.flexDirection = FlexDirection.Column;
+            option.style.alignItems = Align.Stretch;
+            option.style.backgroundColor = new Color(0.10f, 0.07f, 0.055f, 0.96f);
+            option.style.borderBottomColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            option.style.borderLeftColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            option.style.borderRightColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            option.style.borderTopColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            option.style.borderBottomWidth = 1f;
+            option.style.borderLeftWidth = 1f;
+            option.style.borderRightWidth = 1f;
+            option.style.borderTopWidth = 1f;
+            ApplyRowStatusStyle(option, row);
+
+            var header = new VisualElement { name = "management-panel-institution-option-header" };
+            header.style.flexDirection = FlexDirection.Row;
+            header.style.alignItems = Align.Center;
+            header.style.marginBottom = 10f;
+            var icon = CreateIcon(row);
+            if (icon != null)
+            {
+                header.Add(icon);
+            }
+
+            var title = CreateLabel(row?.Title ?? string.Empty, "management-panel-institution-option-title", "management-panel-row-title");
+            title.style.fontSize = 20f;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            header.Add(title);
+            option.Add(header);
+
+            if (!string.IsNullOrWhiteSpace(row?.Summary))
+            {
+                var summary = CreateLabel(row.Summary, "management-panel-institution-option-summary", "management-panel-row-summary");
+                summary.style.fontSize = 16f;
+                summary.style.color = new Color(1f, 0.83f, 0.42f, 1f);
+                summary.style.marginBottom = 8f;
+                option.Add(summary);
+            }
+
+            if (!string.IsNullOrWhiteSpace(row?.Detail))
+            {
+                var detail = CreateLabel(row.Detail, "management-panel-institution-option-detail", "management-panel-row-detail");
+                detail.style.fontSize = 15f;
+                detail.style.color = new Color(0.88f, 0.91f, 0.94f, 1f);
+                option.Add(detail);
+            }
+
+            if (!string.IsNullOrWhiteSpace(row?.Status))
+            {
+                option.Add(CreateLabel(row.Status, "management-panel-institution-option-status", "management-panel-row-status"));
+            }
+
+            return option;
         }
 
         private static VisualElement CreateTechTree(ManagementPanelState state, Action<string> rowActionRequested)
@@ -1324,6 +1589,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                    string.Equals(title, "国策", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool IsInstitutionsTitle(string title)
+        {
+            return string.Equals(title, "Institutions", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(title, "\u5236\u5ea6", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(title, "鍒跺害", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void ApplyTitleStyle(string title)
         {
             if (_title == null)
@@ -1331,7 +1603,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            if (IsPolicyFocusTitle(title))
+            if (IsPolicyFocusTitle(title) || IsInstitutionsTitle(title))
             {
                 _title.style.fontSize = 28f;
                 _title.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -1357,7 +1629,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            if (IsPolicyFocusTitle(title))
+            if (IsPolicyFocusTitle(title) || IsInstitutionsTitle(title))
             {
                 _closeButton.style.width = 52f;
                 _closeButton.style.height = 46f;
@@ -1411,7 +1683,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return TechTreeBackgroundResource;
             }
 
-            if (IsPolicyFocusTitle(title))
+            if (IsPolicyFocusTitle(title) || IsInstitutionsTitle(title))
             {
                 return PolicyFocusBackgroundResource;
             }

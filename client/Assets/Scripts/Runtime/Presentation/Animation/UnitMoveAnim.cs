@@ -14,6 +14,8 @@ namespace Panoptes.Presentation.Animation
 {
     public sealed class UnitMoveAnim : MonoBehaviour
     {
+        private const int MinimumVisibleFrames = 12;
+
         public static IEnumerator Play(
             UnitView unitView,
             Vector3 targetWorldPos,
@@ -49,7 +51,7 @@ namespace Panoptes.Presentation.Animation
                     yield break;
                 }
 
-                elapsed += Time.unscaledDeltaTime;
+                elapsed += Mathf.Min(Time.unscaledDeltaTime, duration / MinimumVisibleFrames);
                 var t = Mathf.Clamp01(elapsed / duration);
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;

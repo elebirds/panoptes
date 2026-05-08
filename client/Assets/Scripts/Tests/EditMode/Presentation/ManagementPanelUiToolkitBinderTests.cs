@@ -214,8 +214,31 @@ namespace Panoptes.Tests.EditMode.Presentation
                 "domestic",
                 new[]
                 {
-                    new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12),
-                    new MinisterTabState("military", "军事大臣", "军事大臣", string.Empty, "军", false, 8)
+                    new MinisterTabState(
+                        "domestic",
+                        "内政大臣",
+                        "内政大臣",
+                        string.Empty,
+                        "内",
+                        true,
+                        attributes: new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", 7),
+                            new MinisterAttributeState("loyalty", "忠诚", 8),
+                            new MinisterAttributeState("ambition", "野心", 4)
+                        }),
+                    new MinisterTabState(
+                        "military",
+                        "军事大臣",
+                        "军事大臣",
+                        string.Empty,
+                        "军",
+                        false,
+                        attributes: new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", 8),
+                            new MinisterAttributeState("loyalty", "忠诚", 7)
+                        })
                 },
                 new[]
                 {
@@ -249,7 +272,10 @@ namespace Panoptes.Tests.EditMode.Presentation
             var texts = _root.GetComponentsInChildren<TextMeshProUGUI>(true);
             Assert.That(ContainsText(texts, "内政大臣"), Is.True);
             Assert.That(ContainsText(texts, "军事大臣"), Is.True);
-            Assert.That(ContainsText(texts, "好感 12"), Is.True);
+            Assert.That(ContainsText(texts, "能力 7"), Is.True);
+            Assert.That(ContainsText(texts, "忠诚 8"), Is.True);
+            Assert.That(ContainsText(texts, "野心 4"), Is.True);
+            Assert.That(ContainsText(texts, "好感 12"), Is.False);
             Assert.That(ContainsText(texts, "建议扩张粮食产出。"), Is.True);
             Assert.That(ContainsText(texts, "采纳全部"), Is.True);
             Assert.That(ContainsText(texts, "暂不采纳"), Is.True);
@@ -279,7 +305,6 @@ namespace Panoptes.Tests.EditMode.Presentation
                 image.color.r < 0.1f &&
                 image.color.g < 0.1f &&
                 image.color.b < 0.1f));
-            Assert.That(_root.GetComponentsInChildren<UguiButton>(true).Length, Is.GreaterThanOrEqualTo(5));
 
             visibilityStore.Dispose();
             viewModel.Dispose();

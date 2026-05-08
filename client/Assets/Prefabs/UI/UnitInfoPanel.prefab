@@ -1624,7 +1624,8 @@ MonoBehaviour:
   autoFindActionRegistry: 1
   mapPlanningInputController: {fileID: 0}
   actionId: expand_territory
-  actionLabel: Expand
+  legacyActionId: settle_city
+  actionLabel: 建立城堡
   planningPhaseOnly: 1
   supportedUnitTypes:
   - settler
