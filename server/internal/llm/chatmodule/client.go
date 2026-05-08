@@ -166,7 +166,6 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 		for stream.Next() {
 			chunk := stream.Current()
 			if len(chunk.Choices) == 0 {
-				c.debugLogStreamChunk(jobCtx, sessionID, chunk, nil)
 				continue
 			}
 			choice := chunk.Choices[0]
@@ -175,7 +174,6 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 			chunkCount++
 			contentBytes += len(content)
 			reasoningBytes += len(reasoning)
-			c.debugLogStreamChunk(jobCtx, sessionID, chunk, &choice)
 			if content == "" {
 				continue
 			}
@@ -259,37 +257,6 @@ func (c *Client) debugLogNormalResponse(ctx context.Context, startedAt time.Time
 		"content_preview", debugPreviewText(content),
 		"raw_preview", debugPreviewText(raw),
 		"elapsed_ms", time.Since(startedAt).Milliseconds(),
-	)
-}
-
-func (c *Client) debugLogStreamChunk(ctx context.Context, sessionID string, chunk openai.ChatCompletionChunk, choice *openai.ChatCompletionChunkChoice) {
-	if !slog.Default().Enabled(ctx, slog.LevelDebug) {
-		return
-	}
-	if choice == nil {
-		slog.Debug(c.name+"-[StreamChat] recv chunk",
-			"session_id", sessionID,
-			"chunk_id", chunk.ID,
-			"model", chunk.Model,
-			"choice_count", 0,
-			"raw_preview", debugPreviewText(chunk.RawJSON()),
-		)
-		return
-	}
-	content := choice.Delta.Content
-	reasoning := debugJSONFieldString(choice.Delta.RawJSON(), "reasoning_content")
-	slog.Debug(c.name+"-[StreamChat] recv chunk",
-		"session_id", sessionID,
-		"chunk_id", chunk.ID,
-		"model", chunk.Model,
-		"choice_index", choice.Index,
-		"finish_reason", choice.FinishReason,
-		"role", choice.Delta.Role,
-		"content_len", len(content),
-		"content_preview", debugPreviewText(content),
-		"reasoning_len", len(reasoning),
-		"reasoning_preview", debugPreviewText(reasoning),
-		"delta_raw_preview", debugPreviewText(choice.Delta.RawJSON()),
 	)
 }
 
