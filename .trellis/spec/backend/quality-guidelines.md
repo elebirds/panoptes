@@ -199,19 +199,26 @@ if ok {
 - Supported action types in the current contract:
   - `build`
   - `move_units`
-- Build action params:
-  - `node_id`
-  - `building_type`
-  - optional `city_id`
-- Move action params:
-  - `unit_id`
-  - `target_node`
+  - `unit_order`
+  - `set_research`
+  - `set_policy`
+  - `set_institution_loadout`
+  - `set_building_recipe`
+- Action param contracts:
+  - `build`: `node_id`, `building_type`, optional `city_id`
+  - `move_units`: `unit_id`, `target_node`
+  - `unit_order`: `unit_id`, `action`, optional `target_node`, `target_unit`, `secondary_node`, `params`
+  - `set_research`: `technology_id`
+  - `set_policy`: `policy_id`
+  - `set_institution_loadout`: `policy_ids`
+  - `set_building_recipe`: `node_id`, `recipe_id`
 
 #### 3. Contracts
 - `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.
 - Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
 - Build actions must be validated with the normal build-order rules before creating a pending minister draft.
 - Move actions must be validated with the normal unit-order rules before creating a pending minister draft.
+- Research, policy, institution loadout, building recipe, and generic unit-order actions must use the same validators as direct planning commands before creating a pending minister draft.
 - Invalid minister actions are ignored after logging; they must not mutate authority directly or bypass the normal planning checks.
 - Staged actions should be visible through `MsgGameSync.minister_proposals` and remain pending until accepted.
 
@@ -219,18 +226,23 @@ if ok {
 - Missing action type or required params -> ignore the action.
 - Build action fails `ValidateBuildOrder` -> log warning, do not create a proposal.
 - Move action fails `ValidatePlanningUnitOrder` -> log warning, do not create a proposal.
+- Research action fails `ValidateResearchTarget` -> log warning, do not create a proposal.
+- Policy or institution action fails policy/institution validation -> log warning, do not create a proposal.
+- Recipe action fails `ValidateRecipeSelection` -> log warning, do not create a proposal.
+- Generic unit order fails `ValidatePlanningUnitOrder` -> log warning, do not create a proposal.
 - Unsupported action type -> log warning, ignore.
-- Valid build/move action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
+- Valid action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
 
 #### 5. Good/Base/Bad Cases
-- Good: LLM returns `build` with a valid node/building pair and the session creates a pending minister proposal that the player can approve.
-- Base: LLM returns `move_units` and the session creates a pending movement proposal that later flows through the same approve/reject path as other minister drafts.
+- Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, `set_building_recipe`, or a valid `unit_order`, and the session creates pending minister proposals that the player can approve.
+- Base: LLM returns legacy `build` or `move_units`, and the session creates proposals that later flow through the same approve/reject path as other minister drafts.
 - Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
 
 #### 6. Tests Required
 - Engine test confirms parsed actions are forwarded to the room callback.
 - Session test confirms valid minister build actions stage pending minister drafts.
 - Session test confirms valid minister move actions stage pending minister drafts.
+- Session test confirms expanded research, policy, institution, recipe, and generic unit-order actions stage pending minister drafts without mutating planning state before approval.
 - Projection/query test confirms minister proposals carry typed commands and raw JSON.
 - Regression tests confirm invalid minister actions are ignored, not applied.
 

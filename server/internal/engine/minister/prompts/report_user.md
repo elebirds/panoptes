@@ -24,6 +24,11 @@ current_research={{ .CurrentResearch }}
 - `actions` 可以为空数组，也可以包含若干动作。
 - `build` 动作需要 `params.node_id`、`params.building_type`，可选 `params.city_id`。
 - `move_units` 动作需要 `params.unit_id`、`params.target_node`。
+- `unit_order` 动作需要 `params.unit_id`、`params.action`，可选 `params.target_node`、`params.target_unit`、`params.secondary_node`、`params.params`。
+- `set_research` 动作需要 `params.technology_id`。
+- `set_policy` 动作需要 `params.policy_id`。
+- `set_institution_loadout` 动作需要 `params.policy_ids` 数组。
+- `set_building_recipe` 动作需要 `params.node_id`、`params.recipe_id`。
 - 不要发明新的动作类型，不要输出无关参数。
 
 `report`、`metrics[].label`、`metrics[].value` 必须全部使用简体中文，不得输出英文。

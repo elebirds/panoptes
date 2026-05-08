@@ -115,6 +115,11 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.SystemPrompt, "`move_units`") || !strings.Contains(req.UserPrompt, "params.target_node") {
 		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)
 	}
+	if !strings.Contains(req.SystemPrompt, "`set_research`") || !strings.Contains(req.SystemPrompt, "`set_policy`") ||
+		!strings.Contains(req.SystemPrompt, "`set_institution_loadout`") || !strings.Contains(req.SystemPrompt, "`set_building_recipe`") ||
+		!strings.Contains(req.SystemPrompt, "`unit_order`") {
+		t.Fatalf("SystemPrompt = %q, want expanded report action contract", req.SystemPrompt)
+	}
 	if !strings.Contains(req.SystemPrompt, "输出必须是裸 JSON 对象") {
 		t.Fatalf("SystemPrompt = %q, want bare JSON constraint", req.SystemPrompt)
 	}

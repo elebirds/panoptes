@@ -17,22 +17,31 @@ func (s *Service) handleInstitutionLoadout(delivery commandDelivery, room Sessio
 		return rejectedHandleIntentResult("invalid_request"), nil
 	}
 	state := room.State()
-	normalized := domain.NormalizePolicyIDList(policyIDs)
-	if len(normalized) > playerState.Institutions.SlotCount {
-		delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-		return rejectedHandleIntentResult("invalid_directive"), nil
-	}
-	for _, policyID := range normalized {
-		if _, errCode := validatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
-			delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: errCode})
-			return rejectedHandleIntentResult(errCode), nil
-		}
-		if !playerState.Institutions.HasCandidate(policyID) {
-			delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-			return rejectedHandleIntentResult("invalid_directive"), nil
-		}
+	normalized, errCode := ValidateInstitutionLoadout(state, playerID, playerState, policyIDs)
+	if errCode != "" {
+		delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: errCode})
+		return rejectedHandleIntentResult(errCode), nil
 	}
 	room.SetInstitutionLoadout(playerID, normalized)
 	delivery.sendWithSnapshot(&pb.MsgSetInstitutionLoadoutResult{Success: true, PolicyIds: normalized})
 	return acceptedHandleIntentResult(), nil
+}
+
+func ValidateInstitutionLoadout(state *domain.GameState, playerID string, playerState *domain.PlayerState, policyIDs []string) ([]string, string) {
+	if playerState == nil {
+		return nil, "invalid_request"
+	}
+	normalized := domain.NormalizePolicyIDList(policyIDs)
+	if len(normalized) > playerState.Institutions.SlotCount {
+		return normalized, "invalid_directive"
+	}
+	for _, policyID := range normalized {
+		if _, errCode := ValidatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
+			return normalized, errCode
+		}
+		if !playerState.Institutions.HasCandidate(policyID) {
+			return normalized, "invalid_directive"
+		}
+	}
+	return normalized, ""
 }

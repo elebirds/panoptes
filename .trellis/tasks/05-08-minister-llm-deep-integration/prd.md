@@ -183,6 +183,7 @@
 - 同一观察摘要会因大臣画像产生不同 system prompt：谨慎大臣强调风险边界，低忠诚/高野心大臣更倾向淡化不利信息或强调自身功劳。
 - `MinisterMemory` 根据玩家 accept/reject/stale 反馈调整 favor；低 favor prompt 会提示大臣因多次被否决而更保守、更强调风险。
 - 2026-05-08 新增回归覆盖：`prompt_test` 验证同观察不同画像的主观压力，`minister_prompt_test` 验证失真 metadata 进入观察摘要。
+- 2026-05-08 扩大 LLM report `actions` 合约：除既有 `build` / `move_units` 外，新增 `set_research`、`set_policy`、`set_institution_loadout`、`set_building_recipe`、`unit_order`。这些 action 仍只会创建待批准 `MinisterDraft`，不会直接写入 planning order。
 
 ### 后续迭代
 - [ ] 客户端同时展示叙事轨和数值轨（双轨信息呈现）

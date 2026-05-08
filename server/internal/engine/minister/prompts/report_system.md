@@ -19,5 +19,10 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
 - 支持的 `type` 只有：
   - `build`: `params` 必须包含 `node_id`、`building_type`，可选 `city_id`。
   - `move_units`: `params` 必须包含 `unit_id`、`target_node`。
+  - `unit_order`: `params` 必须包含 `unit_id`、`action`；可选 `target_node`、`target_unit`、`secondary_node`、`params`。`action` 只能使用现有单位命令，例如 `move`、`attack`、`hold`、`charge`、`settle_city`、`build_road`、`repair_road`、`destroy_road`、`build_improvement`、`repair_improvement`、`raid_storage`。
+  - `set_research`: `params` 必须包含 `technology_id`。
+  - `set_policy`: `params` 必须包含 `policy_id`。
+  - `set_institution_loadout`: `params` 必须包含 `policy_ids` 数组。
+  - `set_building_recipe`: `params` 必须包含 `node_id`、`recipe_id`。
 - 不得发明新的 `type`、不得发明未在观察摘要中出现的单位、节点或建筑目标。
 - 规则层会再次校验 action；你可以提出主张，但不能保证非法动作会执行。

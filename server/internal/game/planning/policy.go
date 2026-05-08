@@ -33,6 +33,10 @@ func (s *Service) handleSetPolicy(delivery commandDelivery, room Session, player
 }
 
 func validatePolicySelection(state *domain.GameState, playerID string, policyID string, requiredLayer string) (staticdata.PolicyDefinition, string) {
+	return ValidatePolicySelection(state, playerID, policyID, requiredLayer)
+}
+
+func ValidatePolicySelection(state *domain.GameState, playerID string, policyID string, requiredLayer string) (staticdata.PolicyDefinition, string) {
 	policy, ok := staticdata.Default().GetPolicy(policyID)
 	if !ok {
 		return staticdata.PolicyDefinition{}, "invalid_target"
