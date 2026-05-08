@@ -121,7 +121,7 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 	}
 	output, err := ParseMinisterResponse(raw)
 	if err != nil {
-		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "err", err)
+		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "raw_len", len(raw), "err", err)
 		output, err = ParseMinisterResponse(fallbackJSON(chineseReportFallback))
 		if err != nil {
 			slog.Warn("parse minister fallback response failed", "player_id", playerID, "role", profile.Role, "err", err)
@@ -176,7 +176,7 @@ func (e *MinisterEngine) PolishDraft(ctx context.Context, playerID string, draft
 	}
 	output, err := ParseDraftResponse(raw)
 	if err != nil {
-		slog.Warn("parse minister draft response failed", "player_id", playerID, "role", draft.MinisterRole, "draft_id", draft.DraftID, "err", err)
+		slog.Warn("parse minister draft response failed", "player_id", playerID, "role", draft.MinisterRole, "draft_id", draft.DraftID, "raw_len", len(raw), "err", err)
 		return nil, false
 	}
 	return output, true
@@ -202,7 +202,13 @@ func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.Comp
 		}
 		b.WriteString(chunk)
 	}
-	return b.String(), true
+	raw := b.String()
+	slog.Debug("minister llm report response collected", "session_id", req.SessionID, "raw_len", len(raw), "raw_preview", ministerDebugPreview(raw))
+	if strings.TrimSpace(raw) == "" {
+		slog.Warn("minister llm report response empty", "session_id", req.SessionID)
+		return fallbackJSON("当前汇报链路没有返回内容，建议按既定国策稳步推进。"), true
+	}
+	return raw, true
 }
 
 func sendMinisterReport(room RuntimeRoom, playerID string, role string, report string) error {
@@ -243,7 +249,13 @@ func (e *MinisterEngine) collectText(ctx context.Context, req llm.CompletionRequ
 		}
 		b.WriteString(chunk)
 	}
-	return b.String(), true
+	raw := b.String()
+	slog.Debug("minister llm text response collected", "session_id", req.SessionID, "raw_len", len(raw), "raw_preview", ministerDebugPreview(raw))
+	if strings.TrimSpace(raw) == "" {
+		slog.Warn("minister llm text response empty", "session_id", req.SessionID)
+		return "", false
+	}
+	return raw, true
 }
 
 func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemory {
@@ -343,4 +355,19 @@ func (e *MinisterEngine) requestModel() string {
 
 func fallbackJSON(report string) string {
 	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
+}
+
+func ministerDebugPreview(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	text = strings.ReplaceAll(text, "\r", "\\r")
+	text = strings.ReplaceAll(text, "\n", "\\n")
+	const limit = 1200
+	runes := []rune(text)
+	if len(runes) <= limit {
+		return text
+	}
+	return string(runes[:limit]) + "...(truncated)"
 }
