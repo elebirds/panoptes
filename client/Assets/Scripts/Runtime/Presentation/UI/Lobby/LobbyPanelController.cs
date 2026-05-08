@@ -1,5 +1,6 @@
 using System.Collections;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace Panoptes.Presentation.UI.Lobby
         private LobbyService _lobbySvc;
         private SessionManager _sessionManager;
         private ErrorToast _errorToast;
+        private PresentationAudioService _audioService;
         private Coroutine _createTimeoutCoroutine;
         private Coroutine _joinTimeoutCoroutine;
 
@@ -29,11 +31,13 @@ namespace Panoptes.Presentation.UI.Lobby
         public void Construct(
             LobbyService lobbyService,
             SessionManager sessionManager,
-            ErrorToast errorToast)
+            ErrorToast errorToast,
+            PresentationAudioService audioService)
         {
             _lobbySvc = lobbyService;
             _sessionManager = sessionManager;
             _errorToast = errorToast;
+            _audioService = audioService;
         }
 
         private void Awake()
@@ -120,6 +124,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnClickCreateRoom()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             HideError();
 
             var roomName = roomNameField != null ? roomNameField.text.Trim() : string.Empty;
@@ -140,6 +145,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnClickJoinRoom()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             HideError();
 
             var roomCode = roomCodeField != null ? roomCodeField.text.Trim() : string.Empty;

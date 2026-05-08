@@ -1,0 +1,7 @@
+﻿{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend package entrypoint for Unity client implementation guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Audio assets/tooling and client code must stay in documented directories."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Runtime audio components must preserve MonoBehaviour and composition boundaries."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Audio integration must remain presentation-only and non-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify forbidden patterns and expected Unity checks."}
+{"file": ".trellis/tasks/05-08-audio-runtime-integration/prd.md", "reason": "Implementation requirements for BGM revision and click/attack SFX integration."}
+{"ts":"2026-05-08T00:00:00+08:00","note":"Completed runtime audio integration: PresentationAudioService registered in project scope, UI click hooks added to main/auth/lobby/room/confirm flows, BGM starts on auth/lobby and switches by turn in game scene, attack SFX moved to damage presentation and gated by resolved damage > 0."}

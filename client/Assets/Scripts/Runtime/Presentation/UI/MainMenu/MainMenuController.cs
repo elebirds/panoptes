@@ -1,9 +1,11 @@
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.UI.Lobby;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -30,6 +32,13 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private bool _lastLoggedIn;
         private bool _loginLayoutApplied;
+        private PresentationAudioService _audioService;
+
+        [Inject]
+        private void Construct(PresentationAudioService audioService)
+        {
+            _audioService = audioService;
+        }
 
         private void Awake()
         {
@@ -43,8 +52,8 @@ namespace Panoptes.Presentation.UI.MainMenu
             startButton?.onClick.AddListener(ShowLobbyEntry);
             settingsButton?.onClick.AddListener(OpenSettings);
             quitButton?.onClick.AddListener(QuitGame);
-            lobbyBackButton?.onClick.AddListener(ShowMainMenu);
-            settingsBackButton?.onClick.AddListener(ShowMainMenu);
+            lobbyBackButton?.onClick.AddListener(OnBackToMainMenuClicked);
+            settingsBackButton?.onClick.AddListener(OnBackToMainMenuClicked);
         }
 
         private void Start()
@@ -59,8 +68,8 @@ namespace Panoptes.Presentation.UI.MainMenu
             startButton?.onClick.RemoveListener(ShowLobbyEntry);
             settingsButton?.onClick.RemoveListener(OpenSettings);
             quitButton?.onClick.RemoveListener(QuitGame);
-            lobbyBackButton?.onClick.RemoveListener(ShowMainMenu);
-            settingsBackButton?.onClick.RemoveListener(ShowMainMenu);
+            lobbyBackButton?.onClick.RemoveListener(OnBackToMainMenuClicked);
+            settingsBackButton?.onClick.RemoveListener(OnBackToMainMenuClicked);
         }
 
         private void OnRectTransformDimensionsChange()
@@ -107,6 +116,7 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         public void ShowLobbyEntry()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             if (!IsLoggedIn())
             {
                 ShowMainMenu();
@@ -149,6 +159,7 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void OpenSettings()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Soft);
             if (mainMenuPanel != null)
             {
                 mainMenuPanel.SetActive(false);
@@ -168,11 +179,18 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void QuitGame()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Back);
 #if UNITY_EDITOR
             EditorApplication.isPlaying = false;
 #else
             Application.Quit();
 #endif
+        }
+
+        private void OnBackToMainMenuClicked()
+        {
+            _audioService?.PlayUiClick(UiClickAudioKind.Back);
+            ShowMainMenu();
         }
 
         private void ApplyLoginState(bool loggedIn)

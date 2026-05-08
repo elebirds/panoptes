@@ -9,6 +9,7 @@
 using System;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
@@ -29,18 +30,21 @@ namespace Panoptes.Presentation.UI.Auth
         private SessionManager _sessionManager;
         private AppManager _appManager;
         private ErrorToast _errorToast;
+        private PresentationAudioService _audioService;
 
         [Inject]
         public void Construct(
             AuthService authService,
             SessionManager sessionManager,
             AppManager appManager,
-            ErrorToast errorToast)
+            ErrorToast errorToast,
+            PresentationAudioService audioService)
         {
             _authService = authService;
             _sessionManager = sessionManager;
             _appManager = appManager;
             _errorToast = errorToast;
+            _audioService = audioService;
         }
 
         private string Username => usernameInput != null ? usernameInput.text.Trim() : string.Empty;
@@ -105,6 +109,7 @@ namespace Panoptes.Presentation.UI.Auth
         
         private async void OnClickLogin()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             if (!IsValid(true))
             {
                 return;
@@ -154,6 +159,7 @@ namespace Panoptes.Presentation.UI.Auth
 
         private async void OnClickRegister()
         {
+            _audioService?.PlayUiClick(UiClickAudioKind.Confirm);
             if (!IsValid(true))
             {
                 return;

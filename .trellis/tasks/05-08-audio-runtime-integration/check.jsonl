@@ -1,0 +1,7 @@
+﻿{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify assets/tooling land in appropriate directories."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify MonoBehaviour/composition boundaries."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client gameplay authority was added."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify forbidden patterns and expected quality checks."}
+{"file": ".trellis/tasks/05-08-audio-runtime-integration/prd.md", "reason": "Check implementation against requirements."}
+{"ts":"2026-05-08T00:00:00+08:00","note":"Verified node syntax, generated WAV manifest, static presentation boundary scans, no protocol generated diffs, no dependency manifest diffs, and git diff whitespace check. Unity Editor import/audition not run: executable not found."}

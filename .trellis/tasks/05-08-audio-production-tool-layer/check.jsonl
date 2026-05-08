@@ -1,0 +1,5 @@
+﻿{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify assets/tooling land in appropriate directories."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client gameplay authority was added."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify forbidden patterns and expected quality checks."}
+{"file": ".trellis/tasks/05-08-audio-production-tool-layer/prd.md", "reason": "Check implementation against agreed audio tooling requirements."}

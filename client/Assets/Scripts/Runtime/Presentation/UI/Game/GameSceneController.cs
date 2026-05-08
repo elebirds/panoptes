@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.UI.Common;
 using R3;
 using TMPro;
@@ -27,6 +28,7 @@ namespace Panoptes.Presentation.UI.Game
         private StaticCatalogStore _staticCatalogStore;
         private TurnStore _turnStore;
         private ErrorToast _errorToast;
+        private PresentationAudioService _audioService;
         private IDisposable _gameStateSubscription;
         private IDisposable _settlementSubscription;
         private IDisposable _gameOverSubscription;
@@ -41,8 +43,8 @@ namespace Panoptes.Presentation.UI.Game
             GameOverStore gameOverStore,
             GameplayFeedbackStore feedbackStore,
             StaticCatalogStore staticCatalogStore,
-            TurnStore turnStore,
-            ErrorToast errorToast)
+            ErrorToast errorToast,
+            PresentationAudioService audioService)
         {
             _gameStateStore = gameStateStore;
             _settlementStore = settlementStore;
@@ -51,6 +53,7 @@ namespace Panoptes.Presentation.UI.Game
             _staticCatalogStore = staticCatalogStore;
             _turnStore = turnStore;
             _errorToast = errorToast;
+            _audioService = audioService;
         }
 
         private void Awake()
@@ -113,6 +116,8 @@ namespace Panoptes.Presentation.UI.Game
             {
                 PanoptesLog.Log($"[GameScene] {summary}");
             }
+
+            _audioService?.PlayTurnBgm(state.Turn);
         }
 
         public void RefreshFromCache()

@@ -6,6 +6,7 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Audio;
 using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.Animation;
 using Panoptes.Presentation.Common;
@@ -15,6 +16,7 @@ using Panoptes.Presentation.UI.Auth;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Lobby;
+using Panoptes.Presentation.UI.MainMenu;
 using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
@@ -151,6 +153,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponent(confirmDialog).AsSelf();
             builder.Register(_ => new AuthService(networkManager.ServerUrl), Lifetime.Singleton).AsSelf();
             builder.RegisterInstance(messageSender).As<IClientMessageSender>();
+            builder.Register<PresentationAudioService>(Lifetime.Singleton).AsSelf();
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
             builder.Register<StaticCatalogStoreHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterBuildCallback(container => container.Resolve<AppManager>().UseStaticCatalogStoreHydrator(container.Resolve<StaticCatalogStoreHydrator>()));
@@ -158,7 +161,9 @@ namespace Panoptes.Presentation.Composition
 
         public static void RegisterAuth(IContainerBuilder builder)
         {
+            builder.RegisterComponentInHierarchy<MainMenuController>();
             builder.RegisterComponentInHierarchy<LoginPanel>();
+            builder.RegisterBuildCallback(container => container.Resolve<PresentationAudioService>().PlayMainMenuBgm());
         }
 
         public static void RegisterLobby(IContainerBuilder builder)
@@ -167,6 +172,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<LobbySceneController>();
             builder.RegisterComponentInHierarchy<LobbyPanelController>();
             builder.RegisterComponentInHierarchy<RoomPanelController>();
+            builder.RegisterBuildCallback(container => container.Resolve<PresentationAudioService>().PlayMainMenuBgm());
         }
 
         public static void RegisterGame(IContainerBuilder builder)
