@@ -8,6 +8,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
 
 func (r *Runtime) BuildMinisterReportInput(playerID string, role string) ministerengine.ReportPromptInput {
@@ -94,13 +95,13 @@ func buildMinisterActionCandidateSummaryFromDrafts(turn int, drafts []domain.Min
 	if turn <= 0 || len(drafts) == 0 {
 		return "(none)"
 	}
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	parts := make([]string, 0, len(drafts))
 	for _, draft := range drafts {
 		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
 			continue
 		}
-		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
+		if role != "" && ministerroles.Canonical(draft.MinisterRole) != role {
 			continue
 		}
 		line := fmt.Sprintf("candidate_id=%s kind=%s target_id=%s target_label=%s source=%s",
@@ -126,11 +127,16 @@ func buildMinisterActionCandidateSummaryFromDrafts(turn int, drafts []domain.Min
 }
 
 func roleObservationFocus(observation *gamequery.ObservationSnapshot, role string) []string {
-	role = strings.ToLower(strings.TrimSpace(role))
-	switch role {
-	case "military":
-		return militaryObservationFocus(observation)
-	case "domestic":
+	switch ministerroles.Canonical(role) {
+	case ministerroles.Command:
+		return commandObservationFocus(observation)
+	case ministerroles.Defense:
+		return defenseObservationFocus(observation)
+	case ministerroles.Works:
+		return worksObservationFocus(observation)
+	case ministerroles.Frontier:
+		return frontierObservationFocus(observation)
+	case ministerroles.Domestic:
 		return domesticObservationFocus(observation)
 	default:
 		return []string{"role_focus=general"}
@@ -159,7 +165,29 @@ func domesticObservationFocus(observation *gamequery.ObservationSnapshot) []stri
 	}
 }
 
-func militaryObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+func worksObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+	resourceNodes := make([]string, 0, 4)
+	buildingNodes := make([]string, 0, 4)
+	for _, node := range observation.VisibleNodes {
+		if node == nil {
+			continue
+		}
+		nodeID := strings.TrimSpace(node.GetId())
+		if node.GetIsResourcePoint() && len(resourceNodes) < 4 {
+			resourceNodes = append(resourceNodes, nodeID+":"+strings.TrimSpace(node.GetResourceType()))
+		}
+		if strings.TrimSpace(node.GetBuildingTypeId()) != "" && len(buildingNodes) < 4 {
+			buildingNodes = append(buildingNodes, nodeID+":"+strings.TrimSpace(node.GetBuildingTypeId()))
+		}
+	}
+	return []string{
+		"role_focus=works",
+		"works_resource_nodes=" + joinOrNone(resourceNodes),
+		"works_building_nodes=" + joinOrNone(buildingNodes),
+	}
+}
+
+func defenseObservationFocus(observation *gamequery.ObservationSnapshot) []string {
 	visibleUnits := make([]string, 0, 4)
 	enemyPressureNodes := make([]string, 0, 4)
 	for _, unit := range observation.Units {
@@ -177,9 +205,58 @@ func militaryObservationFocus(observation *gamequery.ObservationSnapshot) []stri
 		}
 	}
 	return []string{
-		"role_focus=military",
-		"military_visible_units=" + joinOrNone(visibleUnits),
-		"military_enemy_pressure_nodes=" + joinOrNone(enemyPressureNodes),
+		"role_focus=defense",
+		"defense_visible_units=" + joinOrNone(visibleUnits),
+		"defense_enemy_pressure_nodes=" + joinOrNone(enemyPressureNodes),
+	}
+}
+
+func commandObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+	visibleUnits := make([]string, 0, 4)
+	enemyPressureNodes := make([]string, 0, 4)
+	for _, unit := range observation.Units {
+		if unit == nil || len(visibleUnits) >= 4 {
+			continue
+		}
+		visibleUnits = append(visibleUnits, strings.TrimSpace(unit.GetId())+":"+strings.TrimSpace(unit.GetFaction())+":"+strings.TrimSpace(unit.GetUnitType()))
+	}
+	for _, node := range observation.VisibleNodes {
+		if node == nil || len(enemyPressureNodes) >= 4 {
+			continue
+		}
+		if node.GetEnemyUnitCount() > 0 {
+			enemyPressureNodes = append(enemyPressureNodes, strings.TrimSpace(node.GetId()))
+		}
+	}
+	return []string{
+		"role_focus=command",
+		"command_visible_units=" + joinOrNone(visibleUnits),
+		"command_enemy_pressure_nodes=" + joinOrNone(enemyPressureNodes),
+	}
+}
+
+func frontierObservationFocus(observation *gamequery.ObservationSnapshot) []string {
+	unknownNodes := make([]string, 0, 4)
+	pressureNodes := make([]string, 0, 4)
+	for _, node := range observation.VisibleNodes {
+		if node == nil {
+			continue
+		}
+		nodeID := strings.TrimSpace(node.GetId())
+		if nodeID == "" {
+			continue
+		}
+		if strings.TrimSpace(node.GetTerritoryOwnerPlayerId()) == "" && len(unknownNodes) < 4 {
+			unknownNodes = append(unknownNodes, nodeID)
+		}
+		if node.GetEnemyUnitCount() > 0 && len(pressureNodes) < 4 {
+			pressureNodes = append(pressureNodes, nodeID)
+		}
+	}
+	return []string{
+		"role_focus=frontier",
+		"frontier_unknown_nodes=" + joinOrNone(unknownNodes),
+		"frontier_pressure_nodes=" + joinOrNone(pressureNodes),
 	}
 }
 

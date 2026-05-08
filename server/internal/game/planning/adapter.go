@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 )
@@ -158,9 +159,9 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	if msg == nil {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "minister directive is nil")
 	}
-	role := strings.TrimSpace(msg.GetMinisterRole())
+	role := ministerroles.Canonical(msg.GetMinisterRole())
 	switch role {
-	case "domestic", "military":
+	case ministerroles.Domestic, ministerroles.Works, ministerroles.Defense, ministerroles.Command, ministerroles.Frontier:
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister role")
 	}

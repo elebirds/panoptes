@@ -29,11 +29,32 @@ func TestBuildMinisterObservationSummaryAddsRoleSpecificFocus(t *testing.T) {
 		t.Fatalf("domestic summary = %q, want domestic focus", domestic)
 	}
 
-	military := buildMinisterObservationSummary(nil, observation, "military")
-	if !strings.Contains(military, "role_focus=military") ||
-		!strings.Contains(military, "military_visible_units=u1:player-1:infantry") ||
-		!strings.Contains(military, "military_enemy_pressure_nodes=C3") {
-		t.Fatalf("military summary = %q, want military focus", military)
+	works := buildMinisterObservationSummary(nil, observation, "works")
+	if !strings.Contains(works, "role_focus=works") ||
+		!strings.Contains(works, "works_resource_nodes=A1:food") ||
+		!strings.Contains(works, "works_building_nodes=B2:farm") {
+		t.Fatalf("works summary = %q, want works focus", works)
+	}
+
+	defense := buildMinisterObservationSummary(nil, observation, "defense")
+	if !strings.Contains(defense, "role_focus=defense") ||
+		!strings.Contains(defense, "defense_visible_units=u1:player-1:infantry") ||
+		!strings.Contains(defense, "defense_enemy_pressure_nodes=C3") {
+		t.Fatalf("defense summary = %q, want defense focus", defense)
+	}
+
+	command := buildMinisterObservationSummary(nil, observation, "command")
+	if !strings.Contains(command, "role_focus=command") ||
+		!strings.Contains(command, "command_visible_units=u1:player-1:infantry") ||
+		!strings.Contains(command, "command_enemy_pressure_nodes=C3") {
+		t.Fatalf("command summary = %q, want command focus", command)
+	}
+
+	frontier := buildMinisterObservationSummary(nil, observation, "frontier")
+	if !strings.Contains(frontier, "role_focus=frontier") ||
+		!strings.Contains(frontier, "frontier_unknown_nodes=A1,B2") ||
+		!strings.Contains(frontier, "frontier_pressure_nodes=C3") {
+		t.Fatalf("frontier summary = %q, want frontier focus", frontier)
 	}
 }
 
@@ -60,7 +81,7 @@ func TestBuildMinisterObservationSummaryAddsDistortionMetadata(t *testing.T) {
 		},
 	}
 
-	summary := buildMinisterObservationSummary(nil, observation, "military")
+	summary := buildMinisterObservationSummary(nil, observation, "command")
 	for _, want := range []string{
 		"report_mode=high_distortion",
 		"report_confidence=low",
@@ -114,13 +135,13 @@ func TestBuildMinisterActionCandidateSummaryFiltersCurrentRoleCandidates(t *test
 		},
 	}
 
-	summary := buildMinisterActionCandidateSummaryFromDrafts(3, drafts, "domestic")
-	if !strings.Contains(summary, "candidate_id=domestic:research:bronze_working:3") ||
-		!strings.Contains(summary, "kind=research") ||
-		!strings.Contains(summary, "target_id=bronze_working") {
-		t.Fatalf("summary = %q, want domestic current candidate", summary)
+	summary := buildMinisterActionCandidateSummaryFromDrafts(3, drafts, "command")
+	if !strings.Contains(summary, "candidate_id=military:unit_order:u1_move_a2:3") ||
+		!strings.Contains(summary, "kind=unit_order") ||
+		!strings.Contains(summary, "target_id=u1:move:A2:") {
+		t.Fatalf("summary = %q, want command current candidate", summary)
 	}
-	if strings.Contains(summary, "military:unit_order") || strings.Contains(summary, "stale") {
-		t.Fatalf("summary = %q, want only current pending domestic candidates", summary)
+	if strings.Contains(summary, "domestic:research:bronze_working:3") || strings.Contains(summary, "stale") {
+		t.Fatalf("summary = %q, want only current pending command candidates", summary)
 	}
 }

@@ -38,17 +38,20 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	}
 	if !strings.Contains(req.SystemPrompt, "## JSON Response Format") ||
 		!strings.Contains(req.SystemPrompt, "`metrics` 是数值轨") ||
-		!strings.Contains(req.SystemPrompt, `"actions": [`) ||
+		!strings.Contains(req.SystemPrompt, `"proposals": [`) ||
 		!strings.Contains(req.SystemPrompt, `"type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe"`) {
 		t.Fatalf("SystemPrompt = %q, want exact report JSON response format", req.SystemPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, "你负责内政、研究、国策和制度") {
+		t.Fatalf("SystemPrompt = %q, want role duty text", req.SystemPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "`select_candidate`") || !strings.Contains(req.SystemPrompt, "candidate_id") ||
 		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
 		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
 	}
-	if !strings.Contains(req.SystemPrompt, "必须输出一个最匹配的 `select_candidate`") ||
-		!strings.Contains(req.UserPrompt, "必须使用 `select_candidate`") {
-		t.Fatalf("Prompt = %q\n%s, want candidate-backed action requirement", req.SystemPrompt, req.UserPrompt)
+	if !strings.Contains(req.SystemPrompt, "至少输出 1-3 个最匹配的提案") ||
+		!strings.Contains(req.UserPrompt, "至少给出 1-3 个提案") {
+		t.Fatalf("Prompt = %q\n%s, want multi-proposal requirement", req.SystemPrompt, req.UserPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, `"risk_note": "<可选，简体中文风险提示>"`) ||
 		!strings.Contains(req.UserPrompt, "`title`、`summary`、`rationale`、`risk_note`") {
@@ -86,7 +89,8 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	}
 	if !strings.Contains(req.UserPrompt, "## Two-Track Output Contract") ||
 		!strings.Contains(req.UserPrompt, "Return exactly this JSON shape and no other fields") ||
-		!strings.Contains(req.UserPrompt, `"action_id": "<简短英文或数字标识；无动作时可为空字符串>"`) {
+		!strings.Contains(req.UserPrompt, `"action_id": "<简短英文或数字标识；无动作时可为空字符串>"`) ||
+		!strings.Contains(req.UserPrompt, `"proposals": [`) {
 		t.Fatalf("UserPrompt = %q, want exact report JSON shape and two-track contract", req.UserPrompt)
 	}
 }
@@ -115,7 +119,7 @@ func TestBuildReportPromptVariesSubjectivePressureForSameObservation(t *testing.
 	}, input)
 	ambitious := BuildReportPrompt(MinisterProfile{
 		Name:            "李猛",
-		Role:            "military",
+		Role:            "command",
 		Personality:     "aggressive",
 		PersonalityDesc: "果断激进",
 		Loyalty:         2,

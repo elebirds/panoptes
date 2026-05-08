@@ -95,6 +95,32 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		if draft.Kind == domain.MinisterDraftKindOperation && len(draft.OperationSteps) == 0 {
 			t.Fatalf("operation draft must contain command steps: %#v", draft)
 		}
+		switch draft.Kind {
+		case domain.MinisterDraftKindBuild:
+			switch draft.BuildingTypeID {
+			case "granary":
+				if draft.MinisterRole != worksMinisterRole {
+					t.Fatalf("granary build draft = %#v, want works minister", draft)
+				}
+			case "barracks":
+				if draft.MinisterRole != defenseMinisterRole {
+					t.Fatalf("barracks build draft = %#v, want defense minister", draft)
+				}
+			case "city_core":
+				t.Fatalf("city core must not be offered as a normal build candidate: %#v", draft)
+			}
+		case domain.MinisterDraftKindRecipe:
+			switch draft.RecipeID {
+			case "train_settler":
+				if draft.MinisterRole != frontierMinisterRole {
+					t.Fatalf("settler recipe draft = %#v, want frontier minister", draft)
+				}
+			case "train_infantry":
+				if draft.MinisterRole != defenseMinisterRole {
+					t.Fatalf("infantry recipe draft = %#v, want defense minister", draft)
+				}
+			}
+		}
 	}
 
 	for kind, wantAtLeast := range map[domain.MinisterDraftKind]int{
@@ -170,7 +196,7 @@ func TestBuildMinisterDraftsFromLegalCandidatesOffersOpeningMilitaryRecon(t *tes
 
 	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
 	for _, draft := range drafts {
-		if draft.MinisterRole != militaryMinisterRole || draft.Kind != domain.MinisterDraftKindOperation {
+		if draft.MinisterRole != commandMinisterRole || draft.Kind != domain.MinisterDraftKindOperation {
 			continue
 		}
 		if len(draft.OperationSteps) != 1 || draft.OperationSteps[0].TargetNodeID != "B1" {

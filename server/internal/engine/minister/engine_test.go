@@ -191,8 +191,8 @@ func TestGenerateReportsSendsMilitaryWhenRoleEnabled(t *testing.T) {
 			roles[chunk.GetMinisterRole()]++
 		}
 	}
-	if roles["domestic"] != 1 || roles["military"] != 1 {
-		t.Fatalf("final report roles = %#v, want one domestic and one military final chunk", roles)
+	if roles["domestic"] != 1 || roles["command"] != 1 {
+		t.Fatalf("final report roles = %#v, want one domestic and one command final chunk", roles)
 	}
 }
 

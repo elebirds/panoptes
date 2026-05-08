@@ -204,8 +204,17 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if got := gameInit.ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
 		t.Fatalf("message[3] = %s, want MsgGameInit", got)
 	}
-	if len(gameInit.GetMinisters()) != 1 || gameInit.GetMinisters()[0].GetRole() != "domestic" {
-		t.Fatalf("game init ministers = %#v, want domestic roster", gameInit.GetMinisters())
+	if len(gameInit.GetMinisters()) != 5 {
+		t.Fatalf("game init ministers = %#v, want normalized five-role roster", gameInit.GetMinisters())
+	}
+	wantRoles := map[string]bool{"domestic": false, "works": false, "defense": false, "command": false, "frontier": false}
+	for _, minister := range gameInit.GetMinisters() {
+		wantRoles[minister.GetRole()] = true
+	}
+	for role, seen := range wantRoles {
+		if !seen {
+			t.Fatalf("game init ministers = %#v, missing %q role", gameInit.GetMinisters(), role)
+		}
 	}
 
 	start, ok := player.sent[4].(*pb.MsgPlanningStart)

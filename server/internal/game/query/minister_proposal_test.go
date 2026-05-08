@@ -41,7 +41,7 @@ func TestBuildMinisterProposalViewsCarriesOperationCommands(t *testing.T) {
 	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{{
 		DraftID:      "operation-1",
 		PlayerID:     "player-1",
-		MinisterRole: "military",
+		MinisterRole: "command",
 		Kind:         domain.MinisterDraftKindOperation,
 		TargetID:     "secure_a2",
 		TargetLabel:  "控制或侦察 A2",
@@ -54,7 +54,7 @@ func TestBuildMinisterProposalViewsCarriesOperationCommands(t *testing.T) {
 		OperationSteps: []domain.MinisterDraft{{
 			DraftID:      "operation-1:step_1",
 			PlayerID:     "player-1",
-			MinisterRole: "military",
+			MinisterRole: "command",
 			Kind:         domain.MinisterDraftKindUnitOrder,
 			TargetLabel:  "u1 move -> A2",
 			UnitID:       "u1",
