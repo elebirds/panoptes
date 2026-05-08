@@ -107,6 +107,26 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	}
 }
 
+func TestCreateBuildingLeavesRecipeUnselectedOnSpawn(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", MaxHP: 60, RecipeIDs: []string{"train_infantry"}, DefaultRecipeID: "train_infantry"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := CreateNode(world, MapNode{ID: "A2", Q: 1, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+
+	building := world.Entry(CreateBuilding(world, "barracks", "player-1", "city-a", nodeEntry))
+	if building.HasComponent(BuildingOperationC) {
+		t.Fatalf("new building should not auto-attach a recipe operation")
+	}
+}
+
 func TestCreateUnitUsesAuthorSourcedStructureAttackCapability(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Units: []staticdata.UnitDefinition{
