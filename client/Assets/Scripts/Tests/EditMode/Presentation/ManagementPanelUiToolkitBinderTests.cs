@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UguiButton = UnityEngine.UI.Button;
 using UguiImage = UnityEngine.UI.Image;
+using UguiLayoutElement = UnityEngine.UI.LayoutElement;
 
 namespace Panoptes.Tests.EditMode.Presentation
 {
@@ -287,6 +288,41 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void MinisterReportBinder_ShouldSizeChatBubblesToMessageContent()
+        {
+            _root = new GameObject("MinisterReportBubbleSizingTest");
+            var binder = _root.AddComponent<MinisterReportUiToolkitBinder>();
+            var draftStore = new PlanningDraftStore();
+            var viewModel = new MinisterReportViewModel(draftStore);
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectMinisterReport(binder, viewModel, visibilityStore);
+            binder.Render(new MinisterReportState(
+                "大臣汇报",
+                "domestic",
+                new[] { new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12) },
+                new[]
+                {
+                    new MinisterChatMessageState("m1", "domestic", "内政大臣", "内政大臣", string.Empty, "内", "好。", false, false),
+                    new MinisterChatMessageState("m2", "domestic", string.Empty, string.Empty, string.Empty, string.Empty, "收到。", true, false)
+                },
+                null));
+
+            visibilityStore.Show(ManagementPanelId.MinisterReport);
+
+            var bubbleLayouts = FindBubbleLayoutElements();
+            Assert.That(bubbleLayouts, Has.Count.EqualTo(2));
+            foreach (var bubble in bubbleLayouts)
+            {
+                Assert.That(bubble.preferredWidth, Is.GreaterThanOrEqualTo(96f));
+                Assert.That(bubble.preferredWidth, Is.LessThan(360f));
+            }
+
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+            draftStore.Dispose();
+        }
+
+        [Test]
         public void ManagementPanelVisibilityStore_ShouldToggleSingleActivePanel()
         {
             using var visibilityStore = new ManagementPanelVisibilityStore();
@@ -499,6 +535,21 @@ namespace Panoptes.Tests.EditMode.Presentation
             }
 
             return null;
+        }
+
+        private List<UguiLayoutElement> FindBubbleLayoutElements()
+        {
+            var result = new List<UguiLayoutElement>();
+            var layouts = _root.GetComponentsInChildren<UguiLayoutElement>(true);
+            for (var i = 0; i < layouts.Length; i++)
+            {
+                if (layouts[i] != null && layouts[i].gameObject.name == "Bubble")
+                {
+                    result.Add(layouts[i]);
+                }
+            }
+
+            return result;
         }
 
         private static void InjectManagementHost(
