@@ -131,3 +131,52 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 		t.Fatalf("UserPrompt = %q, want no-fence/no-noise output contract", req.UserPrompt)
 	}
 }
+
+func TestBuildReportPromptVariesSubjectivePressureForSameObservation(t *testing.T) {
+	input := ReportPromptInput{
+		Turn:               5,
+		Phase:              "planning",
+		PlayerID:           "player-1",
+		ObservationSummary: "visible_nodes=3; report_confidence=low; reported_omitted=2; reported_delayed=1; reported_misread=1",
+		CurrentPolicy:      "reorganization",
+		CurrentResearch:    "agrarian_foundations",
+	}
+
+	cautious := BuildReportPrompt(MinisterProfile{
+		Name:            "沈衡",
+		Role:            "domestic",
+		Personality:     "steady",
+		PersonalityDesc: "稳健审慎",
+		Loyalty:         8,
+		Ambition:        3,
+		Cautiousness:    82,
+		Decisiveness:    40,
+		LoyaltyTendency: 90,
+		AmbitionStyle:   20,
+	}, input)
+	ambitious := BuildReportPrompt(MinisterProfile{
+		Name:            "李猛",
+		Role:            "military",
+		Personality:     "aggressive",
+		PersonalityDesc: "果断激进",
+		Loyalty:         2,
+		Ambition:        9,
+		Cautiousness:    35,
+		Decisiveness:    75,
+		LoyaltyTendency: 10,
+		AmbitionStyle:   80,
+	}, input)
+
+	if cautious.UserPrompt != ambitious.UserPrompt {
+		t.Fatalf("same observation user prompt differed:\n%s\n---\n%s", cautious.UserPrompt, ambitious.UserPrompt)
+	}
+	if cautious.SystemPrompt == ambitious.SystemPrompt {
+		t.Fatalf("system prompts should differ for distinct minister profiles")
+	}
+	if !strings.Contains(cautious.SystemPrompt, "高谨慎度会让你更强调风险边界") {
+		t.Fatalf("cautious system prompt = %q, want cautious distortion pressure", cautious.SystemPrompt)
+	}
+	if !strings.Contains(ambitious.SystemPrompt, "低忠诚和高野心会让你更倾向淡化不利信息") {
+		t.Fatalf("ambitious system prompt = %q, want low-loyalty/high-ambition distortion pressure", ambitious.SystemPrompt)
+	}
+}

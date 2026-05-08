@@ -104,7 +104,7 @@ if err := json.Unmarshal([]byte(normalized), &out); err != nil {
 - Draft targets still come from `ai.RuleBotProvider.BuildPlanningIntents`.
 - LLM draft polish may only replace `Title`, `Summary`, `Rationale`, `RiskNote`, and `Source`.
 - LLM draft polish must not replace `DraftID`, `TargetID`, unit ids, action ids, node ids, recipe ids, policy ids, or command payload fields.
-- Minister reports may include narrative text and metrics; report `actions` remain ignored in the current MVP.
+- Minister reports may include narrative text, metrics, and approval-gated report actions. Report `actions` must follow the "Minister Report Actions Become Approval-Gated Proposals" contract below.
 
 #### 4. Validation & Error Matrix
 - Role omitted from enabled roles -> `PolishDraft` returns `(nil, false)` and no report is generated for that role.
@@ -148,6 +148,45 @@ if ok {
     draft.Source = domain.MinisterDraftSourceRuleLLM
 }
 ```
+
+### Scenario: Minister Subjective Report and Memory Pressure
+
+#### 1. Scope / Trigger
+- Trigger: backend changes that build minister report prompts, minister observation summaries, or minister memory/favor behavior.
+- Minister reports are not neutral database dumps. They are subjective `reported` narratives generated from player-visible `observed` data, then shaped by minister profile, loyalty, ambition, favor, and recent memory.
+
+#### 2. Signatures
+- Report prompt builder: `BuildReportPrompt(profile MinisterProfile, input ReportPromptInput) llm.CompletionRequest`
+- Runtime observation summary: `Runtime.BuildMinisterObservationSummary(playerID string, role string) string`
+- Memory prompt: `MinisterMemory.ToPromptString() string`
+- Feedback hook: `MinisterMemory.Add(MemoryEntry{PlayerResp: "accepted"|"rejected"|"stale"})`
+
+#### 3. Contracts
+- Report prompts must preserve the `truth -> observed -> reported` boundary and must forbid inventing hidden truth.
+- Observation summaries must include information-report metadata when available: `report_mode`, `report_confidence`, `reported_omitted`, `reported_delayed`, and `reported_misread`.
+- Role-specific observation focus belongs in the summary so domestic and military ministers can emphasize different facts without reading hidden state.
+- The same observation may produce the same user prompt, but the system prompt must vary by minister profile and style pressure.
+- Low loyalty combined with high ambition should push the report toward self-protective distortion pressure such as softening bad news or claiming credit.
+- High cautiousness should push the report toward risk-boundary and uncertainty language.
+- Minister memory favor starts at 50, is clamped to 0..100, and changes through feedback: accepted +5, rejected -8, stale -3.
+- Low favor must add a prompt hint that the minister has been repeatedly rejected and should become more conservative and risk-focused.
+
+#### 4. Validation & Error Matrix
+- Missing observation summary -> use a Chinese no-observation fallback, not hidden truth.
+- Nil memory -> use a no-memory fallback.
+- Rejected or stale memory entries -> lower favor and alter future prompt hints, but do not directly mutate planning state.
+- Profile fields present but extreme -> keep prompt generation deterministic and bounded; do not let prompt helpers panic.
+
+#### 5. Good/Base/Bad Cases
+- Good: the same high-distortion observation creates different report pressure for a cautious loyal domestic minister versus a low-loyalty ambitious military minister.
+- Base: standard reporting mode includes delayed/omitted counts and asks the LLM to express uncertainty in Chinese narrative text.
+- Bad: a prompt says the enemy is definitely in a hidden node that was not present in the observed snapshot.
+
+#### 6. Tests Required
+- Prompt test verifies report prompts include visibility boundaries, Chinese-only player text constraints, and no-fence JSON output requirements.
+- Prompt test verifies the same observation gains different subjective pressure through different minister profiles.
+- Session prompt test verifies observation summaries include information-report distortion metadata.
+- Memory test verifies accept/reject/stale feedback changes favor and low favor changes the prompt hint.
 
 ### Scenario: Minister Report Actions Become Approval-Gated Proposals
 

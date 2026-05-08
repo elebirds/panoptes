@@ -166,11 +166,11 @@
 ## Acceptance Criteria (evolving)
 
 ### MVP 核心体验（本次实现）
-- [ ] 大臣汇报带有主观色彩，同一份 truth 产生不同叙述（信息失真）
-- [ ] 玩家每回合有 3 个亲政令牌，用于查看真实状态或亲自操作（亲政令牌）
+- [x] 大臣汇报带有主观色彩，同一份 truth 产生不同叙述（信息失真）
+- [x] 玩家每回合有 3 个亲政令牌，用于查看真实状态或亲自操作（亲政令牌）
 - [x] LLM 选择的行动进入锁定/批准流程（LLM Actions）
-- [ ] 大臣忠诚度影响汇报的失真程度（行为影响）
-- [ ] 大臣记忆影响后续行为（被拒绝→保守）（行为影响）
+- [x] 大臣忠诚度影响汇报的失真程度（行为影响）
+- [x] 大臣记忆影响后续行为（被拒绝→保守）（行为影响）
 - [x] 支持强参与模式和弱参与模式（LLM 参与程度开关）
 
 ### 已完成补充（2026-05-08）
@@ -178,6 +178,11 @@
 - 弱模式保持既有玩家自由 planning 命令行为。
 - 强模式下，直接玩法命令必须先通过 `direct_command` 消耗亲政令牌进入 mandate mode；否则 planning 层会在命令处理前拒绝并保持状态不变。
 - LLM report `actions` 不再直接落 planning order，而是先转为 `MinisterDraft` / `MinisterProposalView`，等待玩家通过现有 accept/reject 指令批准或否决。
+- 每回合默认 `tokens_per_turn=3` 作为亲政令牌；`reveal`、`mandate_override`、`direct_command` 走同一 token 消耗语义。
+- `BuildMinisterObservationSummary` 会把 `report_mode`、`report_confidence`、`reported_omitted`、`reported_delayed`、`reported_misread` 注入大臣 prompt，让 LLM 把规则层失真 metadata 转成叙事奏报。
+- 同一观察摘要会因大臣画像产生不同 system prompt：谨慎大臣强调风险边界，低忠诚/高野心大臣更倾向淡化不利信息或强调自身功劳。
+- `MinisterMemory` 根据玩家 accept/reject/stale 反馈调整 favor；低 favor prompt 会提示大臣因多次被否决而更保守、更强调风险。
+- 2026-05-08 新增回归覆盖：`prompt_test` 验证同观察不同画像的主观压力，`minister_prompt_test` 验证失真 metadata 进入观察摘要。
 
 ### 后续迭代
 - [ ] 客户端同时展示叙事轨和数值轨（双轨信息呈现）

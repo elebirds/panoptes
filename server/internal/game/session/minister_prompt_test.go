@@ -35,3 +35,40 @@ func TestBuildMinisterObservationSummaryAddsRoleSpecificFocus(t *testing.T) {
 		t.Fatalf("military summary = %q, want military focus", military)
 	}
 }
+
+func TestBuildMinisterObservationSummaryAddsDistortionMetadata(t *testing.T) {
+	observation := &gamequery.ObservationSnapshot{
+		ViewerID:      "player-1",
+		ReportingMode: gamequery.ReportingModeHighDistortion,
+		Nodes: []*pb.NodeView{
+			{Id: "A1", IsCurrentlyVisible: true},
+			{Id: "B2"},
+			{Id: "C3", IsMemory: true},
+		},
+		VisibleNodes: []*pb.NodeView{
+			{Id: "A1", IsCurrentlyVisible: true},
+		},
+		MemoryNodes: []*pb.NodeView{
+			{Id: "C3", IsMemory: true},
+		},
+		Units: []*pb.UnitView{
+			{Id: "u1", Faction: "player-1", UnitType: "infantry"},
+		},
+		MemoryUnits: []*gamequery.RememberedUnitView{
+			{View: &pb.UnitView{Id: "enemy-1", Faction: "enemy", UnitType: "infantry"}, LastObservedTurn: 3},
+		},
+	}
+
+	summary := buildMinisterObservationSummary(nil, observation, "military")
+	for _, want := range []string{
+		"report_mode=high_distortion",
+		"report_confidence=low",
+		"reported_omitted=1",
+		"reported_delayed=2",
+		"reported_misread=1",
+	} {
+		if !strings.Contains(summary, want) {
+			t.Fatalf("summary = %q, want %q", summary, want)
+		}
+	}
+}
