@@ -27,6 +27,7 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	t.Setenv("MAP_ID", "default")
 	t.Setenv("MINISTER_LLM_ENABLED", "true")
 	t.Setenv("MINISTER_LLM_PROVIDER", "qwen")
+	t.Setenv("MINISTER_LLM_API_KEY", "test-llm-key")
 	t.Setenv("MINISTER_LLM_MODEL", "qwen-plus")
 	t.Setenv("MINISTER_LLM_TIMEOUT_MS", "4200")
 	t.Setenv("MINISTER_LLM_ENABLED_ROLES", "domestic,military")
@@ -47,6 +48,9 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	}
 	if cfg.MinisterLLMProvider != "qwen" {
 		t.Fatalf("MinisterLLMProvider = %q", cfg.MinisterLLMProvider)
+	}
+	if cfg.MinisterLLMAPIKey != "test-llm-key" {
+		t.Fatalf("MinisterLLMAPIKey = %q", cfg.MinisterLLMAPIKey)
 	}
 	if cfg.MinisterLLMModel != "qwen-plus" {
 		t.Fatalf("MinisterLLMModel = %q", cfg.MinisterLLMModel)

@@ -9,17 +9,23 @@ package test_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
 )
 
-const testAPIKey = "sk-dfecb221ed3e44a68796bbcbda4fa137"
-
 func newQwenClient(t *testing.T) chatmodule.ChatClient {
 	t.Helper()
-	return chatmodule.NewQwenClient(testAPIKey)
+	if testing.Short() || strings.TrimSpace(os.Getenv("RUN_LLM_INTEGRATION")) != "1" {
+		t.Skip("skip live LLM integration tests; set RUN_LLM_INTEGRATION=1 and LLM_API_KEY to enable")
+	}
+	apiKey := strings.TrimSpace(os.Getenv("LLM_API_KEY"))
+	if apiKey == "" {
+		t.Skip("LLM_API_KEY is required for live LLM integration tests")
+	}
+	return chatmodule.NewQwenClient(apiKey)
 }
 
 // TestNormalChat 非流式调用
