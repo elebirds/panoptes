@@ -20,11 +20,29 @@ const (
 )
 
 func qwenDefaults() clientCfg {
-	return clientCfg{defaultModel: "qwen3.6-flash", temperature: 0.8, topP: 0.8, maxTokens: 1500}
+	return clientCfg{
+		defaultModel: "qwen3.6-flash",
+		temperature:  0.8,
+		topP:         0.8,
+		maxTokens:    1500,
+		extraFields: map[string]any{
+			"enable_thinking": false,
+		},
+	}
 }
 
 func deepSeekDefaults() clientCfg {
-	return clientCfg{defaultModel: "deepseek-v4-flash", temperature: 0.7, topP: 0.9, maxTokens: 2048}
+	return clientCfg{
+		defaultModel: "deepseek-v4-flash",
+		temperature:  0.7,
+		topP:         0.9,
+		maxTokens:    2048,
+		extraFields: map[string]any{
+			"thinking": map[string]any{
+				"type": "disabled",
+			},
+		},
+	}
 }
 
 func openAIDefaults() clientCfg {

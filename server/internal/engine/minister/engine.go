@@ -161,11 +161,12 @@ func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.Comp
 		return fallbackJSON("目前局势稳定，建议优先巩固补给线并保持战区侦察。"), true
 	}
 
+	startedAt := time.Now()
 	ctx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 	stream, err := e.llmClient.Stream(ctx, req)
 	if err != nil {
-		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "err", err)
+		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "response_duration_ms", time.Since(startedAt).Milliseconds(), "err", err)
 		return fallbackJSON("当前汇报链路拥堵，建议按既定国策稳步推进。"), true
 	}
 
@@ -177,9 +178,10 @@ func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.Comp
 		b.WriteString(chunk)
 	}
 	raw := b.String()
-	slog.Debug("minister llm report response collected", "session_id", req.SessionID, "raw_len", len(raw), "raw_preview", ministerDebugPreview(raw))
+	responseDurationMs := time.Since(startedAt).Milliseconds()
+	slog.Debug("minister llm report response collected", "session_id", req.SessionID, "raw_len", len(raw), "response_duration_ms", responseDurationMs, "raw_preview", ministerDebugPreview(raw))
 	if strings.TrimSpace(raw) == "" {
-		slog.Warn("minister llm report response empty", "session_id", req.SessionID)
+		slog.Warn("minister llm report response empty", "session_id", req.SessionID, "response_duration_ms", responseDurationMs)
 		return fallbackJSON("当前汇报链路没有返回内容，建议按既定国策稳步推进。"), true
 	}
 	return raw, true
