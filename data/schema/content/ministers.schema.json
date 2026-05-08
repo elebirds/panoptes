@@ -18,6 +18,21 @@
             "minimum": 0,
             "type": "integer"
           },
+          "ambition_style": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "cautiousness": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "decisiveness": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
           "icon_key": {
             "type": "string"
           },
@@ -25,6 +40,11 @@
             "type": "string"
           },
           "loyalty": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "loyalty_tendency": {
+            "maximum": 100,
             "minimum": 0,
             "type": "integer"
           },

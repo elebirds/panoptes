@@ -206,7 +206,7 @@
       "id": "foundry_directives",
       "name": "冶造敕令",
       "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
-      "icon_key": "policy_foundry_directives",
+      "icon_key": "policy_reorganization",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -244,7 +244,7 @@
       "id": "mercantile_charter",
       "name": "商贸特许",
       "description": "制度层面的市集授权，提高契约调拨效率。",
-      "icon_key": "policy_mercantile_charter",
+      "icon_key": "policy_logistics_corps",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -294,7 +294,7 @@
       "id": "research_mandate",
       "name": "研学敕令",
       "description": "制度层面的学术优先令，显著提高科研产出。",
-      "icon_key": "policy_research_mandate",
+      "icon_key": "policy_academy_charter",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [

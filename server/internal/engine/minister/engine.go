@@ -267,6 +267,10 @@ func pickProfiles() []MinisterProfile {
 			PersonalityDesc: "稳健",
 			Loyalty:         6,
 			Ambition:        5,
+			Cautiousness:    70,
+			Decisiveness:    50,
+			LoyaltyTendency: 80,
+			AmbitionStyle:   30,
 		}}
 	}
 	out := make([]MinisterProfile, 0, len(pool))
@@ -280,6 +284,10 @@ func pickProfiles() []MinisterProfile {
 			PersonalityDesc: p.PersonalityDesc,
 			Loyalty:         p.Loyalty,
 			Ambition:        p.Ambition,
+			Cautiousness:    p.Cautiousness,
+			Decisiveness:    p.Decisiveness,
+			LoyaltyTendency: p.LoyaltyTendency,
+			AmbitionStyle:   p.AmbitionStyle,
 		})
 	}
 	return out

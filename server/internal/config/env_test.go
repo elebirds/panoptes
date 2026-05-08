@@ -149,7 +149,7 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
 		"data/content/ministers/ministers.json": `{
   "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
-    { "id": "m001", "name": "李猛", "role": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
+    { "id": "m001", "name": "李猛", "role": "military", "icon_key": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
   ]
 }`,
 		"data/content/maps/default/definition.json": `{

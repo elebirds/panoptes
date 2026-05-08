@@ -10,7 +10,11 @@
       "personality": "aggressive",
       "personality_desc": "果敢激进",
       "loyalty": 7,
-      "ambition": 6
+      "ambition": 6,
+      "cautiousness": 35,
+      "decisiveness": 82,
+      "loyalty_tendency": 68,
+      "ambition_style": 65
     },
     {
       "id": "m002",
@@ -21,7 +25,11 @@
       "personality": "steady",
       "personality_desc": "稳健审慎",
       "loyalty": 8,
-      "ambition": 4
+      "ambition": 4,
+      "cautiousness": 76,
+      "decisiveness": 58,
+      "loyalty_tendency": 84,
+      "ambition_style": 32
     }
   ]
 }
