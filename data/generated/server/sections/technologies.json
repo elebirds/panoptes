@@ -13,6 +13,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "farm_harvest"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "estate_subjects"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "manor_economy"
         }
       ],
       "modifier_effects": [],
@@ -51,7 +59,12 @@
       "tier": 1,
       "research_cost": 2,
       "prerequisites": [],
-      "explicit_effects": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_institution",
+          "target_id": "guild_regulation"
+        }
+      ],
       "modifier_effects": [
         {
           "trigger": "point.output",
@@ -78,15 +91,23 @@
       "explicit_effects": [
         {
           "type": "unlock_institution",
-          "target_id": "academy_charter"
+          "target_id": "royal_prerogative"
         },
         {
           "type": "unlock_institution",
-          "target_id": "logistics_corps"
+          "target_id": "noble_council"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "civic_citizenship"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "local_autonomy"
         },
         {
           "type": "add_institution_slots",
-          "institution_slots": 1
+          "institution_slots": 2
         }
       ],
       "modifier_effects": [],
@@ -182,6 +203,18 @@
         {
           "type": "unlock_recipe",
           "target_id": "barracks_infantry"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "martial_citizenship"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "vassal_levies"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "mass_conscription"
         }
       ],
       "modifier_effects": [],
@@ -285,6 +318,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "granary_rations"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "inward_rationing"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [
@@ -329,7 +370,7 @@
         },
         {
           "type": "unlock_institution",
-          "target_id": "foundry_directives"
+          "target_id": "state_workshops"
         }
       ],
       "modifier_effects": [],
@@ -410,6 +451,10 @@
         {
           "type": "unlock_recipe",
           "target_id": "engineer_camp_siege_engine"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "munitions_committee"
         }
       ],
       "modifier_effects": [
@@ -448,6 +493,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "warehouse_reserve_rations"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "free_market"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "secretariat_cabinet"
         }
       ],
       "modifier_effects": [
@@ -500,7 +553,19 @@
         },
         {
           "type": "unlock_institution",
-          "target_id": "mercantile_charter"
+          "target_id": "chartered_trade"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "protective_tariffs"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "free_trade"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [],
@@ -531,7 +596,19 @@
         },
         {
           "type": "unlock_institution",
-          "target_id": "research_mandate"
+          "target_id": "bureaucratic_cabinet"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "universal_subjecthood"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "central_bureaucracy"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [],
@@ -567,6 +644,10 @@
         {
           "type": "unlock_recipe",
           "target_id": "watchtower_scout"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "inspectorate_system"
         }
       ],
       "modifier_effects": [
@@ -609,6 +690,18 @@
         {
           "type": "unlock_recipe",
           "target_id": "training_ground_spearman"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "ministerial_devolution"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "professional_army"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [

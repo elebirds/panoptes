@@ -1,10 +1,34 @@
 {
   "$schema": "../../schema/ui/institutions.schema.json",
   "institutions": [
-    { "id": "academy_charter", "name": "学术特许", "description": "行政制度中的学术组织支持，提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": ["administration", "research"] },
-    { "id": "logistics_corps", "name": "转运署", "description": "行政制度中的转运组织，提高道路基础运量。", "icon_key": "policy_logistics_corps", "sort_order": 60, "tags": ["administration", "logistics"] },
-    { "id": "foundry_directives", "name": "冶造敕令", "description": "经济制度中的冶造调度，提高冶炼效率并优先保障工业链。", "icon_key": "policy_reorganization", "sort_order": 70, "tags": ["economy", "industry"] },
-    { "id": "mercantile_charter", "name": "商贸特许", "description": "贸易制度中的市集授权，提高契约调拨效率。", "icon_key": "policy_logistics_corps", "sort_order": 80, "tags": ["trade"] },
-    { "id": "research_mandate", "name": "研学敕令", "description": "行政制度中的学术优先令，显著提高科研产出。", "icon_key": "policy_academy_charter", "sort_order": 90, "tags": ["administration", "research"] }
+    { "id": "royal_prerogative", "name": "王权亲政", "description": "中央亲自裁决，否决力更强，但汇报与拍板更慢。", "icon_key": "policy_academy_charter", "sort_order": 10, "tags": ["power", "veto", "central"] },
+    { "id": "noble_council", "name": "贵族议会", "description": "地方建设和动员更灵活，但资源容易被地方优先截留。", "icon_key": "policy_reorganization", "sort_order": 20, "tags": ["power", "local", "expansion"] },
+    { "id": "bureaucratic_cabinet", "name": "官僚内阁", "description": "报告和规划更稳定，但应急响应偏慢。", "icon_key": "policy_academy_charter", "sort_order": 30, "tags": ["power", "administration"] },
+    { "id": "ministerial_devolution", "name": "部长分权", "description": "大臣更主动提案，执行更积极，但玩家控制力下降。", "icon_key": "policy_logistics_corps", "sort_order": 40, "tags": ["power", "minister", "autonomy"] },
+
+    { "id": "estate_subjects", "name": "等级臣民", "description": "优先稳住核心城市和上层建筑，但边疆恢复更慢。", "icon_key": "policy_reorganization", "sort_order": 50, "tags": ["citizenship", "stability"] },
+    { "id": "civic_citizenship", "name": "城邦公民", "description": "主城、道路和公共工程更强，但扩张区整合更慢。", "icon_key": "policy_academy_charter", "sort_order": 60, "tags": ["citizenship", "infrastructure"] },
+    { "id": "martial_citizenship", "name": "军役公民", "description": "军队、前线和征召优先，但民生与科研容易被挤压。", "icon_key": "policy_logistics_corps", "sort_order": 70, "tags": ["citizenship", "military"] },
+    { "id": "universal_subjecthood", "name": "普遍臣民权", "description": "灾后恢复和城市稳定更好，但短期动员效率较低。", "icon_key": "policy_research_mandate", "sort_order": 80, "tags": ["citizenship", "recovery"] },
+
+    { "id": "manor_economy", "name": "庄园经济", "description": "粮食和基础资源更稳，但工业链效率较低。", "icon_key": "policy_reorganization", "sort_order": 90, "tags": ["economy", "agriculture"] },
+    { "id": "guild_regulation", "name": "行会管制", "description": "建筑和配方更稳定、浪费更少，但切换生产更慢。", "icon_key": "policy_foundry_directives", "sort_order": 100, "tags": ["economy", "production"] },
+    { "id": "state_workshops", "name": "国家工坊", "description": "军工、基建和重工业更强，但消耗高。", "icon_key": "policy_foundry_directives", "sort_order": 110, "tags": ["economy", "industry"] },
+    { "id": "free_market", "name": "自由市场", "description": "产出弹性和贸易收益更高，但短缺时更不可控。", "icon_key": "policy_logistics_corps", "sort_order": 120, "tags": ["economy", "trade"] },
+
+    { "id": "inward_rationing", "name": "内向配给", "description": "本土资源优先，抗封锁更强，但贸易收益更低。", "icon_key": "policy_logistics_corps", "sort_order": 130, "tags": ["trade", "defense"] },
+    { "id": "chartered_trade", "name": "特许贸易", "description": "指定资源和城市收益更高，但被袭扰时损失集中。", "icon_key": "policy_mercantile_charter", "sort_order": 140, "tags": ["trade", "routes"] },
+    { "id": "protective_tariffs", "name": "保护关税", "description": "本地工业受保护，但进口成本更高。", "icon_key": "policy_mercantile_charter", "sort_order": 150, "tags": ["trade", "industry"] },
+    { "id": "free_trade", "name": "自由贸易", "description": "资源调剂与贸易收益都更高，但战争时更脆弱。", "icon_key": "policy_mercantile_charter", "sort_order": 160, "tags": ["trade", "openness"] },
+
+    { "id": "vassal_levies", "name": "封臣兵役", "description": "便宜且地方防御强，但远征和统一指挥较差。", "icon_key": "policy_logistics_corps", "sort_order": 170, "tags": ["military", "local"] },
+    { "id": "professional_army", "name": "职业军", "description": "单位质量和命令可靠性更高，但维护成本也更高。", "icon_key": "policy_reorganization", "sort_order": 180, "tags": ["military", "elite"] },
+    { "id": "mass_conscription", "name": "征召制", "description": "战时扩军很快，但生产和城市稳定会受冲击。", "icon_key": "policy_logistics_corps", "sort_order": 190, "tags": ["military", "mobilization"] },
+    { "id": "munitions_committee", "name": "军需委员会", "description": "前线物流、修路和弹药优先，国家会向战争需求倾斜。", "icon_key": "policy_logistics_corps", "sort_order": 200, "tags": ["military", "logistics"] },
+
+    { "id": "local_autonomy", "name": "地方自治", "description": "地方自动处理建设和修复更快，但中央报告更慢更偏差。", "icon_key": "policy_academy_charter", "sort_order": 210, "tags": ["administration", "local"] },
+    { "id": "central_bureaucracy", "name": "中央官僚", "description": "报告准确、透明度高，但响应慢、行政消耗高。", "icon_key": "policy_academy_charter", "sort_order": 220, "tags": ["administration", "central"] },
+    { "id": "inspectorate_system", "name": "巡察体系", "description": "更容易暴露地图、敌情和短缺，但会额外消耗资源。", "icon_key": "policy_research_mandate", "sort_order": 230, "tags": ["administration", "intel"] },
+    { "id": "secretariat_cabinet", "name": "秘书处内阁", "description": "大臣汇报更结构化、提案更稳定，但玩家会更依赖他们。", "icon_key": "policy_research_mandate", "sort_order": 240, "tags": ["administration", "minister"] }
   ]
 }
