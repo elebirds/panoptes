@@ -40,6 +40,7 @@ type clientCfg struct {
 	temperature  float64
 	topP         float64
 	maxTokens    int64
+	extraFields  map[string]any
 }
 
 func WithModel(model string) Option {
@@ -56,6 +57,10 @@ func WithTopP(p float64) Option {
 
 func WithMaxTokens(n int64) Option {
 	return func(c *clientCfg) { c.maxTokens = n }
+}
+
+func WithExtraFields(fields map[string]any) Option {
+	return func(c *clientCfg) { c.extraFields = cloneAnyMap(fields) }
 }
 
 // -------------------------------- Client --------------------------------
@@ -95,13 +100,7 @@ func (c *Client) NormalChat(ctx context.Context, req *ChatRequest) (*ChatRespons
 	model := c.resolveModel(req.Model)
 	startedAt := time.Now()
 	c.debugLogRequest(ctx, "NormalChat", req, "", model)
-	completion, err := c.oai.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Messages:    buildMessages(req),
-		Model:       model,
-		Temperature: openai.Float(c.cfg.temperature),
-		TopP:        openai.Float(c.cfg.topP),
-		MaxTokens:   openai.Int(c.cfg.maxTokens),
-	})
+	completion, err := c.oai.Chat.Completions.New(ctx, c.chatCompletionParams(req, model))
 	if err != nil {
 		return nil, fmt.Errorf("%s NormalChat: %w", c.name, err)
 	}
@@ -144,13 +143,7 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 	model := c.resolveModel(req.Model)
 	startedAt := time.Now()
 	c.debugLogRequest(ctx, "StreamChat", req, sessionID, model)
-	stream := c.oai.Chat.Completions.NewStreaming(jobCtx, openai.ChatCompletionNewParams{
-		Messages:    buildMessages(req),
-		Model:       model,
-		Temperature: openai.Float(c.cfg.temperature),
-		TopP:        openai.Float(c.cfg.topP),
-		MaxTokens:   openai.Int(c.cfg.maxTokens),
-	})
+	stream := c.oai.Chat.Completions.NewStreaming(jobCtx, c.chatCompletionParams(req, model))
 
 	responseCh := make(chan *ChatResponse)
 
@@ -215,6 +208,31 @@ func (c *Client) resolveModel(reqModel string) string {
 		return reqModel
 	}
 	return c.cfg.defaultModel
+}
+
+func (c *Client) chatCompletionParams(req *ChatRequest, model string) openai.ChatCompletionNewParams {
+	params := openai.ChatCompletionNewParams{
+		Messages:    buildMessages(req),
+		Model:       model,
+		Temperature: openai.Float(c.cfg.temperature),
+		TopP:        openai.Float(c.cfg.topP),
+		MaxTokens:   openai.Int(c.cfg.maxTokens),
+	}
+	if len(c.cfg.extraFields) > 0 {
+		params.SetExtraFields(cloneAnyMap(c.cfg.extraFields))
+	}
+	return params
+}
+
+func cloneAnyMap(in map[string]any) map[string]any {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for key, value := range in {
+		out[key] = value
+	}
+	return out
 }
 
 func (c *Client) debugLogRequest(ctx context.Context, op string, req *ChatRequest, sessionID string, model string) {
