@@ -733,8 +733,8 @@ namespace Panoptes.Presentation.Map
                 {
                     _inputState.SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
+                    return;
                 }
-                return;
             }
 
             if (TryRaycastUnit(out var unit) && unit != null)
@@ -766,6 +766,11 @@ namespace Panoptes.Presentation.Map
                 {
                     if (_inputState.CombatActionMode == CombatActionMode.Attack)
                     {
+                        if (TryIssueUnitTargetOrderFromNode(node.NodeId))
+                        {
+                            return;
+                        }
+
                         if (TryIssueStructureTargetOrder(node.NodeId))
                         {
                             _inputState.SetCombatActionMode(CombatActionMode.None);
@@ -1038,6 +1043,23 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private bool TryIssueUnitTargetOrderFromNode(string nodeId)
+        {
+            if (_selectedUnit == null ||
+                _inputState.CombatActionMode != CombatActionMode.Attack ||
+                string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            if (!TryFindHostileUnitOnNode(nodeId, requireAttackRange: true, out var targetUnit))
+            {
+                return false;
+            }
+
+            return TryIssueUnitTargetOrder(targetUnit);
+        }
+
         private bool IsHostileTarget(UnitView unit)
         {
             if (unit == null || _selectedUnit == null || unit == _selectedUnit)
@@ -1092,7 +1114,10 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null ||
                 _inputState.CombatActionMode != CombatActionMode.Attack ||
-                string.IsNullOrWhiteSpace(nodeId))
+                string.IsNullOrWhiteSpace(nodeId) ||
+                !CanSelectedUnitAttackStructures() ||
+                !IsEnemyStructureNode(nodeId) ||
+                !IsNodeWithinSelectedAttackRange(nodeId))
             {
                 return false;
             }
@@ -1250,7 +1275,8 @@ namespace Panoptes.Presentation.Map
                 _highlightNodeIds,
                 originGrid,
                 attackRange,
-                attackRangeHighlightColor);
+                attackRangeHighlightColor,
+                (nodeId, _) => ShouldHighlightAttackTargetNode(nodeId));
         }
 
         private bool IsNodeWithinSelectedAttackRange(string nodeId)
@@ -1315,14 +1341,58 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
+        private bool ShouldHighlightAttackTargetNode(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            if (TryFindHostileUnitOnNode(nodeId, requireAttackRange: false, out _))
+            {
+                return true;
+            }
+
+            return CanSelectedUnitAttackStructures() && IsEnemyStructureNode(nodeId);
+        }
+
+        private bool TryFindHostileUnitOnNode(string nodeId, bool requireAttackRange, out UnitView targetUnit)
+        {
+            targetUnit = null;
+            var map = _mapRenderer;
+            if (map == null || string.IsNullOrWhiteSpace(nodeId) || !map.TryGetUnitsOnNode(nodeId.Trim(), _nodeClickUnits))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _nodeClickUnits.Count; i++)
+            {
+                var candidate = _nodeClickUnits[i];
+                if (candidate == null || !IsHostileTarget(candidate))
+                {
+                    continue;
+                }
+
+                if (requireAttackRange && !IsGridWithinSelectedAttackRange(candidate.GridPos))
+                {
+                    continue;
+                }
+
+                targetUnit = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
         private int ResolveSelectedUnitAttackRange()
         {
             if (TryGetSelectedUnitCatalog(out var entry) && entry != null)
             {
-                return Mathf.Max(1, entry.AttackRange);
+                return Mathf.Max(0, entry.AttackRange);
             }
 
-            return 1;
+            return 0;
         }
         #endregion
 

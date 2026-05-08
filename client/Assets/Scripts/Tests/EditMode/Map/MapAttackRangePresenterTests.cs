@@ -61,6 +61,29 @@ namespace Panoptes.Tests.EditMode.Map
                 Is.False);
         }
 
+        [Test]
+        public void Refresh_ShouldRespectTargetPredicate()
+        {
+            var presenter = new MapAttackRangePresenter();
+            var highlighted = new HashSet<string>();
+            var tiles = new Dictionary<string, NodeView>
+            {
+                ["enemy"] = CreateNode("enemy", 1, 0),
+                ["empty"] = CreateNode("empty", 0, 1)
+            };
+
+            presenter.Refresh(
+                tiles,
+                highlighted,
+                originGrid: new Vector2Int(0, 0),
+                attackRange: 2,
+                highlightColor: Color.red,
+                canHighlightTarget: (nodeId, _) => nodeId == "enemy");
+
+            Assert.That(highlighted, Does.Contain("enemy"));
+            Assert.That(highlighted, Does.Not.Contain("empty"));
+        }
+
         private NodeView CreateNode(string nodeId, int q, int r)
         {
             var go = new GameObject($"Node_{nodeId}");

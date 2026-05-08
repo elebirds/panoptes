@@ -158,6 +158,26 @@ migrate.
   should assert both direct backend build ghost application and queued build
   restoration leave the node highlight inactive.
 
+### Map Attack Targeting Affordances
+
+- Attack highlights are target affordances, not raw radius previews. Highlight
+  enemy unit nodes for units that can attack, and highlight enemy structure
+  nodes only when the selected unit's static catalog flags allow structure
+  attacks.
+- Presentation may use static catalog fields such as `attack`,
+  `attack_range`, and `can_attack_structures` to decide which attack buttons,
+  highlights, and click routes to show. It must still submit commands through
+  `PlanningIntentService`; the backend remains authoritative for final
+  validation and resolution.
+- When a click in attack mode raycasts the node under an enemy unit instead of
+  the unit model, route the command as a unit-target attack if the map renderer
+  can resolve a hostile `UnitView` on that node. Do not fall back to
+  `AttackNode` unless the node is an enemy structure and the selected unit can
+  attack structures.
+- Regression tests should cover both the generic range presenter filtering and
+  the catalog targeting helper so units with `attack_range: 0` do not get a
+  fake one-tile attack affordance.
+
 ### Composition Scope Ownership
 
 - `ProjectLifetimeScope` is owned by the startup/bootstrap path that creates the

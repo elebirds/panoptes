@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Check frontend package guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify modified files stay in appropriate client folders."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify MonoBehaviour/prefab-facing compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client-side gameplay authority was added."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify expected Unity checks and forbidden patterns."}
+{"file": ".trellis/tasks/05-08-archer-adjacent-attack/prd.md", "reason": "Check implementation against agreed requirements."}

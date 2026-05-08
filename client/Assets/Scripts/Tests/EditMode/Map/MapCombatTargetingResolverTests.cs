@@ -11,10 +11,20 @@ namespace Panoptes.Tests.EditMode.Map
         {
             var entry = new CatalogUnitDto
             {
+                Attack = 1,
+                AttackRange = 1,
                 Tags = new System.Collections.Generic.List<string> { "civilian" }
             };
 
             Assert.That(MapCombatTargetingResolver.CanAttack(entry), Is.False);
+        }
+
+        [Test]
+        public void CanAttack_ShouldRequireAttackAndRange()
+        {
+            Assert.That(MapCombatTargetingResolver.CanAttack(new CatalogUnitDto { Attack = 0, AttackRange = 1 }), Is.False);
+            Assert.That(MapCombatTargetingResolver.CanAttack(new CatalogUnitDto { Attack = 1, AttackRange = 0 }), Is.False);
+            Assert.That(MapCombatTargetingResolver.CanAttack(new CatalogUnitDto { Attack = 1, AttackRange = 2 }), Is.True);
         }
 
         [Test]

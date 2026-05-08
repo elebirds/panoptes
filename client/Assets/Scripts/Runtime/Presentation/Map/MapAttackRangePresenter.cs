@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,7 +11,8 @@ namespace Panoptes.Presentation.Map
             ISet<string> highlightedNodeIds,
             Vector2Int originGrid,
             int attackRange,
-            Color highlightColor)
+            Color highlightColor,
+            Func<string, NodeView, bool> canHighlightTarget = null)
         {
             if (tileViews == null || highlightedNodeIds == null || attackRange <= 0)
             {
@@ -26,7 +28,8 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (HexGrid.AxialDistance(originGrid, nodeView.GridPos) > attackRange)
+                if (HexGrid.AxialDistance(originGrid, nodeView.GridPos) > attackRange ||
+                    (canHighlightTarget != null && !canHighlightTarget(nodeId, nodeView)))
                 {
                     continue;
                 }

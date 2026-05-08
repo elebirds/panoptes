@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend package entrypoint for client implementation guidelines."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Map presentation targeting changes must stay in existing client boundaries."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Map MonoBehaviour changes should preserve serialized compatibility and facade responsibilities."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Client changes must remain presentation/submission routing only, with server authority preserved."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Use project quality rules for Unity verification and forbidden patterns."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "This bug crosses static data, backend validation, and frontend presentation."}
+{"file": ".trellis/tasks/05-08-archer-adjacent-attack/prd.md", "reason": "Implementation requirements for archer adjacent attack mismatch."}

@@ -42,6 +42,35 @@ func TestValidatePlanningUnitOrderAllowsAttackAfterActiveMarch(t *testing.T) {
 	}
 }
 
+func TestValidatePlanningUnitOrderAllowsArcherAdjacentUnitButRejectsStructure(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	archer := state.World.Entry(ecs.CreateUnit(state.World, "archer", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(archer).ID = "archer-1"
+	enemy := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 1, R: 0}))
+	ecs.UnitStatsC.Get(enemy).ID = "enemy-1"
+	enemyNode, _ := state.GetNode("A2")
+	ecs.CreateBuilding(state.World, "farm", "player-2", "A2", enemyNode)
+
+	if errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:     "player-1",
+		UnitID:       "archer-1",
+		Action:       ActionAttack,
+		TargetUnitID: "enemy-1",
+	}); errCode != "" {
+		t.Fatalf("archer unit attack validation error = %q, want accepted", errCode)
+	}
+
+	if errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:     "player-1",
+		UnitID:       "archer-1",
+		Action:       ActionAttack,
+		TargetNodeID: "A2",
+	}); errCode != "invalid_directive" {
+		t.Fatalf("archer structure attack validation error = %q, want invalid_directive", errCode)
+	}
+}
+
 func TestApplyPlanningUnitOrderSyncsMoveAndPreservesAttackPath(t *testing.T) {
 	useUnitOrderTestCatalog(t)
 	state := newUnitOrderTestState(t)
@@ -373,6 +402,7 @@ func useUnitOrderTestCatalog(t *testing.T) {
 		Rules: staticdata.Rules{CityCoreMaxHP: 100},
 		Units: []staticdata.UnitDefinition{
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, Multipliers: map[string]float64{}},
 			{ID: "settler", Class: "civilian", MaxHP: 12, MoveRange: 2, VisionRange: 2, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}},
 		},
 		Buildings: []staticdata.BuildingDefinition{

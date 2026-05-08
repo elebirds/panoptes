@@ -7,7 +7,10 @@ namespace Panoptes.Presentation.Map
     {
         public static bool CanAttack(CatalogUnitDto entry)
         {
-            return entry != null && !MapInputTokens.HasTag(entry.Tags, "civilian");
+            return entry != null &&
+                   entry.Attack > 0 &&
+                   entry.AttackRange > 0 &&
+                   !MapInputTokens.HasTag(entry.Tags, "civilian");
         }
 
         public static bool CanAttackStructures(CatalogUnitDto entry)
