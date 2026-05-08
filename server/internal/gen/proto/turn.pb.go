@@ -565,7 +565,7 @@ type MsgPlanningSnapshot struct {
 	BuildOrders                       []*QueuedBuildOrder       `protobuf:"bytes,8,rep,name=build_orders,json=buildOrders,proto3" json:"build_orders,omitempty"`
 	RecipeSelections                  []*QueuedRecipeSelection  `protobuf:"bytes,9,rep,name=recipe_selections,json=recipeSelections,proto3" json:"recipe_selections,omitempty"`
 	WarZoneDirectives                 []*QueuedWarZoneDirective `protobuf:"bytes,10,rep,name=war_zone_directives,json=warZoneDirectives,proto3" json:"war_zone_directives,omitempty"`
-	PlannedInstitutionPolicyIds       []string                  `protobuf:"bytes,11,rep,name=planned_institution_policy_ids,json=plannedInstitutionPolicyIds,proto3" json:"planned_institution_policy_ids,omitempty"`
+	PlannedInstitutionIds             []string                  `protobuf:"bytes,11,rep,name=planned_institution_ids,json=plannedInstitutionIds,proto3" json:"planned_institution_ids,omitempty"`
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache
 }
@@ -670,9 +670,9 @@ func (x *MsgPlanningSnapshot) GetWarZoneDirectives() []*QueuedWarZoneDirective {
 	return nil
 }
 
-func (x *MsgPlanningSnapshot) GetPlannedInstitutionPolicyIds() []string {
+func (x *MsgPlanningSnapshot) GetPlannedInstitutionIds() []string {
 	if x != nil {
-		return x.PlannedInstitutionPolicyIds
+		return x.PlannedInstitutionIds
 	}
 	return nil
 }
@@ -1233,6 +1233,82 @@ func (x *MsgTokenResult) GetErrorCode() string {
 	return ""
 }
 
+type MsgMandateResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	TokensLeft    int32                  `protobuf:"varint,3,opt,name=tokens_left,json=tokensLeft,proto3" json:"tokens_left,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,4,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgMandateResult) Reset() {
+	*x = MsgMandateResult{}
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgMandateResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgMandateResult) ProtoMessage() {}
+
+func (x *MsgMandateResult) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgMandateResult.ProtoReflect.Descriptor instead.
+func (*MsgMandateResult) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MsgMandateResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgMandateResult) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *MsgMandateResult) GetTokensLeft() int32 {
+	if x != nil {
+		return x.TokensLeft
+	}
+	return 0
+}
+
+func (x *MsgMandateResult) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *MsgMandateResult) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type MsgRevealResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -1244,7 +1320,7 @@ type MsgRevealResult struct {
 
 func (x *MsgRevealResult) Reset() {
 	*x = MsgRevealResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1256,7 +1332,7 @@ func (x *MsgRevealResult) String() string {
 func (*MsgRevealResult) ProtoMessage() {}
 
 func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1269,7 +1345,7 @@ func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRevealResult.ProtoReflect.Descriptor instead.
 func (*MsgRevealResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{15}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MsgRevealResult) GetNodeId() string {
@@ -1304,7 +1380,7 @@ type MsgResearchResult struct {
 
 func (x *MsgResearchResult) Reset() {
 	*x = MsgResearchResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1316,7 +1392,7 @@ func (x *MsgResearchResult) String() string {
 func (*MsgResearchResult) ProtoMessage() {}
 
 func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1329,7 +1405,7 @@ func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgResearchResult.ProtoReflect.Descriptor instead.
 func (*MsgResearchResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{16}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MsgResearchResult) GetSuccess() bool {
@@ -1364,7 +1440,7 @@ type MsgSetPolicyResult struct {
 
 func (x *MsgSetPolicyResult) Reset() {
 	*x = MsgSetPolicyResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1376,7 +1452,7 @@ func (x *MsgSetPolicyResult) String() string {
 func (*MsgSetPolicyResult) ProtoMessage() {}
 
 func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,7 +1465,7 @@ func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetPolicyResult.ProtoReflect.Descriptor instead.
 func (*MsgSetPolicyResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{17}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgSetPolicyResult) GetSuccess() bool {
@@ -1414,17 +1490,17 @@ func (x *MsgSetPolicyResult) GetErrorCode() string {
 }
 
 type MsgSetInstitutionLoadoutResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	PolicyIds     []string               `protobuf:"bytes,2,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
-	ErrorCode     string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Success        bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	InstitutionIds []string               `protobuf:"bytes,2,rep,name=institution_ids,json=institutionIds,proto3" json:"institution_ids,omitempty"`
+	ErrorCode      string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MsgSetInstitutionLoadoutResult) Reset() {
 	*x = MsgSetInstitutionLoadoutResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1436,7 +1512,7 @@ func (x *MsgSetInstitutionLoadoutResult) String() string {
 func (*MsgSetInstitutionLoadoutResult) ProtoMessage() {}
 
 func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1525,7 @@ func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetInstitutionLoadoutResult.ProtoReflect.Descriptor instead.
 func (*MsgSetInstitutionLoadoutResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{18}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MsgSetInstitutionLoadoutResult) GetSuccess() bool {
@@ -1459,9 +1535,9 @@ func (x *MsgSetInstitutionLoadoutResult) GetSuccess() bool {
 	return false
 }
 
-func (x *MsgSetInstitutionLoadoutResult) GetPolicyIds() []string {
+func (x *MsgSetInstitutionLoadoutResult) GetInstitutionIds() []string {
 	if x != nil {
-		return x.PolicyIds
+		return x.InstitutionIds
 	}
 	return nil
 }
@@ -1487,7 +1563,7 @@ type MsgSetBuildingRecipeResult struct {
 
 func (x *MsgSetBuildingRecipeResult) Reset() {
 	*x = MsgSetBuildingRecipeResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1499,7 +1575,7 @@ func (x *MsgSetBuildingRecipeResult) String() string {
 func (*MsgSetBuildingRecipeResult) ProtoMessage() {}
 
 func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1512,7 +1588,7 @@ func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetBuildingRecipeResult.ProtoReflect.Descriptor instead.
 func (*MsgSetBuildingRecipeResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{19}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MsgSetBuildingRecipeResult) GetSuccess() bool {
@@ -1572,7 +1648,7 @@ type MsgBuildStructureResult struct {
 
 func (x *MsgBuildStructureResult) Reset() {
 	*x = MsgBuildStructureResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1584,7 +1660,7 @@ func (x *MsgBuildStructureResult) String() string {
 func (*MsgBuildStructureResult) ProtoMessage() {}
 
 func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1597,7 +1673,7 @@ func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildStructureResult.ProtoReflect.Descriptor instead.
 func (*MsgBuildStructureResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{20}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *MsgBuildStructureResult) GetSuccess() bool {
@@ -1663,7 +1739,7 @@ type MsgIssueUnitOrderResult struct {
 
 func (x *MsgIssueUnitOrderResult) Reset() {
 	*x = MsgIssueUnitOrderResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1675,7 +1751,7 @@ func (x *MsgIssueUnitOrderResult) String() string {
 func (*MsgIssueUnitOrderResult) ProtoMessage() {}
 
 func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1688,7 +1764,7 @@ func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgIssueUnitOrderResult.ProtoReflect.Descriptor instead.
 func (*MsgIssueUnitOrderResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{21}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *MsgIssueUnitOrderResult) GetSuccess() bool {
@@ -1743,7 +1819,7 @@ type MsgTurnReport struct {
 
 func (x *MsgTurnReport) Reset() {
 	*x = MsgTurnReport{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1755,7 +1831,7 @@ func (x *MsgTurnReport) String() string {
 func (*MsgTurnReport) ProtoMessage() {}
 
 func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1768,7 +1844,7 @@ func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTurnReport.ProtoReflect.Descriptor instead.
 func (*MsgTurnReport) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{22}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *MsgTurnReport) GetTurn() int32 {
@@ -1786,23 +1862,26 @@ func (x *MsgTurnReport) GetSummary() string {
 }
 
 type MinisterProposalView struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ProposalId      string                 `protobuf:"bytes,1,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
-	MinisterRole    string                 `protobuf:"bytes,2,opt,name=minister_role,json=ministerRole,proto3" json:"minister_role,omitempty"`
-	Kind            string                 `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
-	Title           string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Summary         string                 `protobuf:"bytes,5,opt,name=summary,proto3" json:"summary,omitempty"`
-	Rationale       string                 `protobuf:"bytes,6,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	RiskNote        string                 `protobuf:"bytes,7,opt,name=risk_note,json=riskNote,proto3" json:"risk_note,omitempty"`
-	ProposedCommand *CommandEnvelope       `protobuf:"bytes,8,opt,name=proposed_command,json=proposedCommand,proto3" json:"proposed_command,omitempty"`
-	RawJson         string                 `protobuf:"bytes,9,opt,name=raw_json,json=rawJson,proto3" json:"raw_json,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state             protoimpl.MessageState          `protogen:"open.v1"`
+	ProposalId        string                          `protobuf:"bytes,1,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
+	MinisterRole      string                          `protobuf:"bytes,2,opt,name=minister_role,json=ministerRole,proto3" json:"minister_role,omitempty"`
+	Kind              string                          `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	Title             string                          `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Summary           string                          `protobuf:"bytes,5,opt,name=summary,proto3" json:"summary,omitempty"`
+	Rationale         string                          `protobuf:"bytes,6,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	RiskNote          string                          `protobuf:"bytes,7,opt,name=risk_note,json=riskNote,proto3" json:"risk_note,omitempty"`
+	ProposedCommand   *CommandEnvelope                `protobuf:"bytes,8,opt,name=proposed_command,json=proposedCommand,proto3" json:"proposed_command,omitempty"`
+	RawJson           string                          `protobuf:"bytes,9,opt,name=raw_json,json=rawJson,proto3" json:"raw_json,omitempty"`
+	OperationCommands []*MinisterOperationCommandView `protobuf:"bytes,10,rep,name=operation_commands,json=operationCommands,proto3" json:"operation_commands,omitempty"`
+	OperationId       string                          `protobuf:"bytes,11,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	Objective         string                          `protobuf:"bytes,12,opt,name=objective,proto3" json:"objective,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *MinisterProposalView) Reset() {
 	*x = MinisterProposalView{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1814,7 +1893,7 @@ func (x *MinisterProposalView) String() string {
 func (*MinisterProposalView) ProtoMessage() {}
 
 func (x *MinisterProposalView) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1827,7 +1906,7 @@ func (x *MinisterProposalView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MinisterProposalView.ProtoReflect.Descriptor instead.
 func (*MinisterProposalView) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{23}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *MinisterProposalView) GetProposalId() string {
@@ -1893,6 +1972,95 @@ func (x *MinisterProposalView) GetRawJson() string {
 	return ""
 }
 
+func (x *MinisterProposalView) GetOperationCommands() []*MinisterOperationCommandView {
+	if x != nil {
+		return x.OperationCommands
+	}
+	return nil
+}
+
+func (x *MinisterProposalView) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
+func (x *MinisterProposalView) GetObjective() string {
+	if x != nil {
+		return x.Objective
+	}
+	return ""
+}
+
+type MinisterOperationCommandView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Command       *CommandEnvelope       `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
+	RawJson       string                 `protobuf:"bytes,4,opt,name=raw_json,json=rawJson,proto3" json:"raw_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MinisterOperationCommandView) Reset() {
+	*x = MinisterOperationCommandView{}
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MinisterOperationCommandView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MinisterOperationCommandView) ProtoMessage() {}
+
+func (x *MinisterOperationCommandView) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MinisterOperationCommandView.ProtoReflect.Descriptor instead.
+func (*MinisterOperationCommandView) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *MinisterOperationCommandView) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *MinisterOperationCommandView) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *MinisterOperationCommandView) GetCommand() *CommandEnvelope {
+	if x != nil {
+		return x.Command
+	}
+	return nil
+}
+
+func (x *MinisterOperationCommandView) GetRawJson() string {
+	if x != nil {
+		return x.RawJson
+	}
+	return ""
+}
+
 type MsgGameSync struct {
 	state             protoimpl.MessageState  `protogen:"open.v1"`
 	Turn              int32                   `protobuf:"varint,1,opt,name=turn,proto3" json:"turn,omitempty"`
@@ -1912,7 +2080,7 @@ type MsgGameSync struct {
 
 func (x *MsgGameSync) Reset() {
 	*x = MsgGameSync{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1924,7 +2092,7 @@ func (x *MsgGameSync) String() string {
 func (*MsgGameSync) ProtoMessage() {}
 
 func (x *MsgGameSync) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1937,7 +2105,7 @@ func (x *MsgGameSync) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgGameSync.ProtoReflect.Descriptor instead.
 func (*MsgGameSync) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{24}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *MsgGameSync) GetTurn() int32 {
@@ -2072,7 +2240,7 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\azone_id\x18\x01 \x01(\tR\x06zoneId\x12\x1c\n" +
 	"\tdirective\x18\x02 \x01(\tR\tdirective\x12\x1f\n" +
 	"\vtarget_node\x18\x03 \x01(\tR\n" +
-	"targetNode\"\xda\x05\n" +
+	"targetNode\"\xcd\x05\n" +
 	"\x13MsgPlanningSnapshot\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12C\n" +
@@ -2085,8 +2253,8 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\fbuild_orders\x18\b \x03(\v2#.panoptes.proto.v1.QueuedBuildOrderR\vbuildOrders\x12U\n" +
 	"\x11recipe_selections\x18\t \x03(\v2(.panoptes.proto.v1.QueuedRecipeSelectionR\x10recipeSelections\x12Y\n" +
 	"\x13war_zone_directives\x18\n" +
-	" \x03(\v2).panoptes.proto.v1.QueuedWarZoneDirectiveR\x11warZoneDirectives\x12C\n" +
-	"\x1eplanned_institution_policy_ids\x18\v \x03(\tR\x1bplannedInstitutionPolicyIds\"\xfe\x02\n" +
+	" \x03(\v2).panoptes.proto.v1.QueuedWarZoneDirectiveR\x11warZoneDirectives\x126\n" +
+	"\x17planned_institution_ids\x18\v \x03(\tR\x15plannedInstitutionIds\"\xfe\x02\n" +
 	"\x1eMsgPlanningPathPreviewResponse\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x17\n" +
@@ -2144,7 +2312,15 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\vtokens_left\x18\x03 \x01(\x05R\n" +
 	"tokensLeft\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\x04 \x01(\tR\terrorCode\"\x87\x01\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\"\x9e\x01\n" +
+	"\x10MsgMandateResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1f\n" +
+	"\vtokens_left\x18\x03 \x01(\x05R\n" +
+	"tokensLeft\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\"\x87\x01\n" +
 	"\x0fMsgRevealResult\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12:\n" +
 	"\n" +
@@ -2160,11 +2336,10 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12,\n" +
 	"\x12national_policy_id\x18\x02 \x01(\tR\x10nationalPolicyId\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\x03 \x01(\tR\terrorCode\"x\n" +
+	"error_code\x18\x03 \x01(\tR\terrorCode\"\x82\x01\n" +
 	"\x1eMsgSetInstitutionLoadoutResult\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
-	"\n" +
-	"policy_ids\x18\x02 \x03(\tR\tpolicyIds\x12\x1d\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12'\n" +
+	"\x0finstitution_ids\x18\x02 \x03(\tR\x0einstitutionIds\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x03 \x01(\tR\terrorCode\"\x84\x02\n" +
 	"\x1aMsgSetBuildingRecipeResult\x12\x18\n" +
@@ -2194,7 +2369,7 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"error_code\x18\x06 \x01(\tR\terrorCode\"=\n" +
 	"\rMsgTurnReport\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x18\n" +
-	"\asummary\x18\x02 \x01(\tR\asummary\"\xc5\x02\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\"\xe6\x03\n" +
 	"\x14MinisterProposalView\x12\x1f\n" +
 	"\vproposal_id\x18\x01 \x01(\tR\n" +
 	"proposalId\x12#\n" +
@@ -2205,7 +2380,16 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\trationale\x18\x06 \x01(\tR\trationale\x12\x1b\n" +
 	"\trisk_note\x18\a \x01(\tR\briskNote\x12M\n" +
 	"\x10proposed_command\x18\b \x01(\v2\".panoptes.proto.v1.CommandEnvelopeR\x0fproposedCommand\x12\x19\n" +
-	"\braw_json\x18\t \x01(\tR\arawJson\"\xf2\x04\n" +
+	"\braw_json\x18\t \x01(\tR\arawJson\x12^\n" +
+	"\x12operation_commands\x18\n" +
+	" \x03(\v2/.panoptes.proto.v1.MinisterOperationCommandViewR\x11operationCommands\x12!\n" +
+	"\foperation_id\x18\v \x01(\tR\voperationId\x12\x1c\n" +
+	"\tobjective\x18\f \x01(\tR\tobjective\"\xa1\x01\n" +
+	"\x1cMinisterOperationCommandView\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12<\n" +
+	"\acommand\x18\x03 \x01(\v2\".panoptes.proto.v1.CommandEnvelopeR\acommand\x12\x19\n" +
+	"\braw_json\x18\x04 \x01(\tR\arawJson\"\xf2\x04\n" +
 	"\vMsgGameSync\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1d\n" +
@@ -2233,7 +2417,7 @@ func file_panoptes_proto_v1_turn_proto_rawDescGZIP() []byte {
 	return file_panoptes_proto_v1_turn_proto_rawDescData
 }
 
-var file_panoptes_proto_v1_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_panoptes_proto_v1_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*MsgPlanningStart)(nil),                    // 0: panoptes.proto.v1.MsgPlanningStart
 	(*MinisterDraftView)(nil),                   // 1: panoptes.proto.v1.MinisterDraftView
@@ -2250,38 +2434,40 @@ var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*MsgSetBuildingRecipePreviewRequest)(nil),  // 12: panoptes.proto.v1.MsgSetBuildingRecipePreviewRequest
 	(*MsgSetBuildingRecipePreviewResponse)(nil), // 13: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
 	(*MsgTokenResult)(nil),                      // 14: panoptes.proto.v1.MsgTokenResult
-	(*MsgRevealResult)(nil),                     // 15: panoptes.proto.v1.MsgRevealResult
-	(*MsgResearchResult)(nil),                   // 16: panoptes.proto.v1.MsgResearchResult
-	(*MsgSetPolicyResult)(nil),                  // 17: panoptes.proto.v1.MsgSetPolicyResult
-	(*MsgSetInstitutionLoadoutResult)(nil),      // 18: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
-	(*MsgSetBuildingRecipeResult)(nil),          // 19: panoptes.proto.v1.MsgSetBuildingRecipeResult
-	(*MsgBuildStructureResult)(nil),             // 20: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgIssueUnitOrderResult)(nil),             // 21: panoptes.proto.v1.MsgIssueUnitOrderResult
-	(*MsgTurnReport)(nil),                       // 22: panoptes.proto.v1.MsgTurnReport
-	(*MinisterProposalView)(nil),                // 23: panoptes.proto.v1.MinisterProposalView
-	(*MsgGameSync)(nil),                         // 24: panoptes.proto.v1.MsgGameSync
-	nil,                                         // 25: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
-	(*PlayerView)(nil),                          // 26: panoptes.proto.v1.PlayerView
-	(*NodeView)(nil),                            // 27: panoptes.proto.v1.NodeView
-	(*UnitView)(nil),                            // 28: panoptes.proto.v1.UnitView
-	(*DomainEventEnvelope)(nil),                 // 29: panoptes.proto.v1.DomainEventEnvelope
-	(*InformationReportView)(nil),               // 30: panoptes.proto.v1.InformationReportView
-	(*WarZone)(nil),                             // 31: panoptes.proto.v1.WarZone
-	(*CommandEnvelope)(nil),                     // 32: panoptes.proto.v1.CommandEnvelope
-	(*MsgCommandAck)(nil),                       // 33: panoptes.proto.v1.MsgCommandAck
+	(*MsgMandateResult)(nil),                    // 15: panoptes.proto.v1.MsgMandateResult
+	(*MsgRevealResult)(nil),                     // 16: panoptes.proto.v1.MsgRevealResult
+	(*MsgResearchResult)(nil),                   // 17: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetPolicyResult)(nil),                  // 18: panoptes.proto.v1.MsgSetPolicyResult
+	(*MsgSetInstitutionLoadoutResult)(nil),      // 19: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgSetBuildingRecipeResult)(nil),          // 20: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MsgBuildStructureResult)(nil),             // 21: panoptes.proto.v1.MsgBuildStructureResult
+	(*MsgIssueUnitOrderResult)(nil),             // 22: panoptes.proto.v1.MsgIssueUnitOrderResult
+	(*MsgTurnReport)(nil),                       // 23: panoptes.proto.v1.MsgTurnReport
+	(*MinisterProposalView)(nil),                // 24: panoptes.proto.v1.MinisterProposalView
+	(*MinisterOperationCommandView)(nil),        // 25: panoptes.proto.v1.MinisterOperationCommandView
+	(*MsgGameSync)(nil),                         // 26: panoptes.proto.v1.MsgGameSync
+	nil,                                         // 27: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	(*PlayerView)(nil),                          // 28: panoptes.proto.v1.PlayerView
+	(*NodeView)(nil),                            // 29: panoptes.proto.v1.NodeView
+	(*UnitView)(nil),                            // 30: panoptes.proto.v1.UnitView
+	(*DomainEventEnvelope)(nil),                 // 31: panoptes.proto.v1.DomainEventEnvelope
+	(*InformationReportView)(nil),               // 32: panoptes.proto.v1.InformationReportView
+	(*WarZone)(nil),                             // 33: panoptes.proto.v1.WarZone
+	(*CommandEnvelope)(nil),                     // 34: panoptes.proto.v1.CommandEnvelope
+	(*MsgCommandAck)(nil),                       // 35: panoptes.proto.v1.MsgCommandAck
 }
 var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	7,  // 0: panoptes.proto.v1.MsgPlanningStart.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
 	1,  // 1: panoptes.proto.v1.MsgPlanningStart.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
-	26, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
-	27, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
-	28, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
-	29, // 5: panoptes.proto.v1.MsgPlanningStart.planning_start_events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	30, // 6: panoptes.proto.v1.MsgPlanningStart.information_report:type_name -> panoptes.proto.v1.InformationReportView
-	25, // 7: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	28, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
+	29, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
+	30, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
+	31, // 5: panoptes.proto.v1.MsgPlanningStart.planning_start_events:type_name -> panoptes.proto.v1.DomainEventEnvelope
+	32, // 6: panoptes.proto.v1.MsgPlanningStart.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	27, // 7: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
 	2,  // 8: panoptes.proto.v1.QueuedUnitOrder.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
 	3,  // 9: panoptes.proto.v1.MsgPlanningSnapshot.unit_orders:type_name -> panoptes.proto.v1.QueuedUnitOrder
-	31, // 10: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
+	33, // 10: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
 	1,  // 11: panoptes.proto.v1.MsgPlanningSnapshot.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
 	4,  // 12: panoptes.proto.v1.MsgPlanningSnapshot.build_orders:type_name -> panoptes.proto.v1.QueuedBuildOrder
 	5,  // 13: panoptes.proto.v1.MsgPlanningSnapshot.recipe_selections:type_name -> panoptes.proto.v1.QueuedRecipeSelection
@@ -2289,23 +2475,25 @@ var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	2,  // 15: panoptes.proto.v1.MsgPlanningPathPreviewResponse.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
 	9,  // 16: panoptes.proto.v1.MsgBuildStructurePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
 	9,  // 17: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	27, // 18: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
+	29, // 18: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
 	9,  // 19: panoptes.proto.v1.MsgSetBuildingRecipeResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
 	9,  // 20: panoptes.proto.v1.MsgBuildStructureResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	32, // 21: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
-	7,  // 22: panoptes.proto.v1.MsgGameSync.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
-	26, // 23: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
-	27, // 24: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
-	28, // 25: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
-	29, // 26: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	33, // 27: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
-	23, // 28: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
-	30, // 29: panoptes.proto.v1.MsgGameSync.information_report:type_name -> panoptes.proto.v1.InformationReportView
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	34, // 21: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
+	25, // 22: panoptes.proto.v1.MinisterProposalView.operation_commands:type_name -> panoptes.proto.v1.MinisterOperationCommandView
+	34, // 23: panoptes.proto.v1.MinisterOperationCommandView.command:type_name -> panoptes.proto.v1.CommandEnvelope
+	7,  // 24: panoptes.proto.v1.MsgGameSync.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
+	28, // 25: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
+	29, // 26: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
+	30, // 27: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
+	31, // 28: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
+	35, // 29: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
+	24, // 30: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
+	32, // 31: panoptes.proto.v1.MsgGameSync.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_panoptes_proto_v1_turn_proto_init() }
@@ -2322,7 +2510,7 @@ func file_panoptes_proto_v1_turn_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_turn_proto_rawDesc), len(file_panoptes_proto_v1_turn_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

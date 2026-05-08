@@ -27,9 +27,11 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	t.Setenv("MAP_ID", "default")
 	t.Setenv("MINISTER_LLM_ENABLED", "true")
 	t.Setenv("MINISTER_LLM_PROVIDER", "qwen")
+	t.Setenv("MINISTER_LLM_API_KEY", "test-llm-key")
 	t.Setenv("MINISTER_LLM_MODEL", "qwen-plus")
 	t.Setenv("MINISTER_LLM_TIMEOUT_MS", "4200")
 	t.Setenv("MINISTER_LLM_ENABLED_ROLES", "domestic,military")
+	t.Setenv("MINISTER_LLM_PARTICIPATION_MODE", "strong")
 
 	cfg, err := Load()
 	if err != nil {
@@ -48,6 +50,9 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	if cfg.MinisterLLMProvider != "qwen" {
 		t.Fatalf("MinisterLLMProvider = %q", cfg.MinisterLLMProvider)
 	}
+	if cfg.MinisterLLMAPIKey != "test-llm-key" {
+		t.Fatalf("MinisterLLMAPIKey = %q", cfg.MinisterLLMAPIKey)
+	}
 	if cfg.MinisterLLMModel != "qwen-plus" {
 		t.Fatalf("MinisterLLMModel = %q", cfg.MinisterLLMModel)
 	}
@@ -56,6 +61,9 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	}
 	if cfg.MinisterLLMRoles != "domestic,military" {
 		t.Fatalf("MinisterLLMRoles = %q", cfg.MinisterLLMRoles)
+	}
+	if cfg.MinisterLLMParticipationMode != "strong" {
+		t.Fatalf("MinisterLLMParticipationMode = %q", cfg.MinisterLLMParticipationMode)
 	}
 	if staticdata.Default() == nil {
 		t.Fatalf("static data default catalog not loaded")
@@ -119,6 +127,15 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "reorganization", "layer": "national", "activation_timing": "same_turn", "prerequisites": [], "explicit_effects": [], "modifier_effects": [] }
   ]
 }`,
+		"data/content/institutions/institutions.json": `{
+  "$schema": "../../schema/content/institutions.schema.json",
+  "categories": [
+    { "id": "administration", "name": "行政制度", "description": "决定中央执行链条。", "sort_order": 10, "tags": [] }
+  ],
+  "institutions": [
+    { "id": "academy_charter", "category": "administration", "activation_timing": "next_turn", "prerequisites": [], "explicit_effects": [], "modifier_effects": [] }
+  ]
+}`,
 		"data/content/recipes/recipes.json": `{
   "$schema": "../../schema/content/recipes.schema.json",
   "recipes": [
@@ -149,7 +166,7 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
 		"data/content/ministers/ministers.json": `{
   "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
-    { "id": "m001", "name": "李猛", "role": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
+    { "id": "m001", "name": "李猛", "role": "military", "icon_key": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
   ]
 }`,
 		"data/content/maps/default/definition.json": `{
@@ -210,6 +227,12 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "war_preparedness", "name": "战备", "description": "强化战备", "icon_key": "policy_war_preparedness", "sort_order": 20, "tags": [] },
     { "id": "recovery", "name": "恢复", "description": "强调恢复", "icon_key": "policy_recovery", "sort_order": 30, "tags": [] },
     { "id": "reorganization", "name": "重组", "description": "推进重组", "icon_key": "policy_reorganization", "sort_order": 40, "tags": [] }
+  ]
+}`,
+		"data/ui/catalogs/institutions.json": `{
+  "$schema": "../../schema/ui/institutions.schema.json",
+  "institutions": [
+    { "id": "academy_charter", "name": "学术特许", "description": "提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": [] }
   ]
 }`,
 		"data/ui/catalogs/recipes.json": `{

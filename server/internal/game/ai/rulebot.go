@@ -13,6 +13,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
 const (
@@ -55,6 +56,8 @@ type ruleBotPlanner struct {
 	playerID     string
 	threatLevel  int
 	reservedUnit map[string]struct{}
+	reservedNode map[string]struct{}
+	nodeViews    map[string]*pb.NodeView
 }
 
 func newRuleBotPlanner(req Request) *ruleBotPlanner {
@@ -73,6 +76,8 @@ func newRuleBotPlanner(req Request) *ruleBotPlanner {
 		observation:  observation,
 		playerID:     req.Participant.ID,
 		reservedUnit: make(map[string]struct{}),
+		reservedNode: make(map[string]struct{}),
+		nodeViews:    buildNodeViewIndex(observation),
 	}
 	planner.threatLevel = planner.computeThreatLevel()
 	return planner

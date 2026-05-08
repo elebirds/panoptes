@@ -18,7 +18,7 @@ type SetPolicyIntent struct {
 func (SetPolicyIntent) isPlanningIntent() {}
 
 type SetInstitutionLoadoutIntent struct {
-	PolicyIDs []string
+	InstitutionIDs []string
 }
 
 func (SetInstitutionLoadoutIntent) isPlanningIntent() {}

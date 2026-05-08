@@ -180,12 +180,12 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if len(mountedLogistics.ExplicitEffects) != 2 || mountedLogistics.ExplicitEffects[0].TargetID != "stable" || mountedLogistics.ExplicitEffects[1].TargetID != "stable_cavalry" {
 		t.Fatalf("mounted_logistics explicit effects = %#v, want stable unlocks", mountedLogistics.ExplicitEffects)
 	}
-	foundryDirectives, ok := catalog.GetPolicy("foundry_directives")
+	foundryDirectives, ok := catalog.GetInstitution("foundry_directives")
 	if !ok {
 		t.Fatalf("foundry_directives missing")
 	}
-	if foundryDirectives.Layer != "institutional" || len(foundryDirectives.LogisticsPriority) == 0 {
-		t.Fatalf("foundry_directives = %#v, want institutional logistics policy", foundryDirectives)
+	if foundryDirectives.Category != "economy" || len(foundryDirectives.LogisticsPriority) == 0 {
+		t.Fatalf("foundry_directives = %#v, want economy logistics institution", foundryDirectives)
 	}
 
 	for _, tc := range []struct {
@@ -245,13 +245,13 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if len(tradeLevies.ExplicitEffects) != 5 || tradeLevies.ExplicitEffects[0].TargetID != "market" || tradeLevies.ExplicitEffects[4].TargetID != "mercantile_charter" {
 		t.Fatalf("trade_levies explicit effects = %#v, want market recipes and mercantile charter", tradeLevies.ExplicitEffects)
 	}
-	for _, policyID := range []string{"mercantile_charter", "research_mandate"} {
-		policy, ok := catalog.GetPolicy(policyID)
+	for _, institutionID := range []string{"mercantile_charter", "research_mandate"} {
+		institution, ok := catalog.GetInstitution(institutionID)
 		if !ok {
-			t.Fatalf("%s missing", policyID)
+			t.Fatalf("%s missing", institutionID)
 		}
-		if policy.Layer != "institutional" || len(policy.ModifierEffects) == 0 {
-			t.Fatalf("%s = %#v, want institutional modifier policy", policyID, policy)
+		if institution.Category == "" || len(institution.ModifierEffects) == 0 {
+			t.Fatalf("%s = %#v, want modifier institution", institutionID, institution)
 		}
 	}
 }

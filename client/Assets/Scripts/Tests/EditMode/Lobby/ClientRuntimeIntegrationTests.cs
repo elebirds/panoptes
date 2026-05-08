@@ -349,12 +349,12 @@ namespace Panoptes.Tests.EditMode.Lobby
             {
                 Turn = 2,
                 Phase = "planning",
-                PlannedInstitutionPolicyIds = { "academy_charter" }
+                PlannedInstitutionIds = { "academy_charter" }
             });
 
             Assert.That(cache.CurrentPreview, Is.Null, "snapshot 覆盖后应清掉旧 preview。");
-            Assert.That(cache.PlannedInstitutionPolicyIds.Count, Is.EqualTo(1));
-            Assert.That(cache.PlannedInstitutionPolicyIds[0], Is.EqualTo("academy_charter"));
+            Assert.That(cache.PlannedInstitutionIds.Count, Is.EqualTo(1));
+            Assert.That(cache.PlannedInstitutionIds[0], Is.EqualTo("academy_charter"));
             Assert.That(previewChanged, Is.GreaterThanOrEqualTo(2), "预览建立与清理都应触发 PreviewChanged。");
         }
 
@@ -508,7 +508,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                             JsonPayload = "{\"draft_id\":\"draft-research-2\",\"player_id\":\"player-1\",\"minister_role\":\"domestic\",\"kind\":\"research\",\"target_id\":\"agrarian_foundations\",\"target_label\":\"Agrarian Foundations\",\"title\":\"锁定科研目标\",\"summary\":\"建议先研究农业基础。\",\"rationale\":\"它能更快展开后续发展。\",\"risk_note\":\"若你改选其他科技，此卡会变为已偏离。\",\"status\":\"pending\",\"available\":true,\"turn\":2,\"source\":\"rule_only\"}"
                         }
                     },
-                    PlannedInstitutionPolicyIds = { "academy_charter" }
+                    PlannedInstitutionIds = { "academy_charter" }
                 },
                 Nodes =
                 {
@@ -546,7 +546,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
             Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
             Assert.That(planningDraftCache.GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
-            Assert.That(planningDraftCache.PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
+            Assert.That(planningDraftCache.PlannedInstitutionIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);
             Assert.That(lastNodeEvent.ChangeType, Is.EqualTo("planning_start"));
@@ -601,8 +601,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                     Institutions = new InstitutionStateView
                     {
                         SlotCount = 2,
-                        CandidatePolicyIds = { "academy_charter", "war_foundry" },
-                        ActivePolicyIds = { "academy_charter" }
+                        CandidateInstitutionIds = { "academy_charter", "war_foundry" },
+                        ActiveInstitutionIds = { "academy_charter" }
                     }
                 },
                 Nodes =
@@ -653,8 +653,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             var institutions = cache.GetInstitutionState();
             Assert.That(institutions, Is.Not.Null, "缓存应提供制度状态投影。");
             Assert.That(institutions.SlotCount, Is.EqualTo(2));
-            Assert.That(institutions.CandidatePolicyIds, Is.EquivalentTo(new[] { "academy_charter", "war_foundry" }));
-            Assert.That(institutions.ActivePolicyIds, Is.EquivalentTo(new[] { "academy_charter" }));
+            Assert.That(institutions.CandidateInstitutionIds, Is.EquivalentTo(new[] { "academy_charter", "war_foundry" }));
+            Assert.That(institutions.ActiveInstitutionIds, Is.EquivalentTo(new[] { "academy_charter" }));
 
             var cities = cache.GetCities();
             Assert.That(cities, Has.Count.EqualTo(1), "缓存应按权威节点重建城市索引。");

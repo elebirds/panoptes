@@ -123,6 +123,17 @@ namespace Panoptes.Core.Application.Stores
             return WithTokens(previous, msg.TokensLeft);
         }
 
+        public static GameStateStoreState MergeMandateResult(GameStateStoreState current, MsgMandateResult msg)
+        {
+            var previous = current ?? new GameStateStoreState();
+            if (msg == null || !msg.Success)
+            {
+                return previous.Clone();
+            }
+
+            return WithTokens(previous, msg.TokensLeft);
+        }
+
         public static GameStateStoreState MergeRevealResult(GameStateStoreState current, MsgRevealResult msg)
         {
             var previous = current ?? new GameStateStoreState();
@@ -195,7 +206,7 @@ namespace Panoptes.Core.Application.Stores
                 ministerDrafts: MapMinisterDrafts(msg.MinisterDrafts),
                 plannedResearchTargetTechnologyId: msg.PlannedResearchTargetTechnologyId,
                 plannedNationalPolicyId: msg.PlannedNationalPolicyId,
-                plannedInstitutionPolicyIds: msg.PlannedInstitutionPolicyIds);
+                plannedInstitutionIds: msg.PlannedInstitutionIds);
         }
 
         public static PlanningDraftState MergePathPreview(PlanningDraftState current, MsgPlanningPathPreviewResponse msg)
@@ -215,7 +226,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.CurrentRecipePreview,
                 previous.PlannedResearchTargetTechnologyId,
                 previous.PlannedNationalPolicyId,
-                previous.PlannedInstitutionPolicyIds);
+                previous.PlannedInstitutionIds);
         }
 
         public static PlanningDraftState MergeBuildPreview(PlanningDraftState current, MsgBuildStructurePreviewResponse msg)
@@ -235,7 +246,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.CurrentRecipePreview,
                 previous.PlannedResearchTargetTechnologyId,
                 previous.PlannedNationalPolicyId,
-                previous.PlannedInstitutionPolicyIds);
+                previous.PlannedInstitutionIds);
         }
 
         public static PlanningDraftState MergeRecipePreview(PlanningDraftState current, MsgSetBuildingRecipePreviewResponse msg)
@@ -255,7 +266,66 @@ namespace Panoptes.Core.Application.Stores
                 msg != null ? MapRecipePreview(msg) : previous.CurrentRecipePreview,
                 previous.PlannedResearchTargetTechnologyId,
                 previous.PlannedNationalPolicyId,
-                previous.PlannedInstitutionPolicyIds);
+                previous.PlannedInstitutionIds);
+        }
+
+        public static PlanningDraftState MergeMinisterProposals(PlanningDraftState current, IEnumerable<MinisterProposalView> proposals)
+        {
+            var previous = current ?? new PlanningDraftState();
+            if (proposals == null)
+            {
+                return previous.Clone();
+            }
+
+            var drafts = StoreSnapshotCloner.CloneMinisterDrafts(previous.MinisterDrafts);
+            var changed = false;
+            foreach (var proposal in proposals)
+            {
+                var mapped = MinisterMapper.ToDto(proposal);
+                if (mapped == null || string.IsNullOrWhiteSpace(mapped.DraftId))
+                {
+                    continue;
+                }
+
+                var replaced = false;
+                for (var i = 0; i < drafts.Count; i++)
+                {
+                    if (string.Equals(drafts[i]?.DraftId, mapped.DraftId, StringComparison.Ordinal))
+                    {
+                        drafts[i] = mapped;
+                        replaced = true;
+                        changed = true;
+                        break;
+                    }
+                }
+
+                if (!replaced)
+                {
+                    drafts.Add(mapped);
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+            {
+                return previous.Clone();
+            }
+
+            return new PlanningDraftState(
+                previous.SnapshotTurn,
+                previous.SnapshotPhase,
+                previous.UnitOrders,
+                previous.BuildOrders,
+                previous.RecipeSelections,
+                previous.WarZoneDirectives,
+                previous.WarZones,
+                drafts,
+                previous.CurrentPreview,
+                previous.CurrentBuildPreview,
+                previous.CurrentRecipePreview,
+                previous.PlannedResearchTargetTechnologyId,
+                previous.PlannedNationalPolicyId,
+                previous.PlannedInstitutionIds);
         }
 
         public static TurnState ToTurn(MsgGameInit msg)
@@ -368,6 +438,22 @@ namespace Panoptes.Core.Application.Stores
         }
 
         public static TurnState MergeTurn(TurnState current, MsgTokenResult msg)
+        {
+            var previous = current ?? new TurnState();
+            return msg != null && msg.Success
+                ? new TurnState(
+                    previous.Turn,
+                    previous.Phase,
+                    msg.TokensLeft,
+                    previous.PlanningStartEvents,
+                    previous.IsGameOver,
+                    previous.TimeoutSeconds,
+                    previous.NextPhase,
+                    previous.IsInteractive)
+                : previous.Clone();
+        }
+
+        public static TurnState MergeTurn(TurnState current, MsgMandateResult msg)
         {
             var previous = current ?? new TurnState();
             return msg != null && msg.Success

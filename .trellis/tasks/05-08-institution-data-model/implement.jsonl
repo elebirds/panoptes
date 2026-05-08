@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend staticdata, planning, domain, and protocol changes"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend catalog and institution UI changes"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature changes data flow across data, proto, backend, and client"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Migration should reuse existing policy/staticdata patterns where appropriate"}

@@ -46,8 +46,8 @@
       "research_cost": 2,
       "prerequisites": [],
       "explicit_effects": [
-        { "type": "unlock_policy", "target_id": "academy_charter" },
-        { "type": "unlock_policy", "target_id": "logistics_corps" },
+        { "type": "unlock_institution", "target_id": "academy_charter" },
+        { "type": "unlock_institution", "target_id": "logistics_corps" },
         { "type": "add_institution_slots", "institution_slots": 1 }
       ],
       "modifier_effects": []
@@ -168,7 +168,7 @@
       "explicit_effects": [
         { "type": "unlock_building", "target_id": "smelter" },
         { "type": "unlock_recipe", "target_id": "smelter_refined_ore" },
-        { "type": "unlock_policy", "target_id": "foundry_directives" }
+        { "type": "unlock_institution", "target_id": "foundry_directives" }
       ],
       "modifier_effects": []
     },
@@ -251,7 +251,7 @@
         { "type": "unlock_recipe", "target_id": "market_grain_contracts" },
         { "type": "unlock_recipe", "target_id": "market_lumber_contracts" },
         { "type": "unlock_recipe", "target_id": "market_ore_contracts" },
-        { "type": "unlock_policy", "target_id": "mercantile_charter" }
+        { "type": "unlock_institution", "target_id": "mercantile_charter" }
       ],
       "modifier_effects": []
     },
@@ -265,7 +265,7 @@
       ],
       "explicit_effects": [
         { "type": "unlock_building", "target_id": "academy" },
-        { "type": "unlock_policy", "target_id": "research_mandate" }
+        { "type": "unlock_institution", "target_id": "research_mandate" }
       ],
       "modifier_effects": []
     },

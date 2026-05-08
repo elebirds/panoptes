@@ -149,6 +149,10 @@ func (r *GameRoom) IsDevMode() bool {
 	return r != nil && r.runtime != nil && r.runtime.IsDevMode()
 }
 
+func (r *GameRoom) IsMinisterStrongMode() bool {
+	return r != nil && r.runtime != nil && r.runtime.IsMinisterStrongMode()
+}
+
 func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
 	if r == nil || r.runtime == nil {
 		return nil
@@ -172,9 +176,9 @@ func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	}
 }
 
-func (r *GameRoom) SetInstitutionLoadout(playerID string, policyIDs []string) {
+func (r *GameRoom) SetInstitutionLoadout(playerID string, institutionIDs []string) {
 	if state := r.State(); state != nil {
-		state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, append([]string(nil), policyIDs...))
+		state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, append([]string(nil), institutionIDs...))
 	}
 }
 
@@ -223,6 +227,22 @@ func (r *GameRoom) RecordMinisterMemory(playerID string, role string, entry mini
 		return
 	}
 	r.runtime.RecordMinisterMemory(playerID, role, entry)
+}
+
+// 亲政模式相关方法
+
+func (r *GameRoom) SetPlayerMandateMode(playerID string, enabled bool) {
+	if r == nil || r.runtime == nil {
+		return
+	}
+	r.runtime.SetPlayerMandateMode(playerID, enabled)
+}
+
+func (r *GameRoom) IsPlayerInMandateMode(playerID string) bool {
+	if r == nil || r.runtime == nil {
+		return false
+	}
+	return r.runtime.IsPlayerInMandateMode(playerID)
 }
 
 func (r *GameRoom) HasParticipant(participantID string) bool {

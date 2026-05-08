@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend entry point for client presentation architecture constraints"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Presentation component boundaries and MonoBehaviour facade guidance"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel state flow and client presentation state rules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Client quality and boundary rules for implementation"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer safety for protocol/store/presentation separation"}

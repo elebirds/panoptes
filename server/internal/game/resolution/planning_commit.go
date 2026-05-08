@@ -40,13 +40,13 @@ func BuildPlanningCommitEvents(state *domain.GameState) []event.Event {
 		if playerState == nil || !state.TurnRuntime.Planning.HasPendingInstitutionLoadout(playerID) {
 			continue
 		}
-		policyIDs := state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
-		if policySlicesEqual(playerState.Institutions.PendingPolicyIDs, policyIDs) && playerState.Institutions.PendingActivationTurn == state.Turn+1 {
+		institutionIDs := state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
+		if institutionSlicesEqual(playerState.Institutions.PendingInstitutionIDs, institutionIDs) && playerState.Institutions.PendingActivationTurn == state.Turn+1 {
 			continue
 		}
 		evt := event.InstitutionLoadoutChangedEvent{
 			PlayerID:       playerID,
-			PolicyIDs:      policyIDs,
+			InstitutionIDs: institutionIDs,
 			ActivationTurn: state.Turn + 1,
 		}
 		events = append(events, evt)
@@ -54,7 +54,7 @@ func BuildPlanningCommitEvents(state *domain.GameState) []event.Event {
 	return events
 }
 
-func policySlicesEqual(a []string, b []string) bool {
+func institutionSlicesEqual(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}

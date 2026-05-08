@@ -37,4 +37,5 @@ func RunTurnResolution(room *GameRoom) {
 	room.checkGameOver()
 
 	room.State().TurnRuntime.ClearPostResolutionScratch()
+	room.runtime.ClearMandateModes()
 }

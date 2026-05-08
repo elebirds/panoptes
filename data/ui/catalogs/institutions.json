@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schema/ui/institutions.schema.json",
+  "institutions": [
+    { "id": "academy_charter", "name": "学术特许", "description": "行政制度中的学术组织支持，提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": ["administration", "research"] },
+    { "id": "logistics_corps", "name": "转运署", "description": "行政制度中的转运组织，提高道路基础运量。", "icon_key": "policy_logistics_corps", "sort_order": 60, "tags": ["administration", "logistics"] },
+    { "id": "foundry_directives", "name": "冶造敕令", "description": "经济制度中的冶造调度，提高冶炼效率并优先保障工业链。", "icon_key": "policy_reorganization", "sort_order": 70, "tags": ["economy", "industry"] },
+    { "id": "mercantile_charter", "name": "商贸特许", "description": "贸易制度中的市集授权，提高契约调拨效率。", "icon_key": "policy_logistics_corps", "sort_order": 80, "tags": ["trade"] },
+    { "id": "research_mandate", "name": "研学敕令", "description": "行政制度中的学术优先令，显著提高科研产出。", "icon_key": "policy_academy_charter", "sort_order": 90, "tags": ["administration", "research"] }
+  ]
+}

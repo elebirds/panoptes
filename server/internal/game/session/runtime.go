@@ -9,6 +9,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/elebirds/panoptes/internal/config"
@@ -50,6 +51,10 @@ type Runtime struct {
 	preparedMinisterDrafts    map[int]map[string][]domain.MinisterDraft
 	preparedMinisterDraftsMu  sync.RWMutex
 	ministerEngine            *ministerengine.MinisterEngine
+
+	// 亲政模式
+	mandateModeByPlayer map[string]bool // 玩家是否处于亲政模式
+	mandateModeMu       sync.RWMutex
 }
 
 func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -62,6 +67,7 @@ func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTr
 		submitCh:               make(chan string, len(participants)*4+16),
 		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
 		preparedMinisterDrafts: make(map[int]map[string][]domain.MinisterDraft),
+		mandateModeByPlayer:    make(map[string]bool),
 	}
 }
 
@@ -74,6 +80,7 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	if r.state != nil {
 		r.state.RefreshStructuredModel()
 	}
+	r.ClearMandateModes()
 	r.resetObservations()
 	r.preparedMinisterDraftsMu.Lock()
 	r.planningStartPreparedTurn = 0
@@ -102,6 +109,13 @@ func (r *Runtime) Cancel() {
 
 func (r *Runtime) IsDevMode() bool {
 	return r != nil && r.cfg != nil && r.cfg.DevMode
+}
+
+func (r *Runtime) IsMinisterStrongMode() bool {
+	if r == nil || r.cfg == nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(r.cfg.MinisterLLMParticipationMode), "strong")
 }
 
 func (r *Runtime) ParticipantIDs() []string {
@@ -207,6 +221,38 @@ func (r *Runtime) RecordMinisterMemory(playerID string, role string, entry minis
 		return
 	}
 	r.ministerEngine.RecordMemory(playerID, role, entry)
+}
+
+// 亲政模式相关方法
+
+// SetPlayerMandateMode 设置玩家的亲政模式
+func (r *Runtime) SetPlayerMandateMode(playerID string, enabled bool) {
+	if r == nil {
+		return
+	}
+	r.mandateModeMu.Lock()
+	defer r.mandateModeMu.Unlock()
+	r.mandateModeByPlayer[playerID] = enabled
+}
+
+// IsPlayerInMandateMode 检查玩家是否处于亲政模式
+func (r *Runtime) IsPlayerInMandateMode(playerID string) bool {
+	if r == nil {
+		return false
+	}
+	r.mandateModeMu.RLock()
+	defer r.mandateModeMu.RUnlock()
+	return r.mandateModeByPlayer[playerID]
+}
+
+// ClearMandateModes clears direct-command authority at turn/session boundaries.
+func (r *Runtime) ClearMandateModes() {
+	if r == nil {
+		return
+	}
+	r.mandateModeMu.Lock()
+	defer r.mandateModeMu.Unlock()
+	clear(r.mandateModeByPlayer)
 }
 
 func (r *Runtime) PreparePlanningStartStateIfNeeded() {

@@ -130,6 +130,17 @@ type PolicyCatalogUIFile struct {
 	} `json:"policies"`
 }
 
+type InstitutionCatalogUIFile struct {
+	Institutions []struct {
+		ID          string   `json:"id"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		IconKey     string   `json:"icon_key"`
+		SortOrder   int      `json:"sort_order"`
+		Tags        []string `json:"tags"`
+	} `json:"institutions"`
+}
+
 type RecipeCatalogUIFile struct {
 	Recipes []struct {
 		ID          string   `json:"id"`

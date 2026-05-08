@@ -12,8 +12,8 @@ func TestBuildMinisterChatClientUsesConfiguredQwenModel(t *testing.T) {
 	client := buildMinisterChatClient(&config.Config{
 		MinisterLLMEnabled:  true,
 		MinisterLLMProvider: "qwen",
+		MinisterLLMAPIKey:   "test-qwen-key",
 		MinisterLLMModel:    "qwen-max-latest",
-		QwenAPIKey:          "test-qwen-key",
 	})
 	if client == nil {
 		t.Fatalf("buildMinisterChatClient() = nil, want qwen client")
@@ -33,7 +33,7 @@ func TestBuildMinisterChatClientUsesConfiguredQwenModel(t *testing.T) {
 func TestBuildMinisterChatClientDisabledReturnsNil(t *testing.T) {
 	if client := buildMinisterChatClient(&config.Config{
 		MinisterLLMEnabled: false,
-		QwenAPIKey:         "test-qwen-key",
+		MinisterLLMAPIKey:  "test-qwen-key",
 	}); client != nil {
 		t.Fatalf("buildMinisterChatClient() = %T, want nil when disabled", client)
 	}

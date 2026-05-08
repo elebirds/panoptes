@@ -47,4 +47,10 @@ type Minister struct {
 	PersonalityDesc string `json:"personality_desc"`
 	Loyalty         int    `json:"loyalty"`
 	Ambition        int    `json:"ambition"`
+
+	// 性格四维度
+	Cautiousness      int `json:"cautiousness"`       // 谨慎度：0-100，鲁莽 ↔ 谨慎
+	Decisiveness      int `json:"decisiveness"`       // 果断度：0-100，优柔寡断 ↔ 果断
+	LoyaltyTendency   int `json:"loyalty_tendency"`   // 忠诚倾向：0-100，狡猾 ↔ 忠诚
+	AmbitionStyle     int `json:"ambition_style"`     // 野心表现：0-100，隐忍 ↔ 张扬
 }

@@ -22,6 +22,6 @@ namespace Panoptes.Presentation.ViewModels
         public string StatusText { get; }
         public int TokensLeft { get; }
 
-        public string TokenText => $"Tokens {TokensLeft}";
+        public string TokenText => $"亲政令牌 {TokensLeft}";
     }
 }

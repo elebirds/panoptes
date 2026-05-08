@@ -10,7 +10,7 @@ message MsgSetPolicy {
 }
 
 message MsgSetInstitutionLoadout {
-  repeated string policy_ids = 1;
+  repeated string institution_ids = 1;
 }
 
 message MsgSetResearchTarget {

@@ -19,14 +19,14 @@ namespace Panoptes.Core.Application.Stores
             RecipePreviewDto currentRecipePreview = null,
             string plannedResearchTargetTechnologyId = "",
             string plannedNationalPolicyId = "",
-            IReadOnlyList<string> plannedInstitutionPolicyIds = null)
+            IReadOnlyList<string> plannedInstitutionIds = null)
         {
             BuildOrders = StoreSnapshotCloner.CloneBuildOrders(buildOrders);
             CurrentBuildPreview = StoreSnapshotCloner.CloneBuildPreview(currentBuildPreview);
             CurrentPreview = StoreSnapshotCloner.ClonePathPreview(currentPreview);
             CurrentRecipePreview = StoreSnapshotCloner.CloneRecipePreview(currentRecipePreview);
             MinisterDrafts = StoreSnapshotCloner.CloneMinisterDrafts(ministerDrafts);
-            PlannedInstitutionPolicyIds = StoreSnapshotCloner.CloneStrings(plannedInstitutionPolicyIds);
+            PlannedInstitutionIds = StoreSnapshotCloner.CloneStrings(plannedInstitutionIds);
             PlannedNationalPolicyId = plannedNationalPolicyId ?? string.Empty;
             PlannedResearchTargetTechnologyId = plannedResearchTargetTechnologyId ?? string.Empty;
             RecipeSelections = StoreSnapshotCloner.CloneRecipeSelections(recipeSelections);
@@ -42,7 +42,7 @@ namespace Panoptes.Core.Application.Stores
         public PathPreviewDto CurrentPreview { get; }
         public RecipePreviewDto CurrentRecipePreview { get; }
         public IReadOnlyList<MinisterDraftDto> MinisterDrafts { get; }
-        public IReadOnlyList<string> PlannedInstitutionPolicyIds { get; }
+        public IReadOnlyList<string> PlannedInstitutionIds { get; }
         public string PlannedNationalPolicyId { get; }
         public string PlannedResearchTargetTechnologyId { get; }
         public IReadOnlyList<QueuedRecipeSelectionDto> RecipeSelections { get; }
@@ -68,7 +68,7 @@ namespace Panoptes.Core.Application.Stores
                 CurrentRecipePreview,
                 PlannedResearchTargetTechnologyId,
                 PlannedNationalPolicyId,
-                PlannedInstitutionPolicyIds);
+                PlannedInstitutionIds);
         }
     }
 }

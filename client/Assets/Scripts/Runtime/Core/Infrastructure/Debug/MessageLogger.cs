@@ -248,6 +248,8 @@ namespace Panoptes.DebugTools
                     return $"request={preview.RequestId} valid={preview.Valid} path_nodes={preview.PathNodeIds.Count}";
                 case MsgTokenResult tokenResult:
                     return $"success={tokenResult.Success} tokens_left={tokenResult.TokensLeft} error={tokenResult.ErrorCode}";
+                case MsgMandateResult mandateResult:
+                    return $"success={mandateResult.Success} action={mandateResult.Action} tokens_left={mandateResult.TokensLeft} error={mandateResult.ErrorCode} message={mandateResult.Message}";
                 case MsgRevealResult reveal:
                     var owner = reveal.TrueState != null ? reveal.TrueState.ControllerPlayerId : string.Empty;
                     var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingTypeId : string.Empty;
@@ -257,7 +259,7 @@ namespace Panoptes.DebugTools
                 case MsgResearchResult research:
                     return $"success={research.Success} tech={research.TechnologyId} error={research.ErrorCode}";
                 case MsgSetInstitutionLoadoutResult institution:
-                    return $"success={institution.Success} policies={institution.PolicyIds.Count} error={institution.ErrorCode}";
+                    return $"success={institution.Success} institutions={institution.InstitutionIds.Count} error={institution.ErrorCode}";
                 case MsgSetBuildingRecipeResult recipe:
                     return $"success={recipe.Success} node={recipe.NodeId} recipe={recipe.RecipeId}";
                 case MsgMinisterReportChunk reportChunk:
@@ -283,7 +285,7 @@ namespace Panoptes.DebugTools
             return message switch
             {
                 MsgSetPolicy setPolicy => $"policy={setPolicy.NationalPolicyId}",
-                MsgSetInstitutionLoadout institutionLoadout => $"policies={institutionLoadout.PolicyIds.Count}",
+                MsgSetInstitutionLoadout institutionLoadout => $"institutions={institutionLoadout.InstitutionIds.Count}",
                 MsgBuildStructure buildStructure =>
                     $"node={buildStructure.NodeId} building={buildStructure.BuildingTypeId}",
                 MsgRevealNode revealNode => $"node={revealNode.NodeId}",

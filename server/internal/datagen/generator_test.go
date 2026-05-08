@@ -29,6 +29,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		"data/schema/content/buildings.schema.json",
 		"data/schema/content/technologies.schema.json",
 		"data/schema/content/policies.schema.json",
+		"data/schema/content/institutions.schema.json",
 		"data/schema/content/recipes.schema.json",
 		"data/schema/content/terrains.schema.json",
 		"data/schema/content/rules.schema.json",
@@ -39,10 +40,12 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		"data/schema/ui/units.schema.json",
 		"data/schema/ui/buildings.schema.json",
 		"data/schema/ui/technology_tree.schema.json",
+		"data/schema/ui/institutions.schema.json",
 		"data/schema/ui/terrains.schema.json",
 		"data/schema/ui/maps/catalog.schema.json",
 		"data/generated/server/sections/resources.json",
 		"data/generated/server/sections/technologies.json",
+		"data/generated/server/sections/institutions.json",
 		"data/generated/server/sections/ui_tech_tree_layout.json",
 		"data/generated/server/sections/ui_build_menu_layout.json",
 		"data/generated/server/sections/ui_recipe_layout.json",
@@ -63,6 +66,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"modifier_effects"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/technologies.schema.json"), `"research_cost"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/policies.schema.json"), `"national"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/institutions.schema.json"), `"administration"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/recipes.schema.json"), `"point_inputs"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"bonus_tokens_per_turn"`)
 	assertFileNotContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"`+strings.Join([]string{"tokens", "recu" + "peration", "bonus"}, "_")+`"`)
@@ -76,6 +80,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"recipes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"points"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"policies"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"institutions"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"institution_categories"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"city_core"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"infantry"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
@@ -92,6 +98,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message MsgStaticCatalogSectionChunk")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message MsgStaticCatalogSyncComplete")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message PolicyCatalogEntry")
+	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message InstitutionCatalogEntry")
+	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message InstitutionCategoryCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message TechnologyCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message RecipeCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "map_catalog.proto"), "message MapCatalogEntry")
@@ -698,6 +706,35 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
     }
   ]
 }`,
+		"data/content/institutions/institutions.json": `{
+  "$schema": "../../schema/content/institutions.schema.json",
+  "categories": [
+    { "id": "administration", "name": "行政制度", "description": "决定中央执行链条。", "sort_order": 10, "tags": ["governance"] }
+  ],
+  "institutions": [
+    {
+      "id": "academy_charter",
+      "category": "administration",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        { "tag": "research", "priority": 70 }
+      ],
+      "governance_effects": [
+        { "type": "report_accuracy", "target": "research", "value": 10 }
+      ]
+    }
+  ]
+}`,
 		"data/content/recipes/recipes.json": `{
   "$schema": "../../schema/content/recipes.schema.json",
   "recipes": [
@@ -926,6 +963,12 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
     { "id": "war_preparedness", "name": "备战", "description": "优先军事准备。", "icon_key": "policy_war_preparedness", "sort_order": 20, "tags": ["national"] },
     { "id": "recovery", "name": "恢复", "description": "优先恢复国家秩序。", "icon_key": "policy_recovery", "sort_order": 30, "tags": ["national"] },
     { "id": "reorganization", "name": "整饬", "description": "优先整顿国家结构。", "icon_key": "policy_reorganization", "sort_order": 40, "tags": ["national"] }
+  ]
+}`,
+		"data/ui/catalogs/institutions.json": `{
+  "$schema": "../../schema/ui/institutions.schema.json",
+  "institutions": [
+    { "id": "academy_charter", "name": "学术特许", "description": "提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": ["administration", "research"] }
   ]
 }`,
 		"data/ui/catalogs/recipes.json": `{

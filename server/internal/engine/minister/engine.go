@@ -26,6 +26,7 @@ type RuntimeRoom interface {
 	HumanPlayerIDs() []string
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 	BuildMinisterReportInput(playerID string, role string) ReportPromptInput
+	ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error
 }
 
 type MinisterEngine struct {
@@ -139,7 +140,9 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 
 	state := room.State()
 	if len(output.Actions) > 0 {
-		slog.Info("minister actions ignored in current MVP", "player_id", playerID, "role", profile.Role, "count", len(output.Actions))
+		if err := room.ApplyMinisterActions(playerID, profile.Role, output.Actions); err != nil {
+			slog.Warn("apply minister actions failed", "player_id", playerID, "role", profile.Role, "count", len(output.Actions), "err", err)
+		}
 	}
 	if state != nil && state.World != nil {
 		event.MinisterActedEvent{
@@ -250,7 +253,7 @@ func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemor
 	if m, ok := e.memories[key]; ok {
 		return m
 	}
-	m := &MinisterMemory{PlayerID: playerID, Role: role}
+	m := &MinisterMemory{PlayerID: playerID, Role: role, Favor: 50}
 	e.memories[key] = m
 	return m
 }
@@ -267,6 +270,10 @@ func pickProfiles() []MinisterProfile {
 			PersonalityDesc: "稳健",
 			Loyalty:         6,
 			Ambition:        5,
+			Cautiousness:    70,
+			Decisiveness:    50,
+			LoyaltyTendency: 80,
+			AmbitionStyle:   30,
 		}}
 	}
 	out := make([]MinisterProfile, 0, len(pool))
@@ -280,6 +287,10 @@ func pickProfiles() []MinisterProfile {
 			PersonalityDesc: p.PersonalityDesc,
 			Loyalty:         p.Loyalty,
 			Ambition:        p.Ambition,
+			Cautiousness:    p.Cautiousness,
+			Decisiveness:    p.Decisiveness,
+			LoyaltyTendency: p.LoyaltyTendency,
+			AmbitionStyle:   p.AmbitionStyle,
 		})
 	}
 	return out

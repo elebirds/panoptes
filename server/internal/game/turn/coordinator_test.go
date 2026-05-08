@@ -379,6 +379,12 @@ func (h *stubCoordinatorHost) NextChatSequence() int64                  { return
 func (h *stubCoordinatorHost) IsDevMode() bool {
 	return h != nil && h.runtime != nil && h.runtime.IsDevMode()
 }
+func (h *stubCoordinatorHost) IsMinisterStrongMode() bool {
+	return h != nil && h.runtime != nil && h.runtime.IsMinisterStrongMode()
+}
+func (h *stubCoordinatorHost) IsPlayerInMandateMode(playerID string) bool {
+	return h != nil && h.runtime != nil && h.runtime.IsPlayerInMandateMode(playerID)
+}
 func (h *stubCoordinatorHost) QueueBuildOrder(order domain.BuildOrder) {
 	if h.State() != nil {
 		h.State().TurnRuntime.Planning.UpsertBuildOrder(order)
@@ -389,9 +395,9 @@ func (h *stubCoordinatorHost) QueueRecipeSelection(order domain.RecipeSelectionO
 		h.State().TurnRuntime.Planning.UpsertRecipeSelection(order)
 	}
 }
-func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, policyIDs []string) {
+func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, institutionIDs []string) {
 	if h.State() != nil {
-		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, policyIDs)
+		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, institutionIDs)
 	}
 }
 func (h *stubCoordinatorHost) SetMinisterDirective(string, string)                {}
@@ -401,6 +407,11 @@ func (h *stubCoordinatorHost) SetUnitOrder(order gameorders.UnitOrder) {
 }
 func (h *stubCoordinatorHost) CancelUnitOrder(playerID string, unitID string) {
 	gameorders.CancelPlanningUnitOrder(h.State(), playerID, unitID)
+}
+func (h *stubCoordinatorHost) SetPlayerMandateMode(playerID string, enabled bool) {
+	if h != nil && h.runtime != nil {
+		h.runtime.SetPlayerMandateMode(playerID, enabled)
+	}
 }
 func (h *stubCoordinatorHost) SendPlanningSnapshot(context.Context, string) error { return nil }
 func (h *stubCoordinatorHost) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {

@@ -17,14 +17,16 @@ const schemaVersion = "https://json-schema.org/draft/2020-12/schema"
 type schemaSet map[string]any
 
 type authoringSchemaContext struct {
-	ResourceKeys  []string
-	PointKeys     []string
-	UnitIDs       []string
-	BuildingIDs   []string
-	RecipeIDs     []string
-	TechnologyIDs []string
-	PolicyIDs     []string
-	TerrainIDs    []string
+	ResourceKeys           []string
+	PointKeys              []string
+	UnitIDs                []string
+	BuildingIDs            []string
+	RecipeIDs              []string
+	TechnologyIDs          []string
+	PolicyIDs              []string
+	InstitutionIDs         []string
+	InstitutionCategoryIDs []string
+	TerrainIDs             []string
 }
 
 func buildAuthoringSchemaContext(
@@ -34,18 +36,22 @@ func buildAuthoringSchemaContext(
 	buildings []staticdata.BuildingDefinition,
 	technologies []staticdata.TechnologyDefinition,
 	policies []staticdata.PolicyDefinition,
+	institutionCategories []staticdata.InstitutionCategoryDefinition,
+	institutions []staticdata.InstitutionDefinition,
 	recipes []staticdata.RecipeDefinition,
 	terrains []staticdata.TerrainDefinition,
 ) authoringSchemaContext {
 	return authoringSchemaContext{
-		ResourceKeys:  collectResourceKeys(resources),
-		PointKeys:     collectPointKeys(points),
-		UnitIDs:       collectUnitIDs(units),
-		BuildingIDs:   collectBuildingIDs(buildings),
-		RecipeIDs:     collectRecipeIDs(recipes),
-		TechnologyIDs: collectTechnologyIDs(technologies),
-		PolicyIDs:     collectPolicyIDs(policies),
-		TerrainIDs:    collectTerrainIDs(terrains),
+		ResourceKeys:           collectResourceKeys(resources),
+		PointKeys:              collectPointKeys(points),
+		UnitIDs:                collectUnitIDs(units),
+		BuildingIDs:            collectBuildingIDs(buildings),
+		RecipeIDs:              collectRecipeIDs(recipes),
+		TechnologyIDs:          collectTechnologyIDs(technologies),
+		PolicyIDs:              collectPolicyIDs(policies),
+		InstitutionIDs:         collectInstitutionIDs(institutions),
+		InstitutionCategoryIDs: collectInstitutionCategoryIDs(institutionCategories),
+		TerrainIDs:             collectTerrainIDs(terrains),
 	}
 }
 
@@ -123,6 +129,13 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			objectSchema(
 				map[string]any{
 					"type":      enumSchema([]string{"unlock_policy"}),
+					"target_id": stringSchema(nil),
+				},
+				[]string{"type", "target_id"},
+			),
+			objectSchema(
+				map[string]any{
+					"type":      enumSchema([]string{"unlock_institution"}),
 					"target_id": stringSchema(nil),
 				},
 				[]string{"type", "target_id"},
@@ -338,7 +351,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 						objectSchema(
 							map[string]any{
 								"id":                 stringSchema(nil),
-								"layer":              enumSchema([]string{"national", "institutional"}),
+								"layer":              enumSchema([]string{"national"}),
 								"activation_timing":  enumSchema([]string{"same_turn", "next_turn"}),
 								"prerequisites":      arraySchema(refSchema("#/$defs/prerequisite"), nil),
 								"explicit_effects":   arraySchema(refSchema("#/$defs/technology_effect"), nil),
@@ -364,6 +377,65 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 						"priority":  intSchema(nil),
 					},
 					[]string{"priority"},
+				),
+			},
+		),
+		filepath.Join("content", "institutions.schema.json"): schemaDocument(
+			filepath.Join("content", "institutions.schema.json"),
+			authoredRootSchema(
+				map[string]any{
+					"categories": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":          stringSchema(nil),
+								"name":        stringSchema(nil),
+								"description": stringSchema(nil),
+								"sort_order":  intSchema(map[string]any{"minimum": 0}),
+								"tags":        arraySchema(stringSchema(nil), nil),
+							},
+							[]string{"id", "name", "description", "sort_order"},
+						),
+						map[string]any{"minItems": 1},
+					),
+					"institutions": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":                 stringSchema(nil),
+								"category":           enumSchema(ctx.InstitutionCategoryIDs),
+								"activation_timing":  enumSchema([]string{"next_turn"}),
+								"prerequisites":      arraySchema(refSchema("#/$defs/prerequisite"), nil),
+								"explicit_effects":   arraySchema(refSchema("#/$defs/technology_effect"), nil),
+								"modifier_effects":   arraySchema(refSchema("#/$defs/modifier_effect"), nil),
+								"logistics_priority": arraySchema(refSchema("#/$defs/logistics_priority"), nil),
+								"governance_effects": arraySchema(refSchema("#/$defs/governance_effect"), nil),
+							},
+							[]string{"id", "category", "activation_timing", "prerequisites", "explicit_effects", "modifier_effects"},
+						),
+						map[string]any{"minItems": 1},
+					),
+				},
+				[]string{"categories", "institutions"},
+			),
+			map[string]any{
+				"resource_amount":   defs["resource_amount"],
+				"prerequisite":      defs["prerequisite"],
+				"technology_effect": defs["technology_effect"],
+				"modifier_effect":   defs["modifier_effect"],
+				"logistics_priority": objectSchema(
+					map[string]any{
+						"target_id": stringSchema(nil),
+						"tag":       stringSchema(nil),
+						"priority":  intSchema(nil),
+					},
+					[]string{"priority"},
+				),
+				"governance_effect": objectSchema(
+					map[string]any{
+						"type":   stringSchema(nil),
+						"target": stringSchema(nil),
+						"value":  intSchema(nil),
+					},
+					[]string{"type", "value"},
 				),
 			},
 		),
@@ -473,6 +545,10 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 								"personality_desc": stringSchema(nil),
 								"loyalty":          intSchema(map[string]any{"minimum": 0}),
 								"ambition":         intSchema(map[string]any{"minimum": 0}),
+								"cautiousness":     intSchema(map[string]any{"minimum": 0, "maximum": 100}),
+								"decisiveness":     intSchema(map[string]any{"minimum": 0, "maximum": 100}),
+								"loyalty_tendency": intSchema(map[string]any{"minimum": 0, "maximum": 100}),
+								"ambition_style":   intSchema(map[string]any{"minimum": 0, "maximum": 100}),
 							},
 							[]string{"id", "name", "role", "icon_key", "ability", "personality", "personality_desc", "loyalty", "ambition"},
 						),
@@ -707,6 +783,18 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 		filepath.Join("ui", "policies.schema.json"): schemaDocument(
 			filepath.Join("ui", "policies.schema.json"),
 			uiCatalogSchema("policies", map[string]any{
+				"id":          stringSchema(nil),
+				"name":        stringSchema(nil),
+				"description": stringSchema(nil),
+				"icon_key":    stringSchema(nil),
+				"sort_order":  intSchema(map[string]any{"minimum": 0}),
+				"tags":        arraySchema(stringSchema(nil), nil),
+			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
+			nil,
+		),
+		filepath.Join("ui", "institutions.schema.json"): schemaDocument(
+			filepath.Join("ui", "institutions.schema.json"),
+			uiCatalogSchema("institutions", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
 				"description": stringSchema(nil),

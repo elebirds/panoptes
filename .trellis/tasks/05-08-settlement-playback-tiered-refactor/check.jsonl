@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec entry point for review"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Quality gate and forbidden pattern checks"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify state and presentation responsibilities remain separated"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review cross-layer data flow and boundary risks"}

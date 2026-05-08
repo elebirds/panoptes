@@ -9,30 +9,46 @@ package planning
 import (
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
-func (s *Service) handleInstitutionLoadout(delivery commandDelivery, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) (handleIntentResult, error) {
+func (s *Service) handleInstitutionLoadout(delivery commandDelivery, room Session, playerID string, playerState *domain.PlayerState, institutionIDs []string) (handleIntentResult, error) {
 	if playerState == nil {
 		delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, ErrorCode: "invalid_request"})
 		return rejectedHandleIntentResult("invalid_request"), nil
 	}
 	state := room.State()
-	normalized := domain.NormalizePolicyIDList(policyIDs)
-	if len(normalized) > playerState.Institutions.SlotCount {
-		delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-		return rejectedHandleIntentResult("invalid_directive"), nil
-	}
-	for _, policyID := range normalized {
-		if _, errCode := validatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
-			delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: errCode})
-			return rejectedHandleIntentResult(errCode), nil
-		}
-		if !playerState.Institutions.HasCandidate(policyID) {
-			delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-			return rejectedHandleIntentResult("invalid_directive"), nil
-		}
+	normalized, errCode := ValidateInstitutionLoadout(state, playerID, playerState, institutionIDs)
+	if errCode != "" {
+		delivery.send(&pb.MsgSetInstitutionLoadoutResult{Success: false, InstitutionIds: normalized, ErrorCode: errCode})
+		return rejectedHandleIntentResult(errCode), nil
 	}
 	room.SetInstitutionLoadout(playerID, normalized)
-	delivery.sendWithSnapshot(&pb.MsgSetInstitutionLoadoutResult{Success: true, PolicyIds: normalized})
+	delivery.sendWithSnapshot(&pb.MsgSetInstitutionLoadoutResult{Success: true, InstitutionIds: normalized})
 	return acceptedHandleIntentResult(), nil
+}
+
+func ValidateInstitutionLoadout(state *domain.GameState, playerID string, playerState *domain.PlayerState, institutionIDs []string) ([]string, string) {
+	if playerState == nil {
+		return nil, "invalid_request"
+	}
+	normalized := domain.NormalizeInstitutionIDList(institutionIDs)
+	categories := make(map[string]string, len(normalized))
+	for _, institutionID := range normalized {
+		institution, ok := staticdata.Default().GetInstitution(institutionID)
+		if !ok {
+			return normalized, "invalid_target"
+		}
+		if errCode := validatePrerequisites(state, playerID, institution.Prerequisites); errCode != "" {
+			return normalized, errCode
+		}
+		if !playerState.Institutions.HasCandidate(institutionID) {
+			return normalized, "invalid_directive"
+		}
+		if existing := categories[institution.Category]; existing != "" && existing != institutionID {
+			return normalized, "invalid_directive"
+		}
+		categories[institution.Category] = institutionID
+	}
+	return normalized, ""
 }

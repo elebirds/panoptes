@@ -216,6 +216,34 @@ func mergePolicyUI(policies []staticdata.PolicyDefinition, ui staticdata.PolicyC
 	}
 }
 
+func mergeInstitutionUI(institutions []staticdata.InstitutionDefinition, ui staticdata.InstitutionCatalogUIFile) {
+	uiByID := make(map[string]struct {
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
+	}, len(ui.Institutions))
+	for _, entry := range ui.Institutions {
+		uiByID[entry.ID] = struct {
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
+	}
+	for i := range institutions {
+		if entry, ok := uiByID[institutions[i].ID]; ok {
+			institutions[i].Name = entry.Name
+			institutions[i].Description = entry.Description
+			institutions[i].IconKey = entry.IconKey
+			institutions[i].SortOrder = entry.SortOrder
+			institutions[i].Tags = append([]string(nil), entry.Tags...)
+		}
+	}
+}
+
 func mergeRecipeUI(recipes []staticdata.RecipeDefinition, ui staticdata.RecipeCatalogUIFile) {
 	uiByID := make(map[string]struct {
 		Name        string

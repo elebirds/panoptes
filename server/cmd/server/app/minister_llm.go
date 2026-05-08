@@ -26,23 +26,18 @@ func buildMinisterChatClient(cfg *config.Config) chatmodule.ChatClient {
 		opts = append(opts, chatmodule.WithModel(model))
 	}
 
-	switch provider {
-	case "qwen":
-		if strings.TrimSpace(cfg.QwenAPIKey) == "" {
-			slog.Warn("minister llm enabled but qwen api key missing")
-			return nil
-		}
-		return chatmodule.NewQwenClient(cfg.QwenAPIKey, opts...)
-	case "deepseek":
-		if strings.TrimSpace(cfg.DeepSeekAPIKey) == "" {
-			slog.Warn("minister llm enabled but deepseek api key missing")
-			return nil
-		}
-		return chatmodule.NewDeepSeekClient(cfg.DeepSeekAPIKey, opts...)
-	default:
+	apiKey := strings.TrimSpace(cfg.MinisterLLMAPIKey)
+	if apiKey == "" {
+		slog.Warn("minister llm enabled but api key missing", "provider", provider)
+		return nil
+	}
+
+	client, ok := chatmodule.NewProviderClient(provider, apiKey, opts...)
+	if !ok {
 		slog.Warn("unsupported minister llm provider", "provider", provider)
 		return nil
 	}
+	return client
 }
 
 func buildMinisterLLMClient(cfg *config.Config) llm.LLMClient {

@@ -42,6 +42,10 @@ type authoredData struct {
 	Policies jsonDocument[struct {
 		Policies []staticdata.PolicyDefinition `json:"policies"`
 	}]
+	Institutions jsonDocument[struct {
+		Categories   []staticdata.InstitutionCategoryDefinition `json:"categories"`
+		Institutions []staticdata.InstitutionDefinition         `json:"institutions"`
+	}]
 	Recipes jsonDocument[struct {
 		Recipes []staticdata.RecipeDefinition `json:"recipes"`
 	}]
@@ -59,6 +63,7 @@ type authoredData struct {
 	TechnologyUI     jsonDocument[staticdata.TechnologyCatalogUIFile]
 	TechnologyTreeUI jsonDocument[staticdata.TechnologyTreeLayoutFile]
 	PolicyUI         jsonDocument[staticdata.PolicyCatalogUIFile]
+	InstitutionUI    jsonDocument[staticdata.InstitutionCatalogUIFile]
 	RecipeUI         jsonDocument[staticdata.RecipeCatalogUIFile]
 	TerrainUI        jsonDocument[staticdata.TerrainCatalogUIFile]
 	MapDefs          map[string]jsonDocument[staticdata.MapDefinition]
@@ -104,6 +109,13 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	policies, err := readJSONDocument[struct {
 		Policies []staticdata.PolicyDefinition `json:"policies"`
 	}](filepath.Join(repoRoot, "data/content/policies/policies.json"))
+	if err != nil {
+		return nil, err
+	}
+	institutions, err := readJSONDocument[struct {
+		Categories   []staticdata.InstitutionCategoryDefinition `json:"categories"`
+		Institutions []staticdata.InstitutionDefinition         `json:"institutions"`
+	}](filepath.Join(repoRoot, "data/content/institutions/institutions.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +169,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	institutionUI, err := readJSONDocument[staticdata.InstitutionCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/institutions.json"))
+	if err != nil {
+		return nil, err
+	}
 	recipeUI, err := readJSONDocument[staticdata.RecipeCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/recipes.json"))
 	if err != nil {
 		return nil, err
@@ -178,6 +194,7 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 		Buildings:        buildings,
 		Technologies:     technologies,
 		Policies:         policies,
+		Institutions:     institutions,
 		Recipes:          recipes,
 		Terrains:         terrains,
 		Rules:            rules,
@@ -189,6 +206,7 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 		TechnologyUI:     technologyUI,
 		TechnologyTreeUI: technologyTreeUI,
 		PolicyUI:         policyUI,
+		InstitutionUI:    institutionUI,
 		RecipeUI:         recipeUI,
 		TerrainUI:        terrainUI,
 		MapDefs:          mapDefs,

@@ -94,11 +94,29 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 	delivery := newCommandDelivery(eventCtx, playerID, room)
 	result := acceptedHandleIntentResult()
 	var err error
+	if currentParticipant.IsHuman() && requiresMandateMode(room, playerID, envelope.Intent) {
+		errorCode := "invalid_directive"
+		message := "需要先消耗亲政令牌进入亲政模式"
+		if playerState.TokensLeft <= 0 {
+			errorCode = "no_mandate_tokens"
+			message = "亲政令牌不足，无法进入亲政模式"
+		}
+		delivery.send(&pb.MsgMandateResult{
+			Success:    false,
+			Action:     string(MandateActionDirectCommand),
+			TokensLeft: int32(playerState.TokensLeft),
+			ErrorCode:  errorCode,
+			Message:    message,
+		})
+		result = rejectedHandleIntentResult(errorCode)
+		s.logIntentResult(baseAttrs, record, result, nil)
+		return nil
+	}
 	switch intent := envelope.Intent.(type) {
 	case SetPolicyIntent:
 		result, err = s.handleSetPolicy(delivery, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
 	case SetInstitutionLoadoutIntent:
-		result, err = s.handleInstitutionLoadout(delivery, room, playerID, playerState, intent.PolicyIDs)
+		result, err = s.handleInstitutionLoadout(delivery, room, playerID, playerState, intent.InstitutionIDs)
 	case BuildStructureIntent:
 		result, err = s.handleBuildRequest(delivery, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
 	case RevealNodeIntent:
@@ -141,6 +159,18 @@ func intentContext(envelope IntentEnvelope) context.Context {
 		return context.Background()
 	}
 	return coretransport.ContextWithEventMeta(context.Background(), meta)
+}
+
+func requiresMandateMode(room Session, playerID string, intent Intent) bool {
+	if room == nil || !room.IsMinisterStrongMode() || room.IsPlayerInMandateMode(playerID) {
+		return false
+	}
+	switch intent.(type) {
+	case SetMinisterDirectiveIntent, SubmitTurnIntent, RevealNodeIntent:
+		return false
+	default:
+		return true
+	}
 }
 
 func (s *Service) logIntentResult(baseAttrs []any, record DebugIntentRecord, result handleIntentResult, err error) {

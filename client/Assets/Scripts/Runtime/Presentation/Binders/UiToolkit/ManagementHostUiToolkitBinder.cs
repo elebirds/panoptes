@@ -20,6 +20,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string BuildButtonName = "management-host-nav-build";
         public const string RecipeButtonName = "management-host-nav-recipe";
         public const string PolicyButtonName = "management-host-nav-policy";
+        public const string InstitutionButtonName = "management-host-nav-institution";
         public const string OverviewPanelName = "management-host-overview-panel";
         public const string TurnValueName = "national-overview-turn-value";
         public const string PhaseValueName = "national-overview-phase-value";
@@ -46,6 +47,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private Label _policyValue;
         private IDisposable _overviewSubscription;
         private Button _policyButton;
+        private Button _institutionButton;
         private Button _recipeButton;
         private Label _researchValue;
         private VisualElement _resources;
@@ -287,6 +289,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             nav.Add(CreateNavButton(BuildButtonName, "建造"));
             nav.Add(CreateNavButton(RecipeButtonName, "配方"));
             nav.Add(CreateNavButton(PolicyButtonName, "国策"));
+            nav.Add(CreateNavButton(InstitutionButtonName, "制度"));
             root.Add(nav);
 
             var overview = new VisualElement { name = OverviewPanelName };
@@ -335,6 +338,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _buildButton = root?.Q<Button>(BuildButtonName);
             _recipeButton = root?.Q<Button>(RecipeButtonName);
             _policyButton = root?.Q<Button>(PolicyButtonName);
+            _institutionButton = root?.Q<Button>(InstitutionButtonName);
             _overviewPanel = root?.Q<VisualElement>(OverviewPanelName);
             _turnValue = root?.Q<Label>(TurnValueName);
             _phaseValue = root?.Q<Label>(PhaseValueName);
@@ -357,6 +361,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             BindButton(_buildButton, ShowBuildCatalog);
             BindButton(_recipeButton, ShowRecipeSynthesis);
             BindButton(_policyButton, ShowPolicyFocus);
+            BindButton(_institutionButton, ShowInstitutions);
         }
 
         private void UnbindButtons()
@@ -369,6 +374,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             UnbindButton(_buildButton, ShowBuildCatalog);
             UnbindButton(_recipeButton, ShowRecipeSynthesis);
             UnbindButton(_policyButton, ShowPolicyFocus);
+            UnbindButton(_institutionButton, ShowInstitutions);
         }
 
         private static void BindButton(Button button, Action action)
@@ -428,6 +434,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void ShowPolicyFocus()
         {
             _visibilityStore?.Show(ManagementPanelId.PolicyFocus);
+        }
+
+        private void ShowInstitutions()
+        {
+            _visibilityStore?.Show(ManagementPanelId.Institutions);
         }
 
         private void EnsureOverviewSubscription()
@@ -499,6 +510,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 ManagementPanelId.BuildCatalog => "建造",
                 ManagementPanelId.RecipeSynthesis => "配方",
                 ManagementPanelId.PolicyFocus => "国策",
+                ManagementPanelId.Institutions => "制度",
                 ManagementPanelId.MinisterReport => "大臣汇报",
                 _ => "管理"
             };

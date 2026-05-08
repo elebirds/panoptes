@@ -174,6 +174,8 @@ func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
 			return "MsgPlanningPathPreviewResponse", body.PlanningPathPreviewResponse, true
 		case *pb.GameEvent_TokenResult:
 			return "MsgTokenResult", body.TokenResult, true
+		case *pb.GameEvent_MandateResult:
+			return "MsgMandateResult", body.MandateResult, true
 		case *pb.GameEvent_RevealResult:
 			return "MsgRevealResult", body.RevealResult, true
 		case *pb.GameEvent_ResearchResult:

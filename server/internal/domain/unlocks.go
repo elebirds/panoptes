@@ -58,11 +58,6 @@ func (s *GameState) IsPolicyActive(playerID string, policyID string) bool {
 	if string(playerState.Policy) == policyID {
 		return true
 	}
-	for _, activeID := range playerState.Institutions.ActivePolicyIDs {
-		if activeID == policyID {
-			return true
-		}
-	}
 	return false
 }
 

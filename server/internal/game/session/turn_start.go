@@ -30,12 +30,13 @@ func activatePendingTechnologies(state *domain.GameState) []event.Event {
 			}
 			resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
 			events = append(events, event.TechnologyActivatedEvent{
-				PlayerID:            playerID,
-				TechnologyID:        technologyID,
-				UnlockBuildingIDs:   append([]string(nil), resolved.UnlockBuildingIDs...),
-				UnlockRecipeIDs:     append([]string(nil), resolved.UnlockRecipeIDs...),
-				UnlockPolicyIDs:     append([]string(nil), resolved.UnlockPolicyIDs...),
-				AddInstitutionSlots: resolved.AddInstitutionSlots,
+				PlayerID:             playerID,
+				TechnologyID:         technologyID,
+				UnlockBuildingIDs:    append([]string(nil), resolved.UnlockBuildingIDs...),
+				UnlockRecipeIDs:      append([]string(nil), resolved.UnlockRecipeIDs...),
+				UnlockPolicyIDs:      append([]string(nil), resolved.UnlockPolicyIDs...),
+				UnlockInstitutionIDs: append([]string(nil), resolved.UnlockInstitutionIDs...),
+				AddInstitutionSlots:  resolved.AddInstitutionSlots,
 			})
 			if !resolved.GrantResources.IsZero() || len(resolved.GrantUnitTypes) > 0 {
 				events = append(events, event.TechnologyGrantAppliedEvent{
@@ -63,19 +64,25 @@ func promoteInstitutionLoadouts(state *domain.GameState) []event.Event {
 		if playerState.Institutions.PendingActivationTurn <= 0 || playerState.Institutions.PendingActivationTurn > state.Turn {
 			continue
 		}
-		next := make([]string, 0, len(playerState.Institutions.PendingPolicyIDs))
-		for _, policyID := range domain.NormalizePolicyIDList(playerState.Institutions.PendingPolicyIDs) {
-			if len(next) >= playerState.Institutions.SlotCount {
-				break
-			}
-			if !playerState.Institutions.HasCandidate(policyID) {
+		next := make([]string, 0, len(playerState.Institutions.PendingInstitutionIDs))
+		seenCategories := make(map[string]struct{})
+		for _, institutionID := range domain.NormalizeInstitutionIDList(playerState.Institutions.PendingInstitutionIDs) {
+			if !playerState.Institutions.HasCandidate(institutionID) {
 				continue
 			}
-			next = append(next, policyID)
+			institution, ok := staticdata.Default().GetInstitution(institutionID)
+			if !ok {
+				continue
+			}
+			if _, exists := seenCategories[institution.Category]; exists {
+				continue
+			}
+			seenCategories[institution.Category] = struct{}{}
+			next = append(next, institutionID)
 		}
 		events = append(events, event.InstitutionLoadoutActivatedEvent{
-			PlayerID:  playerID,
-			PolicyIDs: next,
+			PlayerID:       playerID,
+			InstitutionIDs: next,
 		})
 	}
 	return events

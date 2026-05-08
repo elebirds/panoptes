@@ -301,6 +301,9 @@ internal_error        服务端内部错误
 insufficient_resources 资源不足
 invalid_target        目标无效
 no_tokens_left        令牌已用完
+no_mandate_tokens     亲政令牌不足
+no_minister_actions   当前没有可否决的大臣行动
+unknown_mandate_action 未知的亲政操作
 building_exists       此处已有建筑
 outside_safe_zone     超出安全区范围
 unit_not_found        找不到该单位

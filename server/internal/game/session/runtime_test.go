@@ -294,6 +294,32 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	}
 }
 
+func TestRuntimeClearMandateModesResetsDirectCommandAuthority(t *testing.T) {
+	runtime := NewRuntime("room-1", nil, nil, &config.Config{})
+	runtime.SetPlayerMandateMode("player-1", true)
+	if !runtime.IsPlayerInMandateMode("player-1") {
+		t.Fatalf("mandate mode not enabled")
+	}
+
+	runtime.ClearMandateModes()
+
+	if runtime.IsPlayerInMandateMode("player-1") {
+		t.Fatalf("mandate mode still enabled after clear")
+	}
+}
+
+func TestRuntimeMinisterStrongModeReadsConfig(t *testing.T) {
+	runtime := NewRuntime("room-1", nil, nil, &config.Config{MinisterLLMParticipationMode: " strong "})
+	if !runtime.IsMinisterStrongMode() {
+		t.Fatalf("minister strong mode not enabled")
+	}
+
+	runtime = NewRuntime("room-1", nil, nil, &config.Config{MinisterLLMParticipationMode: "weak"})
+	if runtime.IsMinisterStrongMode() {
+		t.Fatalf("minister strong mode enabled for weak mode")
+	}
+}
+
 func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "default"},

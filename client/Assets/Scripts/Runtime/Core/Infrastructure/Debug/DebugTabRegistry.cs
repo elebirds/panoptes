@@ -739,7 +739,7 @@ namespace Panoptes.DebugTools
             {
                 Send(new MsgSetInstitutionLoadout
                 {
-                    PolicyIds = { "academy_charter" }
+                    InstitutionIds = { "academy_charter" }
                 });
             }
 
@@ -1063,7 +1063,7 @@ namespace Panoptes.DebugTools
                     "制度",
                     DebugActionCatalog.Action("装填学术特许", () => Send(new MsgSetInstitutionLoadout
                     {
-                        PolicyIds = { "academy_charter" }
+                        InstitutionIds = { "academy_charter" }
                     }))),
                 DebugActionCatalog.Section(
                     "令牌高频操作",

@@ -107,6 +107,8 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_SetBuildingRecipePreviewResponse{SetBuildingRecipePreviewResponse: typed}}}
 	case *pb.MsgTokenResult:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_TokenResult{TokenResult: typed}}}
+	case *pb.MsgMandateResult:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_MandateResult{MandateResult: typed}}}
 	case *pb.MsgRevealResult:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_RevealResult{RevealResult: typed}}}
 	case *pb.MsgResearchResult:

@@ -47,6 +47,18 @@ namespace Panoptes.Core.Application.Stores
             return CloneDictionary(source, CloneCatalogPolicy);
         }
 
+        public static Dictionary<string, CatalogInstitutionCategoryDto> CloneCatalogInstitutionCategories(
+            IReadOnlyDictionary<string, CatalogInstitutionCategoryDto> source)
+        {
+            return CloneDictionary(source, CloneCatalogInstitutionCategory);
+        }
+
+        public static Dictionary<string, CatalogInstitutionDto> CloneCatalogInstitutions(
+            IReadOnlyDictionary<string, CatalogInstitutionDto> source)
+        {
+            return CloneDictionary(source, CloneCatalogInstitution);
+        }
+
         public static Dictionary<string, CatalogUnitDto> CloneCatalogUnits(
             IReadOnlyDictionary<string, CatalogUnitDto> source)
         {
@@ -471,7 +483,7 @@ namespace Panoptes.Core.Application.Stores
                 TargetLabel = source.TargetLabel,
                 Title = source.Title,
                 Turn = source.Turn,
-                PolicyIds = source.PolicyIds != null ? (string[])source.PolicyIds.Clone() : Array.Empty<string>(),
+                InstitutionIds = source.InstitutionIds != null ? (string[])source.InstitutionIds.Clone() : Array.Empty<string>(),
                 NodeId = source.NodeId,
                 BuildingTypeId = source.BuildingTypeId,
                 CityId = source.CityId,
@@ -480,7 +492,34 @@ namespace Panoptes.Core.Application.Stores
                 Action = source.Action,
                 TargetNodeId = source.TargetNodeId,
                 TargetUnitId = source.TargetUnitId,
-                SecondaryNodeId = source.SecondaryNodeId
+                SecondaryNodeId = source.SecondaryNodeId,
+                OperationId = source.OperationId,
+                Objective = source.Objective,
+                OperationCommands = CloneMinisterOperationCommands(source.OperationCommands)
+            };
+        }
+
+        private static List<MinisterOperationCommandDto> CloneMinisterOperationCommands(IEnumerable<MinisterOperationCommandDto> source)
+        {
+            return CloneList(source, CloneMinisterOperationCommand);
+        }
+
+        private static MinisterOperationCommandDto CloneMinisterOperationCommand(MinisterOperationCommandDto source)
+        {
+            return new MinisterOperationCommandDto
+            {
+                Action = source.Action,
+                BuildingTypeId = source.BuildingTypeId,
+                CityId = source.CityId,
+                Kind = source.Kind,
+                Label = source.Label,
+                NodeId = source.NodeId,
+                RawJson = source.RawJson,
+                RecipeId = source.RecipeId,
+                SecondaryNodeId = source.SecondaryNodeId,
+                TargetNodeId = source.TargetNodeId,
+                TargetUnitId = source.TargetUnitId,
+                UnitId = source.UnitId
             };
         }
 
@@ -612,6 +651,36 @@ namespace Panoptes.Core.Application.Stores
                 Layer = source.Layer,
                 Name = source.Name,
                 ModifierEffects = CloneCatalogPolicyModifierEffects(source.ModifierEffects)
+            };
+        }
+
+        private static CatalogInstitutionCategoryDto CloneCatalogInstitutionCategory(CatalogInstitutionCategoryDto source)
+        {
+            return new CatalogInstitutionCategoryDto
+            {
+                Description = source.Description,
+                Id = source.Id,
+                Name = source.Name,
+                SortOrder = source.SortOrder,
+                Tags = CloneStrings(source.Tags)
+            };
+        }
+
+        private static CatalogInstitutionDto CloneCatalogInstitution(CatalogInstitutionDto source)
+        {
+            return new CatalogInstitutionDto
+            {
+                ActivationTiming = source.ActivationTiming,
+                Category = source.Category,
+                Description = source.Description,
+                ExplicitEffects = CloneCatalogTechnologyEffects(source.ExplicitEffects),
+                IconKey = source.IconKey,
+                Id = source.Id,
+                ModifierEffects = CloneCatalogPolicyModifierEffects(source.ModifierEffects),
+                Name = source.Name,
+                Prerequisites = CloneCatalogTechnologyPrerequisites(source.Prerequisites),
+                SortOrder = source.SortOrder,
+                Tags = CloneStrings(source.Tags)
             };
         }
 

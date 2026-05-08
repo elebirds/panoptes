@@ -102,7 +102,7 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 	case *pb.PlanningCommand_SetPolicy:
 		envelope.Intent = SetPolicyIntent{NationalPolicyID: strings.TrimSpace(body.SetPolicy.GetNationalPolicyId())}
 	case *pb.PlanningCommand_SetInstitutionLoadout:
-		envelope.Intent = SetInstitutionLoadoutIntent{PolicyIDs: append([]string(nil), body.SetInstitutionLoadout.GetPolicyIds()...)}
+		envelope.Intent = SetInstitutionLoadoutIntent{InstitutionIDs: append([]string(nil), body.SetInstitutionLoadout.GetInstitutionIds()...)}
 	case *pb.PlanningCommand_BuildStructure:
 		envelope.Intent = BuildStructureIntent{
 			NodeID:         strings.TrimSpace(body.BuildStructure.GetNodeId()),
@@ -174,7 +174,7 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
 	switch payload.DirectiveType {
-	case "accept", "reject", "accept_role", "reject_role":
+	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}

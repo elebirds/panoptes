@@ -15,15 +15,17 @@ func (s *Service) handleRevealNode(delivery commandDelivery, room Session, playe
 	if playerState == nil {
 		return rejectedHandleIntentResult("invalid_request"), nil
 	}
+	// 检查亲政令牌是否足够
 	if playerState.TokensLeft <= 0 {
-		delivery.send(&pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
-		return rejectedHandleIntentResult("no_tokens_left"), nil
+		delivery.send(&pb.MsgMandateResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_mandate_tokens"})
+		return rejectedHandleIntentResult("no_mandate_tokens"), nil
 	}
 	nodeView := room.BuildNodeViewForPlayer(nodeID, playerID)
 	if nodeView == nil {
-		delivery.send(&pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
+		delivery.send(&pb.MsgMandateResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
 		return rejectedHandleIntentResult("invalid_target"), nil
 	}
+	// 消耗亲政令牌
 	playerState.TokensLeft--
 	delivery.send(&pb.MsgRevealResult{NodeId: nodeID, TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 	return acceptedHandleIntentResult(), nil

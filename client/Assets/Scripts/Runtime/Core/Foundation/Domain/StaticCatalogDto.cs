@@ -85,6 +85,30 @@ namespace Panoptes.Core.Domain
         public int Value;
     }
 
+    public sealed class CatalogInstitutionCategoryDto
+    {
+        public string Id;
+        public string Name;
+        public string Description;
+        public int SortOrder;
+        public List<string> Tags;
+    }
+
+    public sealed class CatalogInstitutionDto
+    {
+        public string Id;
+        public string Name;
+        public string Description;
+        public string IconKey;
+        public string Category;
+        public string ActivationTiming;
+        public int SortOrder;
+        public List<string> Tags;
+        public List<CatalogTechnologyPrerequisiteDto> Prerequisites;
+        public List<CatalogTechnologyEffectDto> ExplicitEffects;
+        public List<CatalogPolicyModifierEffectDto> ModifierEffects;
+    }
+
     public sealed class CatalogTechnologyDto
     {
         public string Id;

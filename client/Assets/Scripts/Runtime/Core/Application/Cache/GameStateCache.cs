@@ -71,6 +71,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<MinisterChunkEvent> OnMinisterChunk;
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
         public event Action<TokenResultEvent> OnTokenResult;
+        public event Action<MandateResultEvent> OnMandateResult;
         public event Action<RevealResultEvent> OnRevealResult;
         public event Action<PlanningCommandResultEvent> OnPlanningCommandResult;
         public event Action<GameOverEvent> OnGameOver;
@@ -532,6 +533,7 @@ namespace Panoptes.Core.Application.Cache
         public void PublishMinisterChunk(MinisterChunkEvent evtArgs) => Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
         public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs) => Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
         public void PublishTokenResult(TokenResultEvent evtArgs) => Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
+        public void PublishMandateResult(MandateResultEvent evtArgs) => Fire(OnMandateResult, evtArgs, nameof(OnMandateResult));
         public void PublishRevealResult(RevealResultEvent evtArgs) => Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
         public void PublishPlanningCommandResult(PlanningCommandResultEvent evtArgs) => Fire(OnPlanningCommandResult, evtArgs, nameof(OnPlanningCommandResult));
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
@@ -952,8 +954,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             projected.SlotCount = institution.SlotCount;
-            projected.CandidatePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidatePolicyIds);
-            projected.ActivePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActivePolicyIds);
+            projected.CandidateInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidateInstitutionIds);
+            projected.ActiveInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActiveInstitutionIds);
             return projected;
         }
 
@@ -1224,8 +1226,8 @@ namespace Panoptes.Core.Application.Cache
                 : new InstitutionStateDto
                 {
                     SlotCount = source.SlotCount,
-                    CandidatePolicyIds = source.CandidatePolicyIds != null ? new List<string>(source.CandidatePolicyIds) : new List<string>(),
-                    ActivePolicyIds = source.ActivePolicyIds != null ? new List<string>(source.ActivePolicyIds) : new List<string>()
+                    CandidateInstitutionIds = source.CandidateInstitutionIds != null ? new List<string>(source.CandidateInstitutionIds) : new List<string>(),
+                    ActiveInstitutionIds = source.ActiveInstitutionIds != null ? new List<string>(source.ActiveInstitutionIds) : new List<string>()
                 };
         }
 

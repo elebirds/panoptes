@@ -4,11 +4,6 @@
     { "id": "expansion", "name": "扩张", "description": "开拓者组织工时 -1。", "icon_key": "policy_expansion", "sort_order": 10, "tags": ["national"] },
     { "id": "war_preparedness", "name": "备战", "description": "步兵与弓手训练工时 -1。", "icon_key": "policy_war_preparedness", "sort_order": 20, "tags": ["national"] },
     { "id": "recovery", "name": "恢复", "description": "农耕相关配方额外产出粮食。", "icon_key": "policy_recovery", "sort_order": 30, "tags": ["national"] },
-    { "id": "reorganization", "name": "整饬", "description": "每回合工业产出 +1。", "icon_key": "policy_reorganization", "sort_order": 40, "tags": ["national"] },
-    { "id": "academy_charter", "name": "学术特许", "description": "制度层面的学术组织支持，提升科研产出。", "icon_key": "policy_academy_charter", "sort_order": 50, "tags": ["institutional"] },
-    { "id": "logistics_corps", "name": "转运署", "description": "制度层面的转运组织，提高道路基础运量。", "icon_key": "policy_logistics_corps", "sort_order": 60, "tags": ["institutional", "logistics"] },
-    { "id": "foundry_directives", "name": "冶造敕令", "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。", "icon_key": "policy_reorganization", "sort_order": 70, "tags": ["institutional", "industry"] },
-    { "id": "mercantile_charter", "name": "商贸特许", "description": "制度层面的市集授权，提高契约调拨效率。", "icon_key": "policy_logistics_corps", "sort_order": 80, "tags": ["institutional", "trade"] },
-    { "id": "research_mandate", "name": "研学敕令", "description": "制度层面的学术优先令，显著提高科研产出。", "icon_key": "policy_academy_charter", "sort_order": 90, "tags": ["institutional", "research"] }
+    { "id": "reorganization", "name": "整饬", "description": "每回合工业产出 +1。", "icon_key": "policy_reorganization", "sort_order": 40, "tags": ["national"] }
   ]
 }

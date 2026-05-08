@@ -17,15 +17,8 @@ func logisticsPriorityForRecipe(state *domain.GameState, playerID string, recipe
 		return 0
 	}
 	priority := 0
-	applyPolicyPriority := func(policyID string) {
-		if policyID == "" {
-			return
-		}
-		policy, ok := staticdata.Default().GetPolicy(policyID)
-		if !ok {
-			return
-		}
-		for _, candidate := range policy.LogisticsPriority {
+	applyPriority := func(entries []staticdata.LogisticsPriorityDefinition) {
+		for _, candidate := range entries {
 			if candidate.TargetID != "" && candidate.TargetID == recipe.ID {
 				priority = maxInt(priority, candidate.Priority)
 				continue
@@ -35,9 +28,29 @@ func logisticsPriorityForRecipe(state *domain.GameState, playerID string, recipe
 			}
 		}
 	}
+	applyPolicyPriority := func(policyID string) {
+		if policyID == "" {
+			return
+		}
+		policy, ok := staticdata.Default().GetPolicy(policyID)
+		if !ok {
+			return
+		}
+		applyPriority(policy.LogisticsPriority)
+	}
+	applyInstitutionPriority := func(institutionID string) {
+		if institutionID == "" {
+			return
+		}
+		institution, ok := staticdata.Default().GetInstitution(institutionID)
+		if !ok {
+			return
+		}
+		applyPriority(institution.LogisticsPriority)
+	}
 	applyPolicyPriority(string(playerState.Policy))
-	for _, policyID := range playerState.Institutions.ActivePolicyIDs {
-		applyPolicyPriority(policyID)
+	for _, institutionID := range playerState.Institutions.ActiveInstitutionIDs {
+		applyInstitutionPriority(institutionID)
 	}
 	return priority
 }

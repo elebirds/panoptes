@@ -1,37 +1,6 @@
 package minister
 
-import (
-	"testing"
-
-	"github.com/elebirds/panoptes/internal/domain"
-)
-
-type parserTestRoom struct {
-	state *domain.GameState
-}
-
-func (r parserTestRoom) State() *domain.GameState {
-	return r.state
-}
-
-func TestExecuteActionsIgnoresRepairRoadInCurrentMVP(t *testing.T) {
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
-
-	events := ExecuteActions([]MinisterActionItem{
-		{
-			Type: "repair_road",
-			Params: map[string]any{
-				"from_node": "A1",
-				"to_node":   "A2",
-				"cost":      1,
-			},
-		},
-	}, parserTestRoom{state: state}, "player-1")
-
-	if len(events) != 0 {
-		t.Fatalf("repair_road should be ignored in current MVP, got %d events", len(events))
-	}
-}
+import "testing"
 
 func TestParseMinisterResponseSanitizesObviouslyEnglishPlayerText(t *testing.T) {
 	out, err := ParseMinisterResponse(`{
@@ -101,6 +70,31 @@ func TestParseMinisterResponseSkipsBraceNoiseBeforeJSONObject(t *testing.T) {
 	}
 	if out.ActionID != "hold_line" {
 		t.Fatalf("ActionID = %q, want hold_line", out.ActionID)
+	}
+}
+
+func TestParseMinisterResponsePreservesActionObjects(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议尽快批准青铜冶炼。",
+		"metrics":[],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:research:bronze_working:4"}}],
+		"action_id":"select_research"
+	}`)
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
+	}
+
+	if len(out.Actions) != 1 {
+		t.Fatalf("actions len = %d, want 1", len(out.Actions))
+	}
+	if out.Actions[0].Type != "select_candidate" {
+		t.Fatalf("Action type = %q, want select_candidate", out.Actions[0].Type)
+	}
+	if got, _ := out.Actions[0].Params["draft_id"].(string); got != "domestic:research:bronze_working:4" {
+		t.Fatalf("Action draft_id = %q, want candidate id", got)
+	}
+	if out.ActionID != "select_research" {
+		t.Fatalf("ActionID = %q, want select_research", out.ActionID)
 	}
 }
 

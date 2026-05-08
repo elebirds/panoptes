@@ -507,7 +507,7 @@ namespace Panoptes.Presentation.ViewModels
                     draft.DraftId,
                     draft.Title,
                     draft.Summary,
-                    draft.Rationale,
+                    BuildDraftDetail(draft),
                     draft.DisplayStatus,
                     draft.IsInteractive ? "Review" : string.Empty));
             }
@@ -620,8 +620,78 @@ namespace Panoptes.Presentation.ViewModels
             AddLine(lines, draft.Title);
             AddLine(lines, draft.Summary);
             AddLine(lines, draft.Rationale);
+            AddLine(lines, BuildOperationSummary(draft));
             AddLine(lines, draft.RiskNote);
             return lines.Count > 0 ? string.Join("\n", lines) : "有一条新的建议等待定夺。";
+        }
+
+        private static string BuildDraftDetail(MinisterDraftDto draft)
+        {
+            var lines = new List<string>();
+            AddLine(lines, draft.Rationale);
+            AddLine(lines, BuildOperationSummary(draft));
+            return string.Join("\n", lines);
+        }
+
+        private static string BuildOperationSummary(MinisterDraftDto draft)
+        {
+            if (draft == null || !string.Equals(draft.Kind, "operation", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            var lines = new List<string>();
+            AddLine(lines, string.IsNullOrWhiteSpace(draft.Objective) ? string.Empty : "目标：" + draft.Objective.Trim());
+            var commands = draft.OperationCommands;
+            if (commands == null || commands.Count == 0)
+            {
+                return string.Join("\n", lines);
+            }
+
+            lines.Add("行动批次：");
+            for (var i = 0; i < commands.Count; i++)
+            {
+                var command = commands[i];
+                if (command == null)
+                {
+                    continue;
+                }
+
+                var summary = BuildOperationCommandSummary(command);
+                if (!string.IsNullOrWhiteSpace(summary))
+                {
+                    lines.Add((i + 1).ToString() + ". " + summary);
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private static string BuildOperationCommandSummary(MinisterOperationCommandDto command)
+        {
+            var label = Clean(command.Label, string.Empty);
+            if (!string.IsNullOrWhiteSpace(label))
+            {
+                return label;
+            }
+
+            var kind = Clean(command.Kind, string.Empty).ToLowerInvariant();
+            return kind switch
+            {
+                "build" => JoinParts("建造", command.BuildingTypeId, command.NodeId),
+                "recipe" => JoinParts("调整生产", command.RecipeId, command.NodeId),
+                "unit_order" => JoinParts("调动部队", command.UnitId, command.Action, command.TargetNodeId, command.TargetUnitId),
+                "research" => JoinParts("研究", command.Label),
+                "policy" => JoinParts("国策", command.Label),
+                "institution" => JoinParts("制度", command.Label),
+                _ => JoinParts(kind, command.UnitId, command.Action, command.TargetNodeId, command.NodeId)
+            };
+        }
+
+        private static string JoinParts(params string[] parts)
+        {
+            return string.Join(" ",
+                parts.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part.Trim()));
         }
 
         private static void AddLine(List<string> lines, string value)

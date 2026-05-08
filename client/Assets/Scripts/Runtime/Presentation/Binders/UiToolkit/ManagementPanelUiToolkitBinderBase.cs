@@ -269,7 +269,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 {
                     ManagementPanelRuntimeLayout.ApplyFullScreenPanel(root, panelRoot);
                 }
-                else if (_visibilityPanelId == ManagementPanelId.PolicyFocus)
+                else if (_visibilityPanelId == ManagementPanelId.PolicyFocus ||
+                         _visibilityPanelId == ManagementPanelId.Institutions)
                 {
                     ManagementPanelRuntimeLayout.ApplyLargeModalPanel(root, panelRoot);
                 }

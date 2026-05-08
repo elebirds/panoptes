@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend guideline index for minister engine, planning, event, protocol integration work."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Keep new backend files in the established package/layer layout."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Preserve project error response and propagation conventions while adding token/action paths."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Follow backend logging style for LLM fallback/action validation paths."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Contains required Minister LLM structured JSON and role enablement contracts."}
+{"file": ".trellis/spec/guides/index.md", "reason": "Shared trigger guide for cross-layer and reuse checks."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Task spans protocol, backend runtime, planning, and client hydration surfaces."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing token, draft, event, and LLM parsing patterns instead of adding parallel systems."}
+{"file": ".trellis/tasks/05-08-minister-llm-deep-integration/research/codebase-analysis.md", "reason": "Task-specific research on minister LLM architecture and extension points."}

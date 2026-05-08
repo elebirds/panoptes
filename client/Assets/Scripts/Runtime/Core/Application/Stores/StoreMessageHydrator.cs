@@ -57,6 +57,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Register<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Register<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
+            _dispatcher.Register<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Register<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
             _dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
             _dispatcher.Register<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -91,6 +92,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Unregister<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
+            _dispatcher.Unregister<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
             _dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
             _dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -189,7 +191,18 @@ namespace Panoptes.Core.Application.Stores
             _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeGameSync(_gameStateStore.Snapshot, msg));
             if (msg.Snapshot != null)
             {
-                _helper.HydratePlanningDraft(StoreHydrationProtocolMapper.ToPlanningDraft(msg.Snapshot));
+                var draftState = StoreHydrationProtocolMapper.ToPlanningDraft(msg.Snapshot);
+                if (msg.MinisterProposals != null && msg.MinisterProposals.Count > 0)
+                {
+                    draftState = StoreHydrationProtocolMapper.MergeMinisterProposals(draftState, msg.MinisterProposals);
+                }
+
+                _helper.HydratePlanningDraft(draftState);
+            }
+            else if (msg.MinisterProposals != null && msg.MinisterProposals.Count > 0)
+            {
+                _helper.HydratePlanningDraft(
+                    StoreHydrationProtocolMapper.MergeMinisterProposals(_planningDraftStore.Snapshot, msg.MinisterProposals));
             }
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
             _settlementStore.Replace(SettlementMapper.ToDto(msg));
@@ -207,6 +220,21 @@ namespace Panoptes.Core.Application.Stores
             if (!msg.Success)
             {
                 _feedbackStore.PublishFeedback("token", msg.ErrorCode, string.Empty, false, BuildDetails(("action", msg.Action)));
+            }
+        }
+
+        public void HandleMandateResult(MsgMandateResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeMandateResult(_gameStateStore.Snapshot, msg));
+            _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
+            if (!msg.Success)
+            {
+                _feedbackStore.PublishFeedback("mandate", msg.ErrorCode, msg.Message ?? string.Empty, false, BuildDetails(("action", msg.Action)));
             }
         }
 
@@ -280,7 +308,7 @@ namespace Panoptes.Core.Application.Stores
                     msg.ErrorCode,
                     string.Empty,
                     false,
-                    BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
+                    BuildDetails(("institution_ids", string.Join(",", msg.InstitutionIds))));
             }
         }
 

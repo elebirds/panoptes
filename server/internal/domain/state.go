@@ -129,32 +129,34 @@ type RecipeSelectionOrder struct {
 }
 
 type ResearchState struct {
-	CurrentTargetTechnologyID string
-	CurrentProgress           int
-	OutputPerTurn             int
-	ProgressCap               int
-	ProgressByTechnology      map[string]int
-	CompletedTechnologyTurns  map[string]int
-	ActiveTechnologyTurns     map[string]int
-	UnlockedTechnologies      map[string]struct{}
-	UnlockedBuildings         map[string]struct{}
-	UnlockedRecipes           map[string]struct{}
-	UnlockedPolicyCandidates  map[string]struct{}
+	CurrentTargetTechnologyID     string
+	CurrentProgress               int
+	OutputPerTurn                 int
+	ProgressCap                   int
+	ProgressByTechnology          map[string]int
+	CompletedTechnologyTurns      map[string]int
+	ActiveTechnologyTurns         map[string]int
+	UnlockedTechnologies          map[string]struct{}
+	UnlockedBuildings             map[string]struct{}
+	UnlockedRecipes               map[string]struct{}
+	UnlockedPolicyCandidates      map[string]struct{}
+	UnlockedInstitutionCandidates map[string]struct{}
 }
 
 func NewResearchState(starting int, income int, cap int) ResearchState {
 	state := ResearchState{
-		CurrentTargetTechnologyID: "",
-		CurrentProgress:           starting,
-		OutputPerTurn:             income,
-		ProgressCap:               cap,
-		ProgressByTechnology:      make(map[string]int),
-		CompletedTechnologyTurns:  make(map[string]int),
-		ActiveTechnologyTurns:     make(map[string]int),
-		UnlockedTechnologies:      make(map[string]struct{}),
-		UnlockedBuildings:         make(map[string]struct{}),
-		UnlockedRecipes:           make(map[string]struct{}),
-		UnlockedPolicyCandidates:  make(map[string]struct{}),
+		CurrentTargetTechnologyID:     "",
+		CurrentProgress:               starting,
+		OutputPerTurn:                 income,
+		ProgressCap:                   cap,
+		ProgressByTechnology:          make(map[string]int),
+		CompletedTechnologyTurns:      make(map[string]int),
+		ActiveTechnologyTurns:         make(map[string]int),
+		UnlockedTechnologies:          make(map[string]struct{}),
+		UnlockedBuildings:             make(map[string]struct{}),
+		UnlockedRecipes:               make(map[string]struct{}),
+		UnlockedPolicyCandidates:      make(map[string]struct{}),
+		UnlockedInstitutionCandidates: make(map[string]struct{}),
 	}
 	if starting > 0 {
 		state.ProgressByTechnology[""] = starting
@@ -217,19 +219,26 @@ func (r *ResearchState) UnlockPolicyCandidate(id string) {
 	r.UnlockedPolicyCandidates[id] = struct{}{}
 }
 
+func (r *ResearchState) UnlockInstitutionCandidate(id string) {
+	if r == nil || id == "" {
+		return
+	}
+	r.UnlockedInstitutionCandidates[id] = struct{}{}
+}
+
 type InstitutionState struct {
-	SlotCount             int
-	CandidatePolicyIDs    map[string]struct{}
-	ActivePolicyIDs       []string
-	PendingPolicyIDs      []string
-	PendingActivationTurn int
+	SlotCount               int
+	CandidateInstitutionIDs map[string]struct{}
+	ActiveInstitutionIDs    []string
+	PendingInstitutionIDs   []string
+	PendingActivationTurn   int
 }
 
 func NewInstitutionState() InstitutionState {
 	return InstitutionState{
-		CandidatePolicyIDs: make(map[string]struct{}),
-		ActivePolicyIDs:    []string{},
-		PendingPolicyIDs:   []string{},
+		CandidateInstitutionIDs: make(map[string]struct{}),
+		ActiveInstitutionIDs:    []string{},
+		PendingInstitutionIDs:   []string{},
 	}
 }
 

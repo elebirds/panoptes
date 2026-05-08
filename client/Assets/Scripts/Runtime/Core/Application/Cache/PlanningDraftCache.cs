@@ -52,8 +52,8 @@ namespace Panoptes.Core.Application.Cache
         public string SnapshotPhase { get; private set; } = string.Empty;
         public string PlannedResearchTargetTechnologyId { get; private set; } = string.Empty;
         public string PlannedNationalPolicyId { get; private set; } = string.Empty;
-        public IReadOnlyList<string> PlannedInstitutionPolicyIds => _plannedInstitutionPolicyIds;
-        private readonly List<string> _plannedInstitutionPolicyIds = new();
+        public IReadOnlyList<string> PlannedInstitutionIds => _plannedInstitutionIds;
+        private readonly List<string> _plannedInstitutionIds = new();
 
         public event Action PreviewChanged;
         public event Action BuildPreviewChanged;
@@ -183,7 +183,7 @@ namespace Panoptes.Core.Application.Cache
             SnapshotPhase = msg != null ? (msg.Phase ?? string.Empty) : string.Empty;
             PlannedResearchTargetTechnologyId = msg != null ? (msg.PlannedResearchTargetTechnologyId ?? string.Empty) : string.Empty;
             PlannedNationalPolicyId = msg != null ? (msg.PlannedNationalPolicyId ?? string.Empty) : string.Empty;
-            _plannedInstitutionPolicyIds.Clear();
+            _plannedInstitutionIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
             _recipeSelections.Clear();
@@ -288,17 +288,17 @@ namespace Panoptes.Core.Application.Cache
                     }
                 }
             }
-            if (msg != null && msg.PlannedInstitutionPolicyIds != null)
+            if (msg != null && msg.PlannedInstitutionIds != null)
             {
-                for (var i = 0; i < msg.PlannedInstitutionPolicyIds.Count; i++)
+                for (var i = 0; i < msg.PlannedInstitutionIds.Count; i++)
                 {
-                    var policyId = msg.PlannedInstitutionPolicyIds[i];
+                    var policyId = msg.PlannedInstitutionIds[i];
                     if (string.IsNullOrWhiteSpace(policyId))
                     {
                         continue;
                     }
 
-                    _plannedInstitutionPolicyIds.Add(policyId);
+                    _plannedInstitutionIds.Add(policyId);
                 }
             }
 
@@ -439,7 +439,7 @@ namespace Panoptes.Core.Application.Cache
             SnapshotPhase = string.Empty;
             PlannedResearchTargetTechnologyId = string.Empty;
             PlannedNationalPolicyId = string.Empty;
-            _plannedInstitutionPolicyIds.Clear();
+            _plannedInstitutionIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
             _recipeSelections.Clear();

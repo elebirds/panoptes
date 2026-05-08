@@ -7,7 +7,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
-	"github.com/elebirds/panoptes/internal/game/ai"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -35,13 +34,7 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 			continue
 		}
 		observation := r.BuildObservation(playerID)
-		req := ai.Request{
-			Participant: binding.Participant,
-			State:       r.state,
-			Observation: observation,
-		}
-		intents, _ := (ai.RuleBotProvider{}).BuildPlanningIntents(context.Background(), req)
-		drafts := buildMinisterDraftsFromIntents(turn, playerID, intents)
+		drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
 		draftsByPlayer[playerID] = drafts
 		for _, draft := range drafts {
 			r.RecordMinisterMemory(playerID, draft.MinisterRole, ministerengine.MemoryEntry{
@@ -61,7 +54,7 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 				Input: ministerengine.DraftPromptInput{
 					Turn:               turn,
 					PlayerID:           playerID,
-					ObservationSummary: buildMinisterObservationSummary(r.state, observation),
+					ObservationSummary: buildMinisterObservationSummary(r.state, observation, draft.MinisterRole),
 					CurrentPolicy:      currentPolicyValue(r.state, playerID),
 					CurrentResearch:    currentResearchValue(r.state, playerID),
 				},
@@ -138,13 +131,13 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		}
 		return baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindPolicy, targetID, policyLabel(targetID)), true
 	case planning.SetInstitutionLoadoutIntent:
-		policyIDs := domain.NormalizePolicyIDList(typed.PolicyIDs)
-		if len(policyIDs) == 0 {
+		institutionIDs := domain.NormalizeInstitutionIDList(typed.InstitutionIDs)
+		if len(institutionIDs) == 0 {
 			return domain.MinisterDraft{}, false
 		}
-		targetID := strings.Join(policyIDs, ",")
-		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(policyIDs))
-		draft.PolicyIDs = policyIDs
+		targetID := strings.Join(institutionIDs, ",")
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(institutionIDs))
+		draft.InstitutionIDs = institutionIDs
 		return draft, true
 	case planning.BuildStructureIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -153,10 +146,14 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 			return domain.MinisterDraft{}, false
 		}
 		targetID := nodeID + ":" + buildingTypeID
+		cityID := strings.TrimSpace(typed.CityID)
+		if cityID != "" {
+			targetID += ":" + cityID
+		}
 		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindBuild, targetID, buildingLabel(buildingTypeID)+" @ "+nodeID)
 		draft.NodeID = nodeID
 		draft.BuildingTypeID = buildingTypeID
-		draft.CityID = strings.TrimSpace(typed.CityID)
+		draft.CityID = cityID
 		return draft, true
 	case planning.SetBuildingRecipeIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -179,7 +176,10 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		if gameorders.UnitAction(action) == gameorders.ActionSettleCity {
 			role = domesticMinisterRole
 		}
-		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID)
+		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID) + ":" + strings.TrimSpace(typed.SecondaryNodeID)
+		if pairs := sortedParamPairs(typed.Params); len(pairs) > 0 {
+			targetID += ":" + strings.Join(pairs, ",")
+		}
 		draft := baseMinisterDraft(turn, playerID, role, domain.MinisterDraftKindUnitOrder, targetID, unitOrderLabel(typed))
 		draft.UnitID = unitID
 		draft.Action = action
@@ -252,10 +252,14 @@ func policyLabel(policyID string) string {
 	return strings.TrimSpace(policyID)
 }
 
-func institutionLabel(policyIDs []string) string {
-	labels := make([]string, 0, len(policyIDs))
-	for _, policyID := range policyIDs {
-		labels = append(labels, policyLabel(policyID))
+func institutionLabel(institutionIDs []string) string {
+	labels := make([]string, 0, len(institutionIDs))
+	for _, institutionID := range institutionIDs {
+		if institution, ok := staticdata.Default().GetInstitution(strings.TrimSpace(institutionID)); ok && strings.TrimSpace(institution.Name) != "" {
+			labels = append(labels, strings.TrimSpace(institution.Name))
+			continue
+		}
+		labels = append(labels, strings.TrimSpace(institutionID))
 	}
 	return strings.Join(labels, ", ")
 }

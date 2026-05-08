@@ -128,6 +128,24 @@ message PolicyCatalogEntry {
   repeated string tags = 7;
 }
 
+message InstitutionCategoryCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int32 sort_order = 4;
+  repeated string tags = 5;
+}
+
+message InstitutionCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string category = 5;
+  string activation_timing = 6;
+  repeated string tags = 7;
+}
+
 message RecipeCatalogEntry {
   string id = 1;
   string name = 2;
@@ -158,6 +176,8 @@ message StaticCatalogSnapshot {
   repeated PolicyCatalogEntry policies = 7;
   repeated RecipeCatalogEntry recipes = 8;
   repeated TerrainCatalogEntry terrains = 9;
+  repeated InstitutionCategoryCatalogEntry institution_categories = 10;
+  repeated InstitutionCatalogEntry institutions = 11;
 }
 
 message MsgStaticCatalogManifest {

@@ -80,48 +80,49 @@ namespace Panoptes.Protocol.V1 {
             "Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJjaFByb2dyZXNzRW50cnkSIwoN",
             "dGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5vbG9neUlkEikKEGN1cnJlbnRf",
             "cHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9w",
-            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKTAQoUSW5zdGl0dXRp",
-            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjAK",
-            "FGNhbmRpZGF0ZV9wb2xpY3lfaWRzGAIgAygJUhJjYW5kaWRhdGVQb2xpY3lJ",
-            "ZHMSKgoRYWN0aXZlX3BvbGljeV9pZHMYAyADKAlSD2FjdGl2ZVBvbGljeUlk",
-            "cyKSAgoVQnVpbGRpbmdPcGVyYXRpb25WaWV3EiwKEnNlbGVjdGVkX3JlY2lw",
-            "ZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJZBIpChBjdXJyZW50X3Byb2dy",
-            "ZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jl",
-            "c3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSIwoNYmFzZV9wcm9ncmVzcxgE",
-            "IAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2NrZWRfcmVhc29uGAUgASgJUg1i",
-            "bG9ja2VkUmVhc29uEicKD2Jsb2NrZWRfbWVzc2FnZRgGIAEoCVIOYmxvY2tl",
-            "ZE1lc3NhZ2UihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUY",
-            "AiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJZHMSHAoJZGly",
-            "ZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUYBSABKAlS",
-            "CnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUYASABKAlSBHJv",
-            "bGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMgASgFUgdhYmls",
-            "aXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSLfAwoVSW5m",
-            "b3JtYXRpb25SZXBvcnRWaWV3EhIKBG1vZGUYASABKAlSBG1vZGUSHgoKY29u",
-            "ZmlkZW5jZRgCIAEoCVIKY29uZmlkZW5jZRIsChJ2aXNpYmxlX25vZGVfY291",
-            "bnQYAyABKAVSEHZpc2libGVOb2RlQ291bnQSKgoRbWVtb3J5X25vZGVfY291",
-            "bnQYBCABKAVSD21lbW9yeU5vZGVDb3VudBIsChJ1bmtub3duX25vZGVfY291",
-            "bnQYBSABKAVSEHVua25vd25Ob2RlQ291bnQSLAoSdmlzaWJsZV91bml0X2Nv",
-            "dW50GAYgASgFUhB2aXNpYmxlVW5pdENvdW50EioKEW1lbW9yeV91bml0X2Nv",
-            "dW50GAcgASgFUg9tZW1vcnlVbml0Q291bnQSIwoNb21pdHRlZF9jb3VudBgI",
-            "IAEoBVIMb21pdHRlZENvdW50EiMKDWRlbGF5ZWRfY291bnQYCSABKAVSDGRl",
-            "bGF5ZWRDb3VudBIjCg1taXNyZWFkX2NvdW50GAogASgFUgxtaXNyZWFkQ291",
-            "bnQSKwoRZGlyZWN0X2luc3BlY3Rpb24YCyABKAhSEGRpcmVjdEluc3BlY3Rp",
-            "b24SFAoFbm90ZXMYDCADKAlSBW5vdGVzIuwDCgtNc2dHYW1lSW5pdBIXCgdn",
-            "YW1lX2lkGAEgASgJUgZnYW1lSWQSJAoOeW91cl9wbGF5ZXJfaWQYAiABKAlS",
-            "DHlvdXJQbGF5ZXJJZBISCgR0dXJuGAMgASgFUgR0dXJuEhQKBXBoYXNlGAQg",
-            "ASgJUgVwaGFzZRIxCgVub2RlcxgFIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYx",
-            "Lk5vZGVWaWV3UgVub2RlcxIxCgV1bml0cxgGIAMoCzIbLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLlVuaXRWaWV3UgV1bml0cxI6CglteV9wbGF5ZXIYByABKAsyHS5w",
-            "YW5vcHRlcy5wcm90by52MS5QbGF5ZXJWaWV3UghteVBsYXllchI9CgltaW5p",
-            "c3RlcnMYCCADKAsyHy5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlclZpZXdS",
-            "CW1pbmlzdGVycxIbCgltYXBfd2lkdGgYCSABKAVSCG1hcFdpZHRoEh0KCm1h",
-            "cF9oZWlnaHQYCiABKAVSCW1hcEhlaWdodBJXChJpbmZvcm1hdGlvbl9yZXBv",
-            "cnQYCyABKAsyKC5wYW5vcHRlcy5wcm90by52MS5JbmZvcm1hdGlvblJlcG9y",
-            "dFZpZXdSEWluZm9ybWF0aW9uUmVwb3J0ImAKC01zZ0dhbWVPdmVyEhsKCXdp",
-            "bm5lcl9pZBgBIAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFz",
-            "b24SHAoJbmFycmF0aXZlGAMgASgJUgluYXJyYXRpdmVCUFo3Z2l0aHViLmNv",
-            "bS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG87cHJvdG92",
-            "MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKnAQoUSW5zdGl0dXRp",
+            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjoK",
+            "GWNhbmRpZGF0ZV9pbnN0aXR1dGlvbl9pZHMYAiADKAlSF2NhbmRpZGF0ZUlu",
+            "c3RpdHV0aW9uSWRzEjQKFmFjdGl2ZV9pbnN0aXR1dGlvbl9pZHMYAyADKAlS",
+            "FGFjdGl2ZUluc3RpdHV0aW9uSWRzIpICChVCdWlsZGluZ09wZXJhdGlvblZp",
+            "ZXcSLAoSc2VsZWN0ZWRfcmVjaXBlX2lkGAEgASgJUhBzZWxlY3RlZFJlY2lw",
+            "ZUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVz",
+            "cxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVz",
+            "cxIjCg1iYXNlX3Byb2dyZXNzGAQgASgFUgxiYXNlUHJvZ3Jlc3MSJQoOYmxv",
+            "Y2tlZF9yZWFzb24YBSABKAlSDWJsb2NrZWRSZWFzb24SJwoPYmxvY2tlZF9t",
+            "ZXNzYWdlGAYgASgJUg5ibG9ja2VkTWVzc2FnZSKHAQoHV2FyWm9uZRIOCgJp",
+            "ZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIZCghub2RlX2lkcxgD",
+            "IAMoCVIHbm9kZUlkcxIcCglkaXJlY3RpdmUYBCABKAlSCWRpcmVjdGl2ZRIf",
+            "Cgt0YXJnZXRfbm9kZRgFIAEoCVIKdGFyZ2V0Tm9kZSJyCgxNaW5pc3RlclZp",
+            "ZXcSEgoEcm9sZRgBIAEoCVIEcm9sZRISCgRuYW1lGAIgASgJUgRuYW1lEhgK",
+            "B2FiaWxpdHkYAyABKAVSB2FiaWxpdHkSIAoLcGVyc29uYWxpdHkYBCABKAlS",
+            "C3BlcnNvbmFsaXR5It8DChVJbmZvcm1hdGlvblJlcG9ydFZpZXcSEgoEbW9k",
+            "ZRgBIAEoCVIEbW9kZRIeCgpjb25maWRlbmNlGAIgASgJUgpjb25maWRlbmNl",
+            "EiwKEnZpc2libGVfbm9kZV9jb3VudBgDIAEoBVIQdmlzaWJsZU5vZGVDb3Vu",
+            "dBIqChFtZW1vcnlfbm9kZV9jb3VudBgEIAEoBVIPbWVtb3J5Tm9kZUNvdW50",
+            "EiwKEnVua25vd25fbm9kZV9jb3VudBgFIAEoBVIQdW5rbm93bk5vZGVDb3Vu",
+            "dBIsChJ2aXNpYmxlX3VuaXRfY291bnQYBiABKAVSEHZpc2libGVVbml0Q291",
+            "bnQSKgoRbWVtb3J5X3VuaXRfY291bnQYByABKAVSD21lbW9yeVVuaXRDb3Vu",
+            "dBIjCg1vbWl0dGVkX2NvdW50GAggASgFUgxvbWl0dGVkQ291bnQSIwoNZGVs",
+            "YXllZF9jb3VudBgJIAEoBVIMZGVsYXllZENvdW50EiMKDW1pc3JlYWRfY291",
+            "bnQYCiABKAVSDG1pc3JlYWRDb3VudBIrChFkaXJlY3RfaW5zcGVjdGlvbhgL",
+            "IAEoCFIQZGlyZWN0SW5zcGVjdGlvbhIUCgVub3RlcxgMIAMoCVIFbm90ZXMi",
+            "7AMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASABKAlSBmdhbWVJZBIkCg55",
+            "b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXllcklkEhIKBHR1cm4YAyAB",
+            "KAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlEjEKBW5vZGVzGAUgAygL",
+            "MhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdSBW5vZGVzEjEKBXVuaXRz",
+            "GAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5pdFZpZXdSBXVuaXRzEjoK",
+            "CW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLlBsYXllclZp",
+            "ZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMoCzIfLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJzEhsKCW1hcF93aWR0aBgJ",
+            "IAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgKIAEoBVIJbWFwSGVpZ2h0",
+            "ElcKEmluZm9ybWF0aW9uX3JlcG9ydBgLIAEoCzIoLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLkluZm9ybWF0aW9uUmVwb3J0Vmlld1IRaW5mb3JtYXRpb25SZXBvcnQi",
+            "YAoLTXNnR2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJUgh3aW5uZXJJZBIW",
+            "CgZyZWFzb24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRpdmUYAyABKAlSCW5h",
+            "cnJhdGl2ZUJQWjdnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVy",
+            "bmFsL2dlbi9wcm90bztwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -130,7 +131,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchProgressEntry), global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser, new[]{ "TechnologyId", "CurrentProgress", "RequiredProgress" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidatePolicyIds", "ActivePolicyIds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidateInstitutionIds", "ActiveInstitutionIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason", "BlockedMessage" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
@@ -2950,8 +2951,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public InstitutionStateView(InstitutionStateView other) : this() {
       slotCount_ = other.slotCount_;
-      candidatePolicyIds_ = other.candidatePolicyIds_.Clone();
-      activePolicyIds_ = other.activePolicyIds_.Clone();
+      candidateInstitutionIds_ = other.candidateInstitutionIds_.Clone();
+      activeInstitutionIds_ = other.activeInstitutionIds_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2973,26 +2974,26 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "candidate_policy_ids" field.</summary>
-    public const int CandidatePolicyIdsFieldNumber = 2;
-    private static readonly pb::FieldCodec<string> _repeated_candidatePolicyIds_codec
+    /// <summary>Field number for the "candidate_institution_ids" field.</summary>
+    public const int CandidateInstitutionIdsFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_candidateInstitutionIds_codec
         = pb::FieldCodec.ForString(18);
-    private readonly pbc::RepeatedField<string> candidatePolicyIds_ = new pbc::RepeatedField<string>();
+    private readonly pbc::RepeatedField<string> candidateInstitutionIds_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> CandidatePolicyIds {
-      get { return candidatePolicyIds_; }
+    public pbc::RepeatedField<string> CandidateInstitutionIds {
+      get { return candidateInstitutionIds_; }
     }
 
-    /// <summary>Field number for the "active_policy_ids" field.</summary>
-    public const int ActivePolicyIdsFieldNumber = 3;
-    private static readonly pb::FieldCodec<string> _repeated_activePolicyIds_codec
+    /// <summary>Field number for the "active_institution_ids" field.</summary>
+    public const int ActiveInstitutionIdsFieldNumber = 3;
+    private static readonly pb::FieldCodec<string> _repeated_activeInstitutionIds_codec
         = pb::FieldCodec.ForString(26);
-    private readonly pbc::RepeatedField<string> activePolicyIds_ = new pbc::RepeatedField<string>();
+    private readonly pbc::RepeatedField<string> activeInstitutionIds_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> ActivePolicyIds {
-      get { return activePolicyIds_; }
+    public pbc::RepeatedField<string> ActiveInstitutionIds {
+      get { return activeInstitutionIds_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3011,8 +3012,8 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if (SlotCount != other.SlotCount) return false;
-      if(!candidatePolicyIds_.Equals(other.candidatePolicyIds_)) return false;
-      if(!activePolicyIds_.Equals(other.activePolicyIds_)) return false;
+      if(!candidateInstitutionIds_.Equals(other.candidateInstitutionIds_)) return false;
+      if(!activeInstitutionIds_.Equals(other.activeInstitutionIds_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3021,8 +3022,8 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       if (SlotCount != 0) hash ^= SlotCount.GetHashCode();
-      hash ^= candidatePolicyIds_.GetHashCode();
-      hash ^= activePolicyIds_.GetHashCode();
+      hash ^= candidateInstitutionIds_.GetHashCode();
+      hash ^= activeInstitutionIds_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3045,8 +3046,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(8);
         output.WriteInt32(SlotCount);
       }
-      candidatePolicyIds_.WriteTo(output, _repeated_candidatePolicyIds_codec);
-      activePolicyIds_.WriteTo(output, _repeated_activePolicyIds_codec);
+      candidateInstitutionIds_.WriteTo(output, _repeated_candidateInstitutionIds_codec);
+      activeInstitutionIds_.WriteTo(output, _repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3061,8 +3062,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(8);
         output.WriteInt32(SlotCount);
       }
-      candidatePolicyIds_.WriteTo(ref output, _repeated_candidatePolicyIds_codec);
-      activePolicyIds_.WriteTo(ref output, _repeated_activePolicyIds_codec);
+      candidateInstitutionIds_.WriteTo(ref output, _repeated_candidateInstitutionIds_codec);
+      activeInstitutionIds_.WriteTo(ref output, _repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3076,8 +3077,8 @@ namespace Panoptes.Protocol.V1 {
       if (SlotCount != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(SlotCount);
       }
-      size += candidatePolicyIds_.CalculateSize(_repeated_candidatePolicyIds_codec);
-      size += activePolicyIds_.CalculateSize(_repeated_activePolicyIds_codec);
+      size += candidateInstitutionIds_.CalculateSize(_repeated_candidateInstitutionIds_codec);
+      size += activeInstitutionIds_.CalculateSize(_repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -3093,8 +3094,8 @@ namespace Panoptes.Protocol.V1 {
       if (other.SlotCount != 0) {
         SlotCount = other.SlotCount;
       }
-      candidatePolicyIds_.Add(other.candidatePolicyIds_);
-      activePolicyIds_.Add(other.activePolicyIds_);
+      candidateInstitutionIds_.Add(other.candidateInstitutionIds_);
+      activeInstitutionIds_.Add(other.activeInstitutionIds_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -3115,11 +3116,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            candidatePolicyIds_.AddEntriesFrom(input, _repeated_candidatePolicyIds_codec);
+            candidateInstitutionIds_.AddEntriesFrom(input, _repeated_candidateInstitutionIds_codec);
             break;
           }
           case 26: {
-            activePolicyIds_.AddEntriesFrom(input, _repeated_activePolicyIds_codec);
+            activeInstitutionIds_.AddEntriesFrom(input, _repeated_activeInstitutionIds_codec);
             break;
           }
         }
@@ -3142,11 +3143,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            candidatePolicyIds_.AddEntriesFrom(ref input, _repeated_candidatePolicyIds_codec);
+            candidateInstitutionIds_.AddEntriesFrom(ref input, _repeated_candidateInstitutionIds_codec);
             break;
           }
           case 26: {
-            activePolicyIds_.AddEntriesFrom(ref input, _repeated_activePolicyIds_codec);
+            activeInstitutionIds_.AddEntriesFrom(ref input, _repeated_activeInstitutionIds_codec);
             break;
           }
         }
