@@ -191,7 +191,18 @@ namespace Panoptes.Core.Application.Stores
             _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeGameSync(_gameStateStore.Snapshot, msg));
             if (msg.Snapshot != null)
             {
-                _helper.HydratePlanningDraft(StoreHydrationProtocolMapper.ToPlanningDraft(msg.Snapshot));
+                var draftState = StoreHydrationProtocolMapper.ToPlanningDraft(msg.Snapshot);
+                if (msg.MinisterProposals != null && msg.MinisterProposals.Count > 0)
+                {
+                    draftState = StoreHydrationProtocolMapper.MergeMinisterProposals(draftState, msg.MinisterProposals);
+                }
+
+                _helper.HydratePlanningDraft(draftState);
+            }
+            else if (msg.MinisterProposals != null && msg.MinisterProposals.Count > 0)
+            {
+                _helper.HydratePlanningDraft(
+                    StoreHydrationProtocolMapper.MergeMinisterProposals(_planningDraftStore.Snapshot, msg.MinisterProposals));
             }
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
             _settlementStore.Replace(SettlementMapper.ToDto(msg));

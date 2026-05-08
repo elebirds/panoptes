@@ -492,7 +492,34 @@ namespace Panoptes.Core.Application.Stores
                 Action = source.Action,
                 TargetNodeId = source.TargetNodeId,
                 TargetUnitId = source.TargetUnitId,
-                SecondaryNodeId = source.SecondaryNodeId
+                SecondaryNodeId = source.SecondaryNodeId,
+                OperationId = source.OperationId,
+                Objective = source.Objective,
+                OperationCommands = CloneMinisterOperationCommands(source.OperationCommands)
+            };
+        }
+
+        private static List<MinisterOperationCommandDto> CloneMinisterOperationCommands(IEnumerable<MinisterOperationCommandDto> source)
+        {
+            return CloneList(source, CloneMinisterOperationCommand);
+        }
+
+        private static MinisterOperationCommandDto CloneMinisterOperationCommand(MinisterOperationCommandDto source)
+        {
+            return new MinisterOperationCommandDto
+            {
+                Action = source.Action,
+                BuildingTypeId = source.BuildingTypeId,
+                CityId = source.CityId,
+                Kind = source.Kind,
+                Label = source.Label,
+                NodeId = source.NodeId,
+                RawJson = source.RawJson,
+                RecipeId = source.RecipeId,
+                SecondaryNodeId = source.SecondaryNodeId,
+                TargetNodeId = source.TargetNodeId,
+                TargetUnitId = source.TargetUnitId,
+                UnitId = source.UnitId
             };
         }
 

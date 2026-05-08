@@ -183,10 +183,10 @@
 - 同一观察摘要会因大臣画像产生不同 system prompt：谨慎大臣强调风险边界，低忠诚/高野心大臣更倾向淡化不利信息或强调自身功劳。
 - `MinisterMemory` 根据玩家 accept/reject/stale 反馈调整 favor；低 favor prompt 会提示大臣因多次被否决而更保守、更强调风险。
 - 2026-05-08 新增回归覆盖：`prompt_test` 验证同观察不同画像的主观压力，`minister_prompt_test` 验证失真 metadata 进入观察摘要。
-- 2026-05-08 扩大 LLM report `actions` 合约：除既有 `build` / `move_units` 外，新增 `set_research`、`set_policy`、`set_institution_loadout`、`set_building_recipe`、`unit_order`。这些 action 仍只会创建待批准 `MinisterDraft`，不会直接写入 planning order。
+- 2026-05-08 收紧 LLM report `actions` 合约：删除 `move_units` / `unit_order` 兼容入口；单位/地图行动改为由规则层生成 `operation` 候选，LLM 仅能通过 `select_candidate` 选择候选。`build`、`set_research`、`set_policy`、`set_institution_loadout`、`set_building_recipe` 仍会创建待批准 `MinisterDraft`，不会直接写入 planning order。
 - 2026-05-08 引入规则候选选择：`BuildMinisterReportInput` 会把同角色当前 pending minister drafts 作为 Action Candidates 注入 report prompt；LLM 可用 `select_candidate` 引用候选 `draft_id`。选中候选会标记为 `llm_action`，同角色未选中的规则候选会变为 stale，从“双轨清单”收敛为“规则出候选、LLM 选方案”。
-- 2026-05-08 将默认大臣候选从 RuleBot shortlist 推进为合法候选池：规则层从当前 observed snapshot 枚举研究、国策、制度组合、建造、生产配方、单位/地图行动候选，并逐一复用各自规划 validator；LLM 后续负责选择/解释而不是发明目标。
-- 2026-05-08 候选池保持 approval-gated：枚举阶段只生成 `rule_only` pending `MinisterDraft`，不会写 `BuildOrders`、`RecipeSelections`、`UnitOrders`、pending research/policy/institution 或 resolving cache；隐藏节点不进入候选。
+- 2026-05-08 将默认大臣候选从 RuleBot shortlist 推进为合法候选池：规则层从当前 observed snapshot 枚举研究、国策、制度组合、建造、生产配方与 operation 候选，并逐一复用各自规划 validator；LLM 后续负责选择/解释而不是发明目标。
+- 2026-05-08 候选池保持 approval-gated：枚举阶段只生成 `rule_only` pending `MinisterDraft`，不会写 `BuildOrders`、`RecipeSelections`、`UnitOrders`、pending research/policy/institution 或 resolving cache；operation 仅承载少量步骤批次，隐藏节点不进入候选。
 
 ### 后续迭代
 - [ ] 客户端同时展示叙事轨和数值轨（双轨信息呈现）
@@ -220,7 +220,7 @@
 
 #### Phase 3：LLM Actions（3-4 天）
 5. **行动候选列表**
-   - 规则层从 observed snapshot 生成合法行动候选池（建造、研究、政策、制度组合、生产配方、单位/地图行动）
+   - 规则层从 observed snapshot 生成合法行动候选池（建造、研究、政策、制度组合、生产配方、operation）
    - 每个候选复用对应 planning/economy/orders validator
    - 候选池只生成待批准草案，不提前写入 planning state
 
@@ -230,9 +230,9 @@
    - 实现亲政令牌消耗（绕过大臣）
 
 7. **不可穷举行动**
-   - LLM 生成移动意图（目标节点）
-   - 规则层验证移动合法性
-   - 实现移动执行逻辑
+   - 规则层用启发式把地图/单位空间折叠成少量 operation 候选
+   - LLM 选择 operation 候选，而不是生成单位级目标
+   - 批准 operation 时按正常 planning validator 预校验全部步骤，再批量落入 planning state
 
 #### Phase 4：行为影响（2-3 天）
 8. **好感度系统**

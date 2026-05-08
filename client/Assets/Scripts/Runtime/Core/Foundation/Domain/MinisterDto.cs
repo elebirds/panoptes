@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
@@ -35,6 +36,9 @@ namespace Panoptes.Core.Domain
         public string TargetNodeId;
         public string TargetUnitId;
         public string SecondaryNodeId;
+        public string OperationId;
+        public string Objective;
+        public IReadOnlyList<MinisterOperationCommandDto> OperationCommands = Array.Empty<MinisterOperationCommandDto>();
 
         public bool IsDomestic => string.Equals(MinisterRole, "domestic", StringComparison.OrdinalIgnoreCase);
 
@@ -57,5 +61,21 @@ namespace Panoptes.Core.Domain
                 return Status ?? string.Empty;
             }
         }
+    }
+
+    public sealed class MinisterOperationCommandDto
+    {
+        public string Label;
+        public string Kind;
+        public string RawJson;
+        public string NodeId;
+        public string BuildingTypeId;
+        public string CityId;
+        public string RecipeId;
+        public string UnitId;
+        public string Action;
+        public string TargetNodeId;
+        public string TargetUnitId;
+        public string SecondaryNodeId;
     }
 }

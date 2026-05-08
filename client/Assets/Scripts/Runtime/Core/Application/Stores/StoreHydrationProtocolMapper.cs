@@ -269,6 +269,65 @@ namespace Panoptes.Core.Application.Stores
                 previous.PlannedInstitutionIds);
         }
 
+        public static PlanningDraftState MergeMinisterProposals(PlanningDraftState current, IEnumerable<MinisterProposalView> proposals)
+        {
+            var previous = current ?? new PlanningDraftState();
+            if (proposals == null)
+            {
+                return previous.Clone();
+            }
+
+            var drafts = StoreSnapshotCloner.CloneMinisterDrafts(previous.MinisterDrafts);
+            var changed = false;
+            foreach (var proposal in proposals)
+            {
+                var mapped = MinisterMapper.ToDto(proposal);
+                if (mapped == null || string.IsNullOrWhiteSpace(mapped.DraftId))
+                {
+                    continue;
+                }
+
+                var replaced = false;
+                for (var i = 0; i < drafts.Count; i++)
+                {
+                    if (string.Equals(drafts[i]?.DraftId, mapped.DraftId, StringComparison.Ordinal))
+                    {
+                        drafts[i] = mapped;
+                        replaced = true;
+                        changed = true;
+                        break;
+                    }
+                }
+
+                if (!replaced)
+                {
+                    drafts.Add(mapped);
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+            {
+                return previous.Clone();
+            }
+
+            return new PlanningDraftState(
+                previous.SnapshotTurn,
+                previous.SnapshotPhase,
+                previous.UnitOrders,
+                previous.BuildOrders,
+                previous.RecipeSelections,
+                previous.WarZoneDirectives,
+                previous.WarZones,
+                drafts,
+                previous.CurrentPreview,
+                previous.CurrentBuildPreview,
+                previous.CurrentRecipePreview,
+                previous.PlannedResearchTargetTechnologyId,
+                previous.PlannedNationalPolicyId,
+                previous.PlannedInstitutionIds);
+        }
+
         public static TurnState ToTurn(MsgGameInit msg)
         {
             if (msg == null)

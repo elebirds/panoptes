@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
@@ -159,6 +160,53 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void MinisterReport_ShouldDescribeOperationDraftBatches()
+        {
+            var draftStore = new PlanningDraftStore();
+            using var viewModel = new MinisterReportViewModel(draftStore);
+
+            draftStore.Replace(new PlanningDraftState(ministerDrafts: new[]
+            {
+                new MinisterDraftDto
+                {
+                    DraftId = "op-1",
+                    MinisterRole = "military",
+                    Kind = "operation",
+                    Title = "北线行动",
+                    Summary = "压迫敌军前线。",
+                    Rationale = "敌军补给不足。",
+                    Status = "pending",
+                    Available = true,
+                    Objective = "夺取北部渡口",
+                    OperationCommands = new[]
+                    {
+                        new MinisterOperationCommandDto
+                        {
+                            Label = "弓兵前压至 N2",
+                            Kind = "unit_order",
+                            UnitId = "u-archer",
+                            Action = "move",
+                            TargetNodeId = "N2"
+                        },
+                        new MinisterOperationCommandDto
+                        {
+                            Kind = "build",
+                            NodeId = "V3",
+                            BuildingTypeId = "watchtower"
+                        }
+                    }
+                }
+            }));
+
+            var messageText = viewModel.Current.Messages[0].Text;
+            StringAssert.Contains("目标：夺取北部渡口", messageText);
+            StringAssert.Contains("行动批次：", messageText);
+            StringAssert.Contains("弓兵前压至 N2", messageText);
+            StringAssert.Contains("建造 watchtower V3", messageText);
+            StringAssert.Contains("目标：夺取北部渡口", viewModel.Current.Groups[0].Rows[0].Detail);
+        }
+
+        [Test]
         public void PolicyFocus_ShouldShowOnlyNationalPolicies()
         {
             var catalogStore = new StaticCatalogStore();
@@ -269,7 +317,10 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             Assert.That(viewModel.Current.Groups[0].Rows[0].Summary, Is.EqualTo("7"));
             Assert.That(viewModel.Current.Groups[1].Rows[0].Summary, Is.EqualTo("11"));
-            Assert.That(viewModel.Current.Groups[2].Rows[4].Summary, Is.EqualTo("1"));
+
+            var catalogRows = viewModel.Current.Groups[2].Rows;
+            Assert.That(catalogRows.Single(row => row.Id == "institutions").Summary, Is.EqualTo("0"));
+            Assert.That(catalogRows.Single(row => row.Id == "units").Summary, Is.EqualTo("1"));
         }
     }
 }
