@@ -47,6 +47,7 @@ type ReportPromptInput struct {
 	Phase              string
 	PlayerID           string
 	ObservationSummary string
+	ActionCandidates   string
 	CurrentPolicy      string
 	CurrentResearch    string
 	Memory             *MinisterMemory
@@ -96,6 +97,7 @@ func buildReportUserPrompt(input ReportPromptInput) string {
 		CurrentPolicy:      emptyFallback(input.CurrentPolicy, "(none)"),
 		CurrentResearch:    emptyFallback(input.CurrentResearch, "(none)"),
 		ObservationSummary: emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
+		ActionCandidates:   emptyFallback(input.ActionCandidates, "(none)"),
 		Memory:             memoryPrompt(input.Memory),
 	})
 }
@@ -153,6 +155,7 @@ type reportPromptTemplateData struct {
 	CurrentPolicy      string
 	CurrentResearch    string
 	ObservationSummary string
+	ActionCandidates   string
 	Memory             string
 }
 

@@ -16,6 +16,7 @@ func (r *Runtime) BuildMinisterReportInput(playerID string, role string) ministe
 		Phase:              r.currentPhase(),
 		PlayerID:           strings.TrimSpace(playerID),
 		ObservationSummary: r.BuildMinisterObservationSummary(playerID, role),
+		ActionCandidates:   r.BuildMinisterActionCandidateSummary(playerID, role),
 		CurrentPolicy:      currentPolicyValue(r.state, playerID),
 		CurrentResearch:    currentResearchValue(r.state, playerID),
 	}
@@ -74,6 +75,45 @@ func buildMinisterObservationSummary(state *domain.GameState, observation *gameq
 	parts = append(parts, roleObservationFocus(observation, role)...)
 
 	return strings.Join(parts, "; ")
+}
+
+func (r *Runtime) BuildMinisterActionCandidateSummary(playerID string, role string) string {
+	if r == nil || r.state == nil {
+		return "(none)"
+	}
+	return buildMinisterActionCandidateSummary(r.state, playerID, role)
+}
+
+func buildMinisterActionCandidateSummary(state *domain.GameState, playerID string, role string) string {
+	if state == nil {
+		return "(none)"
+	}
+	playerID = strings.TrimSpace(playerID)
+	role = strings.TrimSpace(role)
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
+	if len(drafts) == 0 {
+		return "(none)"
+	}
+	parts := make([]string, 0, len(drafts))
+	for _, draft := range drafts {
+		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != state.Turn {
+			continue
+		}
+		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("candidate_id=%s kind=%s target_id=%s target_label=%s source=%s",
+			strings.TrimSpace(draft.DraftID),
+			strings.TrimSpace(string(draft.Kind)),
+			strings.TrimSpace(draft.TargetID),
+			strings.TrimSpace(draft.TargetLabel),
+			strings.TrimSpace(string(draft.Source)),
+		))
+	}
+	if len(parts) == 0 {
+		return "(none)"
+	}
+	return strings.Join(parts, "\n")
 }
 
 func roleObservationFocus(observation *gamequery.ObservationSnapshot, role string) []string {

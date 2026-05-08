@@ -101,6 +101,7 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 		Phase:              "planning",
 		PlayerID:           "player-1",
 		ObservationSummary: "当前只看到本土腹地，边境敌军位置未知。",
+		ActionCandidates:   "candidate_id=domestic:research:bronze_working:4 kind=research target_id=bronze_working target_label=青铜冶炼 source=rule_only",
 		CurrentPolicy:      "reorganization",
 		CurrentResearch:    "agrarian_foundations",
 		Memory:             &MinisterMemory{PlayerID: "player-1", Role: "domestic", Favor: 28},
@@ -111,6 +112,10 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	}
 	if !strings.Contains(req.SystemPrompt, "metrics 里的玩家可读字符串都必须是简体中文") {
 		t.Fatalf("SystemPrompt = %q, want report field Chinese constraint", req.SystemPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, "`select_candidate`") || !strings.Contains(req.SystemPrompt, "candidate_id") ||
+		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
+		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.SystemPrompt, "`move_units`") || !strings.Contains(req.UserPrompt, "params.target_node") {
 		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)

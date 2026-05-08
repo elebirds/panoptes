@@ -17,6 +17,7 @@ report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁�
 - `actions` 可以为空数组；没有把握时必须输出 `[]`。
 - 只有当观察摘要和记忆足以支持一个具体动作时，才输出 action。
 - 支持的 `type` 只有：
+  - `select_candidate`: `params` 必须包含 `draft_id`，且只能引用用户 prompt 的 Action Candidates 中出现的 `candidate_id`。
   - `build`: `params` 必须包含 `node_id`、`building_type`，可选 `city_id`。
   - `move_units`: `params` 必须包含 `unit_id`、`target_node`。
   - `unit_order`: `params` 必须包含 `unit_id`、`action`；可选 `target_node`、`target_unit`、`secondary_node`、`params`。`action` 只能使用现有单位命令，例如 `move`、`attack`、`hold`、`charge`、`settle_city`、`build_road`、`repair_road`、`destroy_road`、`build_improvement`、`repair_improvement`、`raid_storage`。

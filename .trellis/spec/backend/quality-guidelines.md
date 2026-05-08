@@ -197,6 +197,7 @@ if ok {
 #### 2. Signatures
 - Engine callback: `RuntimeRoom.ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error`
 - Supported action types in the current contract:
+  - `select_candidate`
   - `build`
   - `move_units`
   - `unit_order`
@@ -205,6 +206,7 @@ if ok {
   - `set_institution_loadout`
   - `set_building_recipe`
 - Action param contracts:
+  - `select_candidate`: `draft_id` from the report prompt Action Candidates list
   - `build`: `node_id`, `building_type`, optional `city_id`
   - `move_units`: `unit_id`, `target_node`
   - `unit_order`: `unit_id`, `action`, optional `target_node`, `target_unit`, `secondary_node`, `params`
@@ -215,6 +217,10 @@ if ok {
 
 #### 3. Contracts
 - `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.
+- Report prompts should include current same-role pending minister drafts as Action Candidates when they exist.
+- If Action Candidates exist, the prompt must instruct the LLM to prefer `select_candidate` over hand-written action params for the same decision surface.
+- `select_candidate` must only be allowed to reference an existing current-turn pending draft for the same player and minister role.
+- When one or more same-role rule candidates are selected, selected drafts become `llm_action` proposals and unselected same-role rule-only/rule+llm candidates become stale/unavailable.
 - Session-level action application must route through existing planning validation and create pending minister drafts/proposals instead of writing planning orders directly.
 - Build actions must be validated with the normal build-order rules before creating a pending minister draft.
 - Move actions must be validated with the normal unit-order rules before creating a pending minister draft.
@@ -224,6 +230,7 @@ if ok {
 
 #### 4. Validation & Error Matrix
 - Missing action type or required params -> ignore the action.
+- `select_candidate` references an unknown, stale, cross-role, or unavailable candidate -> ignore the selection and do not stale other candidates.
 - Build action fails `ValidateBuildOrder` -> log warning, do not create a proposal.
 - Move action fails `ValidatePlanningUnitOrder` -> log warning, do not create a proposal.
 - Research action fails `ValidateResearchTarget` -> log warning, do not create a proposal.
@@ -234,7 +241,8 @@ if ok {
 - Valid action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
 
 #### 5. Good/Base/Bad Cases
-- Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, `set_building_recipe`, or a valid `unit_order`, and the session creates pending minister proposals that the player can approve.
+- Good: rules generate research/policy/unit candidates, the report prompt lists them, and the LLM returns `select_candidate` for the candidate it wants to formally recommend.
+- Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, `set_building_recipe`, or a valid `unit_order` when no suitable candidate exists, and the session creates pending minister proposals that the player can approve.
 - Base: LLM returns legacy `build` or `move_units`, and the session creates proposals that later flow through the same approve/reject path as other minister drafts.
 - Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
 
@@ -243,6 +251,8 @@ if ok {
 - Session test confirms valid minister build actions stage pending minister drafts.
 - Session test confirms valid minister move actions stage pending minister drafts.
 - Session test confirms expanded research, policy, institution, recipe, and generic unit-order actions stage pending minister drafts without mutating planning state before approval.
+- Session test confirms `select_candidate` marks selected same-role candidates as `llm_action` and stales unselected same-role rule candidates.
+- Prompt test confirms Action Candidates are injected into report prompts and the selection contract is visible.
 - Projection/query test confirms minister proposals carry typed commands and raw JSON.
 - Regression tests confirm invalid minister actions are ignored, not applied.
 

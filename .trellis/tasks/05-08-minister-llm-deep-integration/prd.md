@@ -184,6 +184,7 @@
 - `MinisterMemory` 根据玩家 accept/reject/stale 反馈调整 favor；低 favor prompt 会提示大臣因多次被否决而更保守、更强调风险。
 - 2026-05-08 新增回归覆盖：`prompt_test` 验证同观察不同画像的主观压力，`minister_prompt_test` 验证失真 metadata 进入观察摘要。
 - 2026-05-08 扩大 LLM report `actions` 合约：除既有 `build` / `move_units` 外，新增 `set_research`、`set_policy`、`set_institution_loadout`、`set_building_recipe`、`unit_order`。这些 action 仍只会创建待批准 `MinisterDraft`，不会直接写入 planning order。
+- 2026-05-08 引入规则候选选择：`BuildMinisterReportInput` 会把同角色当前 pending minister drafts 作为 Action Candidates 注入 report prompt；LLM 可用 `select_candidate` 引用候选 `draft_id`。选中候选会标记为 `llm_action`，同角色未选中的规则候选会变为 stale，从“双轨清单”收敛为“规则出候选、LLM 选方案”。
 
 ### 后续迭代
 - [ ] 客户端同时展示叙事轨和数值轨（双轨信息呈现）

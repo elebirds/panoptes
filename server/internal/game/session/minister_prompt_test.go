@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/elebirds/panoptes/internal/domain"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
@@ -70,5 +71,58 @@ func TestBuildMinisterObservationSummaryAddsDistortionMetadata(t *testing.T) {
 		if !strings.Contains(summary, want) {
 			t.Fatalf("summary = %q, want %q", summary, want)
 		}
+	}
+}
+
+func TestBuildMinisterActionCandidateSummaryFiltersCurrentRoleCandidates(t *testing.T) {
+	state := domain.NewGameState("game-candidates", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Turn = 3
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "domestic:research:bronze_working:3",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "bronze_working",
+			TargetLabel:  "Bronze Working",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         3,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+		{
+			DraftID:      "military:unit_order:u1_move_a2:3",
+			PlayerID:     "player-1",
+			MinisterRole: "military",
+			Kind:         domain.MinisterDraftKindUnitOrder,
+			TargetID:     "u1:move:A2:",
+			TargetLabel:  "u1 move -> A2",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         3,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+		{
+			DraftID:      "domestic:policy:stale:2",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Status:       domain.MinisterDraftStatusStale,
+			Available:    false,
+			Turn:         2,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	summary := buildMinisterActionCandidateSummary(state, "player-1", "domestic")
+	if !strings.Contains(summary, "candidate_id=domestic:research:bronze_working:3") ||
+		!strings.Contains(summary, "kind=research") ||
+		!strings.Contains(summary, "target_id=bronze_working") {
+		t.Fatalf("summary = %q, want domestic current candidate", summary)
+	}
+	if strings.Contains(summary, "military:unit_order") || strings.Contains(summary, "stale") {
+		t.Fatalf("summary = %q, want only current pending domestic candidates", summary)
 	}
 }

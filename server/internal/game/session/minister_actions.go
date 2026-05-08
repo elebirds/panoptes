@@ -35,15 +35,35 @@ func (r *Runtime) ApplyMinisterActions(playerID string, role string, actions []m
 	}
 
 	staged := false
+	selectedCandidateIDs := make(map[string]struct{})
 	for _, action := range actions {
+		if ministerActionIsCandidateSelection(action) {
+			draftID := ministerActionStringParam(action.Params, "draft_id", "candidate_id")
+			if draftID != "" {
+				selectedCandidateIDs[draftID] = struct{}{}
+			}
+			continue
+		}
 		if r.stageMinisterActionDraft(playerID, role, action) {
 			staged = true
 		}
+	}
+	if len(selectedCandidateIDs) > 0 && r.applyMinisterCandidateSelections(playerID, role, selectedCandidateIDs) {
+		staged = true
 	}
 	if staged {
 		_ = r.sendMinisterProposalSync(playerID)
 	}
 	return nil
+}
+
+func ministerActionIsCandidateSelection(action ministerengine.MinisterActionItem) bool {
+	switch strings.TrimSpace(action.Type) {
+	case "select_candidate", "select_draft":
+		return true
+	default:
+		return false
+	}
 }
 
 func (r *Runtime) stageMinisterActionDraft(playerID string, role string, action ministerengine.MinisterActionItem) bool {
@@ -244,6 +264,63 @@ func (r *Runtime) upsertMinisterActionDraft(playerID string, draft domain.Minist
 	drafts = append(drafts, draft)
 	r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
 	return true
+}
+
+func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string, selectedDraftIDs map[string]struct{}) bool {
+	if r == nil || r.state == nil || len(selectedDraftIDs) == 0 {
+		return false
+	}
+	role = strings.TrimSpace(role)
+	drafts := r.state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
+	if len(drafts) == 0 {
+		return false
+	}
+	found := false
+	for _, draft := range drafts {
+		if !ministerDraftSelectableForRole(draft, r.state.Turn, role) {
+			continue
+		}
+		if _, ok := selectedDraftIDs[strings.TrimSpace(draft.DraftID)]; ok {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return false
+	}
+	changed := false
+	for idx := range drafts {
+		if !ministerDraftSelectableForRole(drafts[idx], r.state.Turn, role) {
+			continue
+		}
+		draftID := strings.TrimSpace(drafts[idx].DraftID)
+		if _, selected := selectedDraftIDs[draftID]; selected {
+			if drafts[idx].Source != domain.MinisterDraftSourceLLMAction {
+				drafts[idx].Source = domain.MinisterDraftSourceLLMAction
+				changed = true
+			}
+			continue
+		}
+		if drafts[idx].Source == domain.MinisterDraftSourceRuleOnly || drafts[idx].Source == domain.MinisterDraftSourceRuleLLM {
+			drafts[idx].Status = domain.MinisterDraftStatusStale
+			drafts[idx].Available = false
+			changed = true
+		}
+	}
+	if changed {
+		r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
+	}
+	return changed
+}
+
+func ministerDraftSelectableForRole(draft domain.MinisterDraft, turn int, role string) bool {
+	if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
+		return false
+	}
+	if role == "" {
+		return true
+	}
+	return strings.TrimSpace(draft.MinisterRole) == role
 }
 
 func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, intent planning.Intent) bool {
