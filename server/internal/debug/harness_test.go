@@ -1,6 +1,8 @@
 package debug
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -151,7 +153,7 @@ func TestHarnessRecipeBlockedByInput_RecordsGameSyncAndState(t *testing.T) {
 		t.Fatalf("WaitGameSync() error = %v", err)
 	}
 	if !hasTurnEvent(record.GameSync, "economy", "building_status_changed") {
-		t.Fatalf("missing building_status_changed event")
+		t.Fatalf("missing building_status_changed event; events=%s", describeTurnEvents(record.GameSync))
 	}
 	building, ok := record.Summary.Buildings["A2"]
 	if !ok {
@@ -430,8 +432,8 @@ func TestHarnessM9PreflightLongGame_CoversMinisterInfoLogisticsAndWarfare(t *tes
 	if err != nil {
 		t.Fatalf("WaitGameSync(turn=6) error = %v", err)
 	}
-	if !hasTurnEvent(turn6.GameSync, "economy", "recipe_completed") {
-		t.Fatalf("turn 6 missing recipe_completed event")
+	if !hasTurnEvent(turn6.GameSync, "economy", "recipe_progressed") {
+		t.Fatalf("turn 6 missing recipe_progressed event; events=%s", describeTurnEvents(turn6.GameSync))
 	}
 	if unitID := findOwnedUnitIDByTypeIfExists(h.room.State(), "player-1", "infantry"); unitID != "" {
 		t.Fatalf("disconnected new city produced infantry %q without reachable ore", unitID)
@@ -534,7 +536,7 @@ func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *
 				t.Fatalf("turn 3 building summary = %#v, want active player-2/E2 farm", building)
 			}
 			if got := record.Summary.Players["player-2"].Resources["food"]; got != 2 {
-				t.Fatalf("turn 3 player-2 food = %d, want 2 after reactivated farm output", got)
+				t.Fatalf("turn 3 player-2 food = %d, want 2 after reactivated farm output; events=%s summary=%+v", got, describeTurnEvents(record.GameSync), record.Summary)
 			}
 		}
 	}
@@ -565,6 +567,20 @@ func hasPlanningStartEvent(msg *pb.MsgPlanningStart, eventType string) bool {
 		}
 	}
 	return false
+}
+
+func describeTurnEvents(msg *pb.MsgGameSync) string {
+	if msg == nil {
+		return "<nil>"
+	}
+	parts := make([]string, 0, len(msg.GetEvents()))
+	for _, evt := range msg.GetEvents() {
+		if evt == nil {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s:%s:%v", evt.GetChannel(), evt.GetKind(), evt.GetData()))
+	}
+	return strings.Join(parts, ",")
 }
 
 func assertM9PreflightPlanningStart(t *testing.T, start *pb.MsgPlanningStart) {

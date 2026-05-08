@@ -258,6 +258,9 @@ func RecipeBlockedByInput() (*Definition, error) {
 	if _, err := placeBuildingAtNode(state, "barracks", "player-1", "A1", "A2"); err != nil {
 		return nil, err
 	}
+	if err := setBuildingRecipeAtNode(state, "A2", "barracks_infantry"); err != nil {
+		return nil, err
+	}
 	state.Players["player-1"].Research.UnlockBuilding("barracks")
 	state.Players["player-1"].Research.UnlockRecipe("barracks_infantry")
 	return &Definition{
@@ -315,6 +318,9 @@ func DisabledRecipeSkipped() (*Definition, error) {
 	}
 	nodeEntry, err := placeBuildingAtNode(state, "barracks", "player-1", "A1", "A2")
 	if err != nil {
+		return nil, err
+	}
+	if err := setBuildingRecipeAtNode(state, "A2", "barracks_infantry"); err != nil {
 		return nil, err
 	}
 	if !nodeEntry.HasComponent(ecs.BuildingStateC) {

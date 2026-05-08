@@ -57,6 +57,7 @@ func newRealContentHappyPathDefinition(t *testing.T) *scenario.Definition {
 		t.Fatalf("missing node B1")
 	}
 	ecs.CreateBuilding(state.World, "frontier_office", "player-1", "A2", frontierOfficeEntry)
+	setSelectedRecipe(t, frontierOfficeEntry, "city_core_settler")
 	if !frontierOfficeEntry.HasComponent(ecs.BuildingOperationC) {
 		t.Fatalf("frontier office B1 missing BuildingOperationC")
 	}
@@ -100,6 +101,7 @@ func newRealContentFacilityTakeoverDefinition(t *testing.T) *scenario.Definition
 		t.Fatalf("missing node C2")
 	}
 	ecs.CreateBuilding(state.World, "farm", "player-1", "A2", farmEntry)
+	setSelectedRecipe(t, farmEntry, "farm_food")
 	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 2, R: 1}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-infantry-1"
 
@@ -286,6 +288,24 @@ func clearSelectedRecipe(t *testing.T, state *domain.GameState, nodeID string) {
 	operation.ProgressRemainder = 0
 	operation.ConsumedResources = domain.NewResourceBag()
 	operation.ConsumedPoints = domain.NewPointBag()
+}
+
+func setSelectedRecipe(t *testing.T, entry *donburi.Entry, recipeID string) {
+	t.Helper()
+
+	recipe, ok := staticdata.Default().GetRecipe(recipeID)
+	if !ok {
+		t.Fatalf("missing recipe %s", recipeID)
+	}
+	if !entry.HasComponent(ecs.BuildingOperationC) {
+		entry.AddComponent(ecs.BuildingOperationC)
+	}
+	ecs.BuildingOperationC.SetValue(entry, ecs.BuildingOperationComp{
+		SelectedRecipeID:  recipeID,
+		RequiredTurns:     recipe.WorkAmount,
+		ConsumedResources: domain.NewResourceBag(),
+		ConsumedPoints:    domain.NewPointBag(),
+	})
 }
 
 func capitalNodeID(playerID string) string {

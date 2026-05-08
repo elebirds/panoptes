@@ -52,7 +52,11 @@ func NewHarness(def *scenario.Definition) (*Harness, error) {
 		def.State.GameID,
 		participants,
 		transport,
-		&config.Config{DevMode: true, MapID: def.State.Map.ID},
+		&config.Config{
+			DevMode:             true,
+			MapID:               def.State.Map.ID,
+			TurnReportTimeoutMs: 50,
+		},
 		def.State,
 	)
 
@@ -137,6 +141,7 @@ func (h *Harness) WaitGameSync(playerID string, turn int, timeout time.Duration)
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
+		syncMsg = proto.Clone(syncMsg).(*pb.MsgGameSync)
 
 		record := &TurnRecord{
 			Turn:          turn,
