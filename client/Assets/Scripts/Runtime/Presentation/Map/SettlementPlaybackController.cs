@@ -49,6 +49,8 @@ namespace Panoptes.Presentation.Map
         private SettlementPlaybackRunner _runner;
         private UnitView _playbackSelectedUnit;
         private SettlementCameraPolicy _cameraPolicy;
+        private SettlementPlaybackControlOverlay _controlOverlay;
+        private TurnSettlementDto _activeSettlement;
         private readonly List<GameObject> _activeMoveProxies = new();
         private int _lastHandledSettlementSequence;
         private bool _inputLockedForPlayback;
@@ -77,6 +79,8 @@ namespace Panoptes.Presentation.Map
         private void OnEnable()
         {
             EnsureRunner();
+            EnsureControlOverlay();
+            UpdatePlaybackControls();
             SubscribeSettlement();
         }
 
@@ -86,6 +90,8 @@ namespace Panoptes.Presentation.Map
             _settlementSubscription = null;
 
             SkipPlayback();
+            _controlOverlay?.Dispose();
+            _controlOverlay = null;
         }
 
         private void Update()
@@ -103,7 +109,20 @@ namespace Panoptes.Presentation.Map
 
         public void SetPlaybackMode(SettlementPlaybackMode mode)
         {
+            if (playbackMode == mode)
+            {
+                UpdatePlaybackControls();
+                return;
+            }
+
             playbackMode = mode;
+            if (_isPlayingSettlement && _activeSettlement != null)
+            {
+                RestartActivePlayback();
+                return;
+            }
+
+            UpdatePlaybackControls();
         }
 
         public void SkipPlayback()
@@ -120,6 +139,41 @@ namespace Panoptes.Presentation.Map
             ClearPlaybackSelection();
             _cameraPolicy = null;
             _isPlayingSettlement = false;
+            UpdatePlaybackControls();
+        }
+
+        public bool FocusSettlementEvent(TurnEventDto evt)
+        {
+            if (_mapRenderer == null || evt == null)
+            {
+                return false;
+            }
+
+            var unitId = ResolveFocusUnitId(evt);
+            if (!string.IsNullOrWhiteSpace(unitId) &&
+                _mapRenderer.TryGetUnitView(unitId.Trim(), out var unit) &&
+                unit != null)
+            {
+                CinemachineMapCameraController.TryFocus(unit.transform.position, false);
+                return true;
+            }
+
+            if (TryResolveNodeForEvent(evt, out var node) && node != null)
+            {
+                CinemachineMapCameraController.TryFocus(node.transform.position, false);
+                return true;
+            }
+
+            if (string.Equals(evt.Type, "unit_moved", StringComparison.Ordinal) &&
+                _mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.ToQ, evt.ToR), out var targetNodeId) &&
+                _mapRenderer.TryGetNodeView(targetNodeId, out node) &&
+                node != null)
+            {
+                CinemachineMapCameraController.TryFocus(node.transform.position, false);
+                return true;
+            }
+
+            return false;
         }
 
         private void SubscribeSettlement()
@@ -138,8 +192,10 @@ namespace Panoptes.Presentation.Map
 
             _lastHandledSettlementSequence = state.Sequence;
             var settlement = state.Settlement;
+            _activeSettlement = settlement;
             if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
+                UpdatePlaybackControls();
                 return;
             }
 
@@ -157,8 +213,10 @@ namespace Panoptes.Presentation.Map
         {
             BeginPlaybackInputLock();
             _isPlayingSettlement = true;
+            _activeSettlement = settlement;
             _cameraPolicy = SettlementCameraPolicy.Start(playbackMode);
             _animationQueue?.CancelUnitMoves();
+            UpdatePlaybackControls();
             try
             {
                 var steps = SettlementPlaybackPlanBuilder.Build(settlement);
@@ -191,6 +249,7 @@ namespace Panoptes.Presentation.Map
                 _playbackCoroutine = null;
                 _cameraPolicy = null;
                 _isPlayingSettlement = false;
+                UpdatePlaybackControls();
             }
         }
 
@@ -885,6 +944,18 @@ namespace Panoptes.Presentation.Map
                 return node != null;
             }
 
+            var dataNodeId = ReadEventString(evt, "node_id", "target_node_id");
+            if (!string.IsNullOrWhiteSpace(dataNodeId) && _mapRenderer.TryGetNodeView(dataNodeId.Trim(), out node))
+            {
+                return node != null;
+            }
+
+            if (string.Equals(evt.Type, "unit_moved", StringComparison.Ordinal) &&
+                _mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.ToQ, evt.ToR), out var moveTargetNodeId))
+            {
+                return _mapRenderer.TryGetNodeView(moveTargetNodeId, out node) && node != null;
+            }
+
             if (_mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId))
             {
                 return _mapRenderer.TryGetNodeView(nodeId, out node) && node != null;
@@ -949,6 +1020,47 @@ namespace Panoptes.Presentation.Map
             }
 
             _runner = new SettlementPlaybackRunner(this);
+        }
+
+        private void EnsureControlOverlay()
+        {
+            if (_controlOverlay != null)
+            {
+                return;
+            }
+
+            _controlOverlay = new SettlementPlaybackControlOverlay(SkipPlayback, SetPlaybackMode);
+        }
+
+        private void UpdatePlaybackControls()
+        {
+            EnsureControlOverlay();
+            _controlOverlay?.Refresh(playbackMode, _isPlayingSettlement);
+        }
+
+        private void RestartActivePlayback()
+        {
+            var settlement = _activeSettlement;
+            if (settlement == null)
+            {
+                UpdatePlaybackControls();
+                return;
+            }
+
+            if (_playbackCoroutine != null)
+            {
+                StopCoroutine(_playbackCoroutine);
+                _playbackCoroutine = null;
+            }
+
+            _runner?.StopActive();
+            ClearActiveMoveProxies();
+            _mapRenderer?.ReconcileUnitsToCurrentState();
+            EndPlaybackInputLock();
+            ClearPlaybackSelection();
+            _cameraPolicy = null;
+            _isPlayingSettlement = false;
+            _playbackCoroutine = StartCoroutine(PlaySettlement(settlement));
         }
 
         private void BeginPlaybackInputLock()
@@ -1061,6 +1173,31 @@ namespace Panoptes.Presentation.Map
             return !string.IsNullOrWhiteSpace(evt.UnitId)
                 ? evt.UnitId
                 : ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id");
+        }
+
+        private static string ResolveFocusUnitId(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return evt.UnitId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.TargetUnitId))
+            {
+                return evt.TargetUnitId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.EnemyUnitId))
+            {
+                return evt.EnemyUnitId;
+            }
+
+            return ResolveActorUnitId(evt);
         }
 
     }

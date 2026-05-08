@@ -7,33 +7,39 @@
  *************************************************/
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
-using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Map;
 using R3;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using VContainer;
 
 namespace Panoptes.Presentation.UI.Turn
 {
-    public sealed class SettlementTimeline : MonoBehaviour
+    public sealed class SettlementTimeline : MonoBehaviour, IPointerClickHandler
     {
         [SerializeField] private RectTransform root;
         [SerializeField] private Image background;
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI timelineText;
 
+        private readonly List<TurnEventDto> _clickableEvents = new();
         private IDisposable _settlementSubscription;
         private SettlementStore _settlementStore;
+        private SettlementPlaybackController _playbackController;
         private bool _warnedMissingUi;
 
         [Inject]
-        private void Construct(SettlementStore settlementStore)
+        private void Construct(SettlementStore settlementStore, SettlementPlaybackController playbackController)
         {
             _settlementStore = settlementStore;
+            _playbackController = playbackController;
         }
 
         private void Awake()
@@ -65,11 +71,13 @@ namespace Panoptes.Presentation.UI.Turn
             var settlement = state?.Settlement;
             if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
+                _clickableEvents.Clear();
                 timelineText.text = "本回合没有结算提示";
                 return;
             }
 
             var builder = new StringBuilder();
+            _clickableEvents.Clear();
             var lineCount = 0;
             for (var i = 0; i < settlement.Sections.Count; i++)
             {
@@ -81,7 +89,8 @@ namespace Panoptes.Presentation.UI.Turn
 
                 for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                 {
-                    if (!TryDescribeEvent(section.Events[eventIndex], out var line))
+                    var evt = section.Events[eventIndex];
+                    if (!SettlementTimelineEventFormatter.TryDescribeEvent(evt, out var line))
                     {
                         continue;
                     }
@@ -91,7 +100,7 @@ namespace Panoptes.Presentation.UI.Turn
                         builder.Append('\n');
                     }
 
-                    builder.Append(line);
+                    AppendLinkedLine(builder, line, evt);
                     lineCount++;
                 }
             }
@@ -99,114 +108,56 @@ namespace Panoptes.Presentation.UI.Turn
             timelineText.text = lineCount > 0
                 ? builder.ToString()
                 : "本回合没有建造或生产相关提示";
+            timelineText.ForceMeshUpdate();
         }
 
-        private static bool TryDescribeEvent(TurnEventDto evt, out string description)
+        public void OnPointerClick(PointerEventData eventData)
         {
-            description = string.Empty;
-            if (evt == null)
+            if (eventData == null || timelineText == null || _clickableEvents.Count == 0)
             {
-                return false;
+                return;
             }
 
-            var nodeId = ReadData(evt, "node_id");
-            var buildingType = ReadData(evt, "building_type_id", "building_type");
-            var recipeId = ReadData(evt, "recipe_id");
-            var reasonMessage = ResolveReasonMessage(evt.ReasonMessage, ReadData(evt, "reason"));
-            var blockedReasonMessage = ResolveReasonMessage(evt.BlockedReasonMessage, ReadData(evt, "blocked_reason"));
-
-            switch (evt.Type)
+            var linkIndex = TMP_TextUtilities.FindIntersectingLink(
+                timelineText,
+                eventData.position,
+                eventData.pressEventCamera);
+            if (linkIndex < 0 || linkIndex >= timelineText.textInfo.linkInfo.Length)
             {
-                case "city_founded":
-                    description = string.IsNullOrWhiteSpace(nodeId)
-                        ? "建立了新城市。"
-                        : $"节点 {nodeId} 建立了新城市。";
-                    return true;
-                case "building_built":
-                    description = $"节点 {Fallback(nodeId, "未知节点")} 完成了 {Fallback(buildingType, "建筑")}。";
-                    return true;
-                case "building_skipped":
-                    description = $"节点 {Fallback(nodeId, "未知节点")} 的 {Fallback(buildingType, "建筑")} 未能建造：{Fallback(reasonMessage, "当前不能建造。")}";
-                    return true;
-                case "recipe_skipped":
-                    description = $"节点 {Fallback(nodeId, "未知节点")} 的配方 {Fallback(recipeId, "当前配方")} 未推进：{Fallback(reasonMessage, "本回合未生产。")}";
-                    return true;
-                case "recipe_progressed":
-                    if (!string.IsNullOrWhiteSpace(blockedReasonMessage))
-                    {
-                        description = $"节点 {Fallback(nodeId, "未知节点")} 的配方 {Fallback(recipeId, "当前配方")} 被阻塞：{blockedReasonMessage}";
-                        return true;
-                    }
-
-                    var amount = ReadData(evt, "amount", "progress", "base_progress");
-                    description = string.IsNullOrWhiteSpace(amount)
-                        ? $"节点 {Fallback(nodeId, "未知节点")} 的配方 {Fallback(recipeId, "当前配方")} 已推进。"
-                        : $"节点 {Fallback(nodeId, "未知节点")} 的配方 {Fallback(recipeId, "当前配方")} 推进了 {amount} 点。";
-                    return true;
-                case "building_status_changed":
-                    var status = ReadData(evt, "status");
-                    description = string.IsNullOrWhiteSpace(reasonMessage)
-                        ? $"节点 {Fallback(nodeId, "未知节点")} 的建筑状态变为 {Fallback(status, "未知状态")}。"
-                        : $"节点 {Fallback(nodeId, "未知节点")} 的建筑状态变为 {Fallback(status, "未知状态")}：{reasonMessage}";
-                    return true;
-                case "facility_takeover_progressed":
-                    var progress = ReadData(evt, "takeover_progress");
-                    var required = ReadData(evt, "takeover_required");
-                    if (!string.IsNullOrWhiteSpace(progress) && !string.IsNullOrWhiteSpace(required))
-                    {
-                        description = $"节点 {Fallback(nodeId, "未知节点")} 正在被接管（{progress}/{required}）：{Fallback(reasonMessage, "当前无法正常运作。")}";
-                        return true;
-                    }
-
-                    description = $"节点 {Fallback(nodeId, "未知节点")} 正在被接管：{Fallback(reasonMessage, "当前无法正常运作。")}";
-                    return true;
-                default:
-                    return false;
+                return;
             }
+
+            var linkId = timelineText.textInfo.linkInfo[linkIndex].GetLinkID();
+            if (!int.TryParse(linkId, NumberStyles.Integer, CultureInfo.InvariantCulture, out var eventIndex) ||
+                eventIndex < 0 ||
+                eventIndex >= _clickableEvents.Count)
+            {
+                return;
+            }
+
+            _playbackController?.FocusSettlementEvent(_clickableEvents[eventIndex]);
         }
 
-        private static string ReadData(TurnEventDto evt, params string[] keys)
+        private void AppendLinkedLine(StringBuilder builder, string line, TurnEventDto evt)
         {
-            if (evt?.Data == null || keys == null)
+            var linkId = _clickableEvents.Count.ToString(CultureInfo.InvariantCulture);
+            _clickableEvents.Add(evt);
+            builder
+                .Append("<link=\"")
+                .Append(linkId)
+                .Append("\"><color=#D8ECFF>")
+                .Append(SanitizeRichText(line))
+                .Append("</color></link>");
+        }
+
+        private static string SanitizeRichText(string value)
+        {
+            if (string.IsNullOrEmpty(value))
             {
                 return string.Empty;
             }
 
-            for (var i = 0; i < keys.Length; i++)
-            {
-                var key = keys[i];
-                if (string.IsNullOrWhiteSpace(key))
-                {
-                    continue;
-                }
-
-                if (evt.Data.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
-                {
-                    return value.Trim();
-                }
-            }
-
-            return string.Empty;
-        }
-
-        private static string Fallback(string value, string fallback)
-        {
-            return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-        }
-
-        private static string ResolveReasonMessage(string serverMessage, string code)
-        {
-            if (!string.IsNullOrWhiteSpace(serverMessage))
-            {
-                return serverMessage.Trim();
-            }
-
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return string.Empty;
-            }
-
-            return GameplayFeedbackText.ResolveMessage(string.Empty, code);
+            return value.Replace("<", "＜").Replace(">", "＞");
         }
 
         private bool TryResolveUiReferences(bool logWarning)
@@ -243,6 +194,12 @@ namespace Panoptes.Presentation.UI.Turn
                     {
                         timelineText = timelineTransform.GetComponent<TextMeshProUGUI>();
                     }
+                }
+
+                if (timelineText != null)
+                {
+                    timelineText.raycastTarget = true;
+                    timelineText.richText = true;
                 }
             }
 
