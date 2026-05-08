@@ -48,6 +48,24 @@ func (e RoadRepairedEvent) String() string {
 	return fmt.Sprintf("RoadRepairedEvent %s->%s owner=%s", e.FromNode, e.ToNode, e.Owner)
 }
 
+type EngineerRoadTrailBuiltEvent struct {
+	UnitID  string
+	Owner   string
+	NodeIDs []string
+}
+
+func (e EngineerRoadTrailBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
+	for _, nodeID := range e.NodeIDs {
+		markRoadAtNodeID(world, state, nodeID)
+	}
+}
+
+func (e EngineerRoadTrailBuiltEvent) Kind() string { return "engineer_road_trail_built" }
+
+func (e EngineerRoadTrailBuiltEvent) String() string {
+	return fmt.Sprintf("EngineerRoadTrailBuiltEvent unit=%s owner=%s nodes=%v", e.UnitID, e.Owner, e.NodeIDs)
+}
+
 func markRoadBetween(world donburi.World, state *domain.GameState, fromNode string, toNode string) {
 	fromEntry, okFrom := findNodeByID(world, state, fromNode)
 	toEntry, okTo := findNodeByID(world, state, toNode)
@@ -73,6 +91,15 @@ func markRoadBetween(world donburi.World, state *domain.GameState, fromNode stri
 			markRoadAt(world, current)
 		}
 	}
+}
+
+func markRoadAtNodeID(world donburi.World, state *domain.GameState, nodeID string) {
+	entry, ok := findNodeByID(world, state, nodeID)
+	if !ok {
+		return
+	}
+	n := ecs.NodeC.Get(entry)
+	n.HasRoad = true
 }
 
 func markRoadAt(world donburi.World, pos domain.Position) {

@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "3c0dc4749a039624ac41ea119a7c9a3278c188601bc179be711e152e06338ff6",
+    "bundle_hash": "f1070d922d801bd1d7e877c0e6e2fa2bfe1b63d51aba4395b2e8879af55f4fe6",
     "required_sections": [
       "resources",
       "points",
@@ -26,7 +26,7 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "e13f38a5130d054008529ba2c898d19b2e0e6d6afba46e6fed2c8eb143b2e031"
+        "hash": "bd329cd7c1e456ffdcf966404ce44da4add3da45481b6596aacbe9e0ba3d1624"
       },
       {
         "section_name": "institutions",
@@ -54,7 +54,7 @@
       },
       {
         "section_name": "recipes",
-        "hash": "23ca295069d6cbd7255b5ca8e4ac8b63b47fbf6165d7c7ba703617db4432b38e"
+        "hash": "a406deb734de7cecc46b06ed3cf237bcc441d8642f4924de7908b522b52828d8"
       },
       {
         "section_name": "resources",
@@ -66,7 +66,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "f3d021154315a99ce0cc1fc4d5b70b1002bf3cb90474d6430e025f2576e1d757"
+        "hash": "ba94f2498b9efea49f4f86e51b3fe0e6b1eb182ead488c2288ee55bc11a34b5d"
       },
       {
         "section_name": "terrains",
@@ -78,7 +78,7 @@
       },
       {
         "section_name": "ui_recipe_layout",
-        "hash": "5aac56fdcb2433c2191822705d53af8aca324b0eb6cb528f88fb3967fde28455"
+        "hash": "318da2806d25e2e828de1bd84ed835e27094b9879c7b68e031509971c9eefafe"
       },
       {
         "section_name": "ui_tech_tree_layout",
@@ -86,7 +86,7 @@
       },
       {
         "section_name": "units",
-        "hash": "b0dc0316d64699d9a5047b44f4b1c08c2e7d57a1e8e3999adac5c44bfdd55714"
+        "hash": "2ae548a83baad2ac5e2a4b91eee4ec63309586b697587dd3bd9eda65976a8386"
       }
     ]
   },
@@ -185,6 +185,38 @@
       ]
     },
     {
+      "id": "engineer",
+      "name": "工程队",
+      "description": "低速移动并在实际行进路径上铺设道路。",
+      "icon_key": "unit_settler",
+      "prefab_key": "Settler",
+      "class": "civilian",
+      "max_hp": 16,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": {
+        "food": 1,
+        "wood": 2
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_attack_structures": false,
+        "can_destroy_road": false,
+        "can_capture": false
+      },
+      "sort_order": 20,
+      "tags": [
+        "civilian",
+        "logistics"
+      ]
+    },
+    {
       "id": "infantry",
       "name": "步兵",
       "description": "基础近战战斗单位",
@@ -210,7 +242,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 20,
+      "sort_order": 30,
       "tags": [
         "frontline"
       ]
@@ -241,7 +273,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "ranged"
       ]
@@ -273,7 +305,7 @@
         "destroy_multiplier": 2,
         "can_capture": false
       },
-      "sort_order": 40,
+      "sort_order": 50,
       "tags": [
         "raider",
         "sabotage"
@@ -306,7 +338,7 @@
         "can_destroy_road": false,
         "can_capture": false
       },
-      "sort_order": 50,
+      "sort_order": 60,
       "tags": [
         "siege"
       ]
@@ -339,7 +371,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 60,
+      "sort_order": 70,
       "tags": [
         "mobile",
         "charge"
@@ -370,7 +402,7 @@
         "can_destroy_road": false,
         "can_capture": false
       },
-      "sort_order": 70,
+      "sort_order": 80,
       "tags": [
         "civilian",
         "visibility"
@@ -402,7 +434,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 80,
+      "sort_order": 90,
       "tags": [
         "frontline",
         "melee"
@@ -792,6 +824,7 @@
       },
       "recipe_ids": [
         "engineer_camp_raider",
+        "engineer_camp_engineer",
         "engineer_camp_siege_engine"
       ],
       "default_recipe_id": "engineer_camp_raider",
@@ -1418,6 +1451,10 @@
         {
           "type": "unlock_building",
           "target_id": "engineer_camp"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "engineer_camp_engineer"
         },
         {
           "type": "unlock_recipe",
@@ -3574,6 +3611,32 @@
       ]
     },
     {
+      "id": "engineer_camp_engineer",
+      "name": "组织工程队",
+      "description": "产出可随行军铺设道路的工程队。",
+      "icon_key": "unit_settler",
+      "building_id": "engineer_camp",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 2
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "engineer"
+        ]
+      },
+      "sort_order": 130,
+      "tags": [
+        "logistics",
+        "road"
+      ]
+    },
+    {
       "id": "engineer_camp_raider",
       "name": "训练掠袭兵",
       "description": "产出擅长破坏道路的掠袭兵。",
@@ -3593,7 +3656,7 @@
           "raider"
         ]
       },
-      "sort_order": 130,
+      "sort_order": 140,
       "tags": [
         "military",
         "sabotage"
@@ -3619,7 +3682,7 @@
           "siege_engine"
         ]
       },
-      "sort_order": 140,
+      "sort_order": 150,
       "tags": [
         "military",
         "siege"
@@ -3644,7 +3707,7 @@
           "food": 3
         }
       },
-      "sort_order": 150,
+      "sort_order": 160,
       "tags": [
         "food",
         "storage"
@@ -3670,7 +3733,7 @@
           "food": 3
         }
       },
-      "sort_order": 160,
+      "sort_order": 170,
       "tags": [
         "trade",
         "food"
@@ -3696,7 +3759,7 @@
           "wood": 3
         }
       },
-      "sort_order": 170,
+      "sort_order": 180,
       "tags": [
         "trade",
         "wood"
@@ -3722,7 +3785,7 @@
           "ore": 2
         }
       },
-      "sort_order": 180,
+      "sort_order": 190,
       "tags": [
         "trade",
         "ore"
@@ -3748,7 +3811,7 @@
           "scout"
         ]
       },
-      "sort_order": 190,
+      "sort_order": 200,
       "tags": [
         "visibility"
       ]
@@ -3773,7 +3836,7 @@
           "spearman"
         ]
       },
-      "sort_order": 200,
+      "sort_order": 210,
       "tags": [
         "military",
         "melee"
@@ -4706,6 +4769,7 @@
       "granary_rations",
       "smelter_refined_ore",
       "stable_cavalry",
+      "engineer_camp_engineer",
       "engineer_camp_raider",
       "engineer_camp_siege_engine",
       "warehouse_reserve_rations",

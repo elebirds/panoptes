@@ -77,7 +77,7 @@ func TestParseMinisterResponsePreservesActionObjects(t *testing.T) {
 	out, err := ParseMinisterResponse(`{
 		"report":"建议尽快批准青铜冶炼。",
 		"metrics":[],
-		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:research:bronze_working:4"}}],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:research:bronze_working:4"},"title":"青铜研究","summary":"建议先研究青铜冶炼。","rationale":"此举能补强后续军备。","risk_note":"若边境告急，可暂缓。"}],
 		"action_id":"select_research"
 	}`)
 	if err != nil {
@@ -93,7 +93,29 @@ func TestParseMinisterResponsePreservesActionObjects(t *testing.T) {
 	if got, _ := out.Actions[0].Params["draft_id"].(string); got != "domestic:research:bronze_working:4" {
 		t.Fatalf("Action draft_id = %q, want candidate id", got)
 	}
+	if out.Actions[0].Title != "青铜研究" || out.Actions[0].Summary != "建议先研究青铜冶炼。" ||
+		out.Actions[0].Rationale != "此举能补强后续军备。" || out.Actions[0].RiskNote != "若边境告急，可暂缓。" {
+		t.Fatalf("Action proposal copy = %#v, want preserved Chinese optional fields", out.Actions[0])
+	}
 	if out.ActionID != "select_research" {
 		t.Fatalf("ActionID = %q, want select_research", out.ActionID)
+	}
+}
+
+func TestParseMinisterResponseDropsEnglishActionProposalText(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议维持当前节奏。",
+		"metrics":[],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:policy:expansion:4"},"title":"Expansion Plan","summary":"Take expansion now."}],
+		"action_id":"select_policy"
+	}`)
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
+	}
+	if len(out.Actions) != 1 {
+		t.Fatalf("actions len = %d, want 1", len(out.Actions))
+	}
+	if out.Actions[0].Title != "" || out.Actions[0].Summary != "" {
+		t.Fatalf("English action copy should be dropped, got %#v", out.Actions[0])
 	}
 }

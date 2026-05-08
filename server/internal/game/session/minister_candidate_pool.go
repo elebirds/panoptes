@@ -431,7 +431,7 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		if node.GetIsResourcePoint() {
 			score += 25
 		}
-		if score < 80 {
+		if score < 40 {
 			continue
 		}
 		intents := make([]planning.IssueUnitOrderIntent, 0, 2)
@@ -439,7 +439,11 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 			if len(intents) >= 2 || unit == nil || strings.TrimSpace(unit.GetFaction()) != playerID || strings.TrimSpace(unit.GetUnitType()) == string(domain.UnitTypeSettler) {
 				continue
 			}
-			intent := planning.IssueUnitOrderIntent{UnitID: strings.TrimSpace(unit.GetId()), Action: string(gameorders.ActionMove), TargetNodeID: strings.TrimSpace(node.GetId())}
+			unitID := strings.TrimSpace(unit.GetId())
+			if unitCurrentNodeID(state, playerID, unitID) == strings.TrimSpace(node.GetId()) {
+				continue
+			}
+			intent := planning.IssueUnitOrderIntent{UnitID: unitID, Action: string(gameorders.ActionMove), TargetNodeID: strings.TrimSpace(node.GetId())}
 			if validateUnitOrderIntent(state, playerID, intent) == "" {
 				intents = append(intents, intent)
 			}
@@ -462,6 +466,23 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		})
 	}
 	return out
+}
+
+func unitCurrentNodeID(state *domain.GameState, playerID string, unitID string) string {
+	if state == nil || state.World == nil || strings.TrimSpace(unitID) == "" {
+		return ""
+	}
+	for _, entry := range domain.GetUnitsByFaction(state.World, playerID) {
+		if strings.TrimSpace(domain.UnitStatsC.Get(entry).ID) != strings.TrimSpace(unitID) {
+			continue
+		}
+		nodeEntry, ok := domain.GetNodeAt(state.World, domain.GetPosition(entry))
+		if !ok || nodeEntry == nil {
+			return ""
+		}
+		return strings.TrimSpace(domain.NodeC.Get(nodeEntry).ID)
+	}
+	return ""
 }
 
 func ministerOperationDraftFromCandidate(turn int, playerID string, candidate ministerOperationCandidate) (domain.MinisterDraft, bool) {

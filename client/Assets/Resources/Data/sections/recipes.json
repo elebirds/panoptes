@@ -307,6 +307,32 @@
       ]
     },
     {
+      "id": "engineer_camp_engineer",
+      "name": "组织工程队",
+      "description": "产出可随行军铺设道路的工程队。",
+      "icon_key": "unit_settler",
+      "building_id": "engineer_camp",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 2
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "engineer"
+        ]
+      },
+      "sort_order": 130,
+      "tags": [
+        "logistics",
+        "road"
+      ]
+    },
+    {
       "id": "engineer_camp_raider",
       "name": "训练掠袭兵",
       "description": "产出擅长破坏道路的掠袭兵。",
@@ -326,7 +352,7 @@
           "raider"
         ]
       },
-      "sort_order": 130,
+      "sort_order": 140,
       "tags": [
         "military",
         "sabotage"
@@ -352,7 +378,7 @@
           "siege_engine"
         ]
       },
-      "sort_order": 140,
+      "sort_order": 150,
       "tags": [
         "military",
         "siege"
@@ -377,7 +403,7 @@
           "food": 3
         }
       },
-      "sort_order": 150,
+      "sort_order": 160,
       "tags": [
         "food",
         "storage"
@@ -403,7 +429,7 @@
           "food": 3
         }
       },
-      "sort_order": 160,
+      "sort_order": 170,
       "tags": [
         "trade",
         "food"
@@ -429,7 +455,7 @@
           "wood": 3
         }
       },
-      "sort_order": 170,
+      "sort_order": 180,
       "tags": [
         "trade",
         "wood"
@@ -455,7 +481,7 @@
           "ore": 2
         }
       },
-      "sort_order": 180,
+      "sort_order": 190,
       "tags": [
         "trade",
         "ore"
@@ -481,7 +507,7 @@
           "scout"
         ]
       },
-      "sort_order": 190,
+      "sort_order": 200,
       "tags": [
         "visibility"
       ]
@@ -506,7 +532,7 @@
           "spearman"
         ]
       },
-      "sort_order": 200,
+      "sort_order": 210,
       "tags": [
         "military",
         "melee"

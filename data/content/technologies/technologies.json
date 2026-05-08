@@ -216,6 +216,7 @@
       ],
       "explicit_effects": [
         { "type": "unlock_building", "target_id": "engineer_camp" },
+        { "type": "unlock_recipe", "target_id": "engineer_camp_engineer" },
         { "type": "unlock_recipe", "target_id": "engineer_camp_raider" },
         { "type": "unlock_recipe", "target_id": "engineer_camp_siege_engine" },
         { "type": "unlock_institution", "target_id": "munitions_committee" }

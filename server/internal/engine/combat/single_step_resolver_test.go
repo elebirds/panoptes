@@ -279,6 +279,76 @@ func TestSingleStepResolver_FriendlyStartPositionBlocksMovement(t *testing.T) {
 	assertNoUnitStacks(t, state.World)
 }
 
+func TestSingleStepResolver_EngineerBuildsRoadTrailOnActualPath(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	engineerID := spawnTestUnit(state.World, "engineer", "player-a", 0, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		engineerID: {PlayerID: "player-a", UnitID: engineerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "engineer_road_trail_built"); got != 1 {
+		t.Fatalf("engineer road trail events = %d, want 1", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0", "N2_0"} {
+		if !nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = false, want true", nodeID)
+		}
+	}
+}
+
+func TestSingleStepResolver_NonEngineerDoesNotBuildRoadTrail(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	infantryID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		infantryID: {PlayerID: "player-a", UnitID: infantryID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "engineer_road_trail_built"); got != 0 {
+		t.Fatalf("engineer road trail events = %d, want 0", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0", "N2_0"} {
+		if nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = true, want false", nodeID)
+		}
+	}
+}
+
+func TestSingleStepResolver_EngineerRoadTrailStopsAtBlockedActualPosition(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	engineerID := spawnTestUnit(state.World, "engineer", "player-a", 0, 0)
+	spawnTestUnit(state.World, "infantry", "player-b", 2, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		engineerID: {PlayerID: "player-a", UnitID: engineerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, engineerID); got != (domain.Position{Q: 1, R: 0}) {
+		t.Fatalf("engineer position = %#v, want stop before blocker", got)
+	}
+	for _, nodeID := range []string{"N0_0", "N1_0"} {
+		if !nodeHasRoad(t, state, nodeID) {
+			t.Fatalf("node %s HasRoad = false, want true", nodeID)
+		}
+	}
+	if nodeHasRoad(t, state, "N2_0") {
+		t.Fatalf("node N2_0 HasRoad = true, want false")
+	}
+}
+
 func TestSingleStepResolver_NodeConflictGroupEmitsStableConflictOrder(t *testing.T) {
 	buildState := func() *domain.GameState {
 		state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b", "player-c"})
@@ -453,6 +523,7 @@ func newCombatTestStateWithPlayers(t *testing.T, width, height int, playerIDs []
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian"}},
+			{ID: "engineer", Class: "civilian", MaxHP: 16, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian", "engineer"}},
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}, Tags: []string{"melee"}},
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
@@ -535,6 +606,15 @@ func unitPosition(t *testing.T, world donburi.World, unitID string) domain.Posit
 	}
 	pos := ecs.PositionC.Get(entry)
 	return domain.Position{Q: pos.Q, R: pos.R}
+}
+
+func nodeHasRoad(t *testing.T, state *domain.GameState, nodeID string) bool {
+	t.Helper()
+	entry, ok := state.GetNode(nodeID)
+	if !ok {
+		t.Fatalf("missing node %s", nodeID)
+	}
+	return ecs.NodeC.Get(entry).HasRoad
 }
 
 func findUnitEntry(world donburi.World, unitID string) (*donburi.Entry, bool) {

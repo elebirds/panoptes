@@ -446,6 +446,10 @@
         },
         {
           "type": "unlock_recipe",
+          "target_id": "engineer_camp_engineer"
+        },
+        {
+          "type": "unlock_recipe",
           "target_id": "engineer_camp_raider"
         },
         {

@@ -138,6 +138,49 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 	}
 }
 
+func TestBuildMinisterDraftsFromLegalCandidatesOffersOpeningMilitaryRecon(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{CityCoreMaxHP: 100},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state := newMinisterCandidatePoolState(t)
+	observation := &gamequery.ObservationSnapshot{
+		ViewerID: "player-1",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "C1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1", BuildingTypeId: "city_core"},
+			{Id: "B1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "player-1"},
+		},
+		Units: []*pb.UnitView{
+			{Id: "u1", Faction: "player-1", UnitType: "infantry"},
+		},
+	}
+
+	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
+	for _, draft := range drafts {
+		if draft.MinisterRole != militaryMinisterRole || draft.Kind != domain.MinisterDraftKindOperation {
+			continue
+		}
+		if len(draft.OperationSteps) != 1 || draft.OperationSteps[0].TargetNodeID != "B1" {
+			t.Fatalf("military recon draft = %#v, want one move step to B1", draft)
+		}
+		return
+	}
+	t.Fatalf("drafts = %#v, want opening military recon operation", drafts)
+}
+
 func TestMinisterDraftFromIntentKeepsDraftIDsUniqueForCommandDimensions(t *testing.T) {
 	leftBuild, ok := ministerDraftFromIntent(3, "player-1", planning.BuildStructureIntent{NodeID: "B1", BuildingTypeID: "farm", CityID: "C1"})
 	if !ok {

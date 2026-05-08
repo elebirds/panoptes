@@ -39,8 +39,12 @@ type MinisterMetricItem struct {
 }
 
 type MinisterActionItem struct {
-	Type   string         `json:"type"`
-	Params map[string]any `json:"params"`
+	Type      string         `json:"type"`
+	Params    map[string]any `json:"params"`
+	Title     string         `json:"title,omitempty"`
+	Summary   string         `json:"summary,omitempty"`
+	Rationale string         `json:"rationale,omitempty"`
+	RiskNote  string         `json:"risk_note,omitempty"`
 }
 
 const (
@@ -69,10 +73,25 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	}
 	out.Actions = make([]MinisterActionItem, 0, len(raw.Actions))
 	for _, a := range raw.Actions {
-		out.Actions = append(out.Actions, MinisterActionItem{Type: a.Type, Params: a.Params})
+		out.Actions = append(out.Actions, MinisterActionItem{
+			Type:      a.Type,
+			Params:    a.Params,
+			Title:     sanitizeOptionalPlayerVisibleChinese(a.Title),
+			Summary:   sanitizeOptionalPlayerVisibleChinese(a.Summary),
+			Rationale: sanitizeOptionalPlayerVisibleChinese(a.Rationale),
+			RiskNote:  sanitizeOptionalPlayerVisibleChinese(a.RiskNote),
+		})
 	}
 	out.Report = sanitizePlayerVisibleChinese(out.Report, chineseReportFallback)
 	return out, nil
+}
+
+func sanitizeOptionalPlayerVisibleChinese(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" || isObviouslyEnglishText(text) {
+		return ""
+	}
+	return text
 }
 
 func normalizeJSONObjectPayload(response string) string {

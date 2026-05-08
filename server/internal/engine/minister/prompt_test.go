@@ -46,6 +46,18 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
 		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
 	}
+	if !strings.Contains(req.SystemPrompt, "必须输出一个最匹配的 `select_candidate`") ||
+		!strings.Contains(req.UserPrompt, "必须使用 `select_candidate`") {
+		t.Fatalf("Prompt = %q\n%s, want candidate-backed action requirement", req.SystemPrompt, req.UserPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, `"risk_note": "<可选，简体中文风险提示>"`) ||
+		!strings.Contains(req.UserPrompt, "`title`、`summary`、`rationale`、`risk_note`") {
+		t.Fatalf("Prompt = %q\n%s, want optional action proposal copy fields", req.SystemPrompt, req.UserPrompt)
+	}
+	if !strings.Contains(req.SystemPrompt, "不得把候选来源、规则规划器、内部校验或系统实现写进玩家可见提案文案") ||
+		!strings.Contains(req.UserPrompt, "不得提到候选来源、规则规划器、内部校验或系统实现") {
+		t.Fatalf("Prompt = %q\n%s, want no internal proposal copy rule", req.SystemPrompt, req.UserPrompt)
+	}
 	if !strings.Contains(req.SystemPrompt, "`build`") || !strings.Contains(req.UserPrompt, "单位/地图行动只能通过 Action Candidates") {
 		t.Fatalf("Prompt = %q\n%s, want report action contract", req.SystemPrompt, req.UserPrompt)
 	}

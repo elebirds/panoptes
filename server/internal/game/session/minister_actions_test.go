@@ -1,6 +1,7 @@
 package session
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -64,6 +65,10 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildProposal(t *testing.T) {
 				"building_type": "farm",
 				"city_id":       "A1",
 			},
+			Title:     "农田营建",
+			Summary:   "建议在A2修建农田，先补稳粮食来源。",
+			Rationale: "粮食节点已经纳入控制，尽早开发能支撑后续扩张。",
+			RiskNote:  "若本回合需要保留劳力机动，可暂缓批准。",
 		},
 	})
 	if err != nil {
@@ -83,6 +88,12 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildProposal(t *testing.T) {
 		}
 		if draft.Status != domain.MinisterDraftStatusPending || !draft.Available {
 			t.Fatalf("draft = %#v, want pending and available", draft)
+		}
+		if draft.Title != "农田营建" || draft.Summary != "建议在A2修建农田，先补稳粮食来源。" {
+			t.Fatalf("draft visible copy = %#v, want LLM action proposal copy", draft)
+		}
+		if containsInternalProposalCopy(draft) {
+			t.Fatalf("draft visible copy leaks internal rule-planner text: %#v", draft)
 		}
 	}
 	var syncMsg *pb.MsgGameSync
@@ -189,6 +200,9 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 		if draft.Status != domain.MinisterDraftStatusPending || !draft.Available {
 			t.Fatalf("draft = %#v, want pending available proposal", draft)
 		}
+		if containsInternalProposalCopy(draft) {
+			t.Fatalf("draft visible copy leaks internal rule-planner text: %#v", draft)
+		}
 	}
 	for _, want := range []domain.MinisterDraftKind{
 		domain.MinisterDraftKindResearch,
@@ -292,7 +306,14 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateWithoutExposingOtherHidd
 	runtime.preparedMinisterDraftsMu.Unlock()
 
 	err := runtime.ApplyMinisterActions("player-1", "domestic", []ministerengine.MinisterActionItem{
-		{Type: "select_candidate", Params: map[string]any{"draft_id": "domestic:research:bronze_working:4"}},
+		{
+			Type:      "select_candidate",
+			Params:    map[string]any{"draft_id": "domestic:research:bronze_working:4"},
+			Title:     "青铜研究",
+			Summary:   "建议先推进青铜冶炼，为后续军备和营建打基础。",
+			Rationale: "当前没有更紧迫的已知威胁，先补技术根基更稳妥。",
+			RiskNote:  "若边境突然吃紧，可改选更偏军事的安排。",
+		},
 	})
 	if err != nil {
 		t.Fatalf("ApplyMinisterActions error = %v", err)
@@ -307,6 +328,12 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateWithoutExposingOtherHidd
 	if selected.Source != domain.MinisterDraftSourceLLMAction || selected.Status != domain.MinisterDraftStatusPending || !selected.Available {
 		t.Fatalf("selected draft = %#v, want pending llm_action", selected)
 	}
+	if selected.Title != "青铜研究" || selected.Summary != "建议先推进青铜冶炼，为后续军备和营建打基础。" {
+		t.Fatalf("selected draft visible copy = %#v, want LLM-selected proposal copy", selected)
+	}
+	if containsInternalProposalCopy(selected) {
+		t.Fatalf("selected draft visible copy leaks internal rule-planner text: %#v", selected)
+	}
 	if _, ok := byID["domestic:policy:expansion:4"]; ok {
 		t.Fatalf("unselected domestic candidate should stay hidden, got visible draft %#v", byID["domestic:policy:expansion:4"])
 	}
@@ -317,4 +344,9 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateWithoutExposingOtherHidd
 	if len(proposals) != 1 {
 		t.Fatalf("proposal views = %d, want only selected candidate proposal", len(proposals))
 	}
+}
+
+func containsInternalProposalCopy(draft domain.MinisterDraft) bool {
+	text := draft.Title + draft.Summary + draft.Rationale + draft.RiskNote
+	return strings.Contains(text, "规则规划器") || strings.Contains(text, "规则层") || strings.Contains(text, "rule planner")
 }
