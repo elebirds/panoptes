@@ -130,8 +130,7 @@ namespace Panoptes.Presentation.Map
         {
             "settler",
             "pioneer",
-            "expander",
-            "engineer"
+            "expander"
         };
 
         private readonly HashSet<string> _highlightNodeIds = new();

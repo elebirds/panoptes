@@ -204,6 +204,11 @@ namespace Panoptes.Presentation.Map
 
         private void Awake()
         {
+            if (roadOverlay != null)
+            {
+                roadOverlay.SetActive(false);
+            }
+
             EnsureHighlightBlock();
             if (enableObservationFogOverlay)
             {
@@ -1801,7 +1806,7 @@ namespace Panoptes.Presentation.Map
 
             if (roadOverlay != null)
             {
-                roadOverlay.SetActive(_roadVisibleWanted && !hideDetails);
+                roadOverlay.SetActive(false);
             }
 
             for (var i = 0; i < _roadConnectionOverlays.Count; i++)

@@ -938,8 +938,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             return string.Equals(unitType, "settler", System.StringComparison.Ordinal) ||
                    string.Equals(unitType, "pioneer", System.StringComparison.Ordinal) ||
-                   string.Equals(unitType, "expander", System.StringComparison.Ordinal) ||
-                   string.Equals(unitType, "engineer", System.StringComparison.Ordinal);
+                   string.Equals(unitType, "expander", System.StringComparison.Ordinal);
         }
 
         private static bool HasHitPoints(UnitView unit)

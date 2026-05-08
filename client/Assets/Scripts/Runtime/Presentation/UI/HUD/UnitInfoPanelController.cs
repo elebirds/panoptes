@@ -603,8 +603,7 @@ namespace Panoptes.Presentation.UI.HUD
             var unitType = NormalizeToken(unit != null ? unit.UnitType : string.Empty);
             return string.Equals(unitType, "settler", StringComparison.Ordinal) ||
                    string.Equals(unitType, "pioneer", StringComparison.Ordinal) ||
-                   string.Equals(unitType, "expander", StringComparison.Ordinal) ||
-                   string.Equals(unitType, "engineer", StringComparison.Ordinal);
+                   string.Equals(unitType, "expander", StringComparison.Ordinal);
         }
 
         private bool TryResolveCenterNodeId(UnitView unit, out string centerNodeId)

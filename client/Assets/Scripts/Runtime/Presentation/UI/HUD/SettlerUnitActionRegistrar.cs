@@ -17,7 +17,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string legacyActionId = "settle_city";
         [SerializeField] private string actionLabel = "建立城堡";
         [SerializeField] private bool planningPhaseOnly = true;
-        [SerializeField] private string[] supportedUnitTypes = { "settler", "pioneer", "expander", "engineer" };
+        [SerializeField] private string[] supportedUnitTypes = { "settler", "pioneer", "expander" };
 
         private GameStateStore _gameStateStore;
         private PlanningIntentService _planningIntentService;
