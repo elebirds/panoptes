@@ -227,6 +227,58 @@ func TestSingleStepResolver_NodeConflictGroupSkipsFriendlyPairs(t *testing.T) {
 	}
 }
 
+func TestSingleStepResolver_FriendlySameDestinationFallsBackWithoutDamage(t *testing.T) {
+	state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a"})
+	a1ID := spawnTestUnit(state.World, "infantry", "player-a", 0, 1)
+	a2ID := spawnTestUnit(state.World, "infantry", "player-a", 2, 1)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		a1ID: {PlayerID: "player-a", UnitID: a1ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		a2ID: {PlayerID: "player-a", UnitID: a2ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countConflicts(events, "node"); got != 0 {
+		t.Fatalf("friendly-only node collision emitted combat conflicts = %d, want 0", got)
+	}
+	if got := countDamageEventsForUnit(events, a1ID) + countDamageEventsForUnit(events, a2ID); got != 0 {
+		t.Fatalf("friendly-only node collision damage events = %d, want 0", got)
+	}
+	if got := unitPosition(t, state.World, a1ID); got != (domain.Position{Q: 0, R: 1}) {
+		t.Fatalf("unit a1 position = %#v, want fallback to start", got)
+	}
+	if got := unitPosition(t, state.World, a2ID); got != (domain.Position{Q: 2, R: 1}) {
+		t.Fatalf("unit a2 position = %#v, want fallback to start", got)
+	}
+	assertNoUnitStacks(t, state.World)
+}
+
+func TestSingleStepResolver_FriendlyStartPositionBlocksMovement(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	moverID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	blockerID := spawnTestUnit(state.World, "infantry", "player-a", 1, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		moverID:   {PlayerID: "player-a", UnitID: moverID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+		blockerID: {PlayerID: "player-a", UnitID: blockerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, moverID); got != (domain.Position{Q: 0, R: 0}) {
+		t.Fatalf("mover position = %#v, want blocked by friendly start position", got)
+	}
+	if got := unitPosition(t, state.World, blockerID); got != (domain.Position{Q: 2, R: 0}) {
+		t.Fatalf("blocker position = %#v, want move to target", got)
+	}
+	assertNoUnitStacks(t, state.World)
+}
+
 func TestSingleStepResolver_NodeConflictGroupEmitsStableConflictOrder(t *testing.T) {
 	buildState := func() *domain.GameState {
 		state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b", "player-c"})
@@ -548,6 +600,13 @@ func collectConflictPairs(events []event.Event) []string {
 		pairs = append(pairs, conflict.UnitAID+"|"+conflict.UnitBID+"|"+conflict.ConflictType)
 	}
 	return pairs
+}
+
+func assertNoUnitStacks(t *testing.T, world donburi.World) {
+	t.Helper()
+	if violations := domain.UnitOccupancyViolations(world); len(violations) != 0 {
+		t.Fatalf("unit occupancy violations = %d, want 0", len(violations))
+	}
 }
 
 func nodeID(x, y int) string {

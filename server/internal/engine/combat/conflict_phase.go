@@ -101,14 +101,13 @@ func (NodeConflictDetector) Detect(ctx *ResolutionContext) []ConflictGroup {
 		}
 		sort.Strings(unitIDs)
 		pairs := buildHostilePairs(ctx, unitIDs)
-		if len(pairs) == 0 {
-			continue
-		}
 		groups = append(groups, ConflictGroup{
 			ConflictType: "node",
 			Location:     pos,
 			Members:      append([]string(nil), unitIDs...),
-			// 对外协议仍是二元 conflict event，因此 group 会在 DamagePhase 被展开为稳定 hostile pair 序列。
+			// 节点冲突不再只代表敌对交战。
+			// 只要同一节点上出现多个候选单位，就必须在落位阶段打散，避免任何形式的同格堆叠。
+			// 对外仍只投影 hostile pair 事件；友军-only 碰撞不会产生伤害事件。
 			HostilePairs: pairs,
 		})
 	}

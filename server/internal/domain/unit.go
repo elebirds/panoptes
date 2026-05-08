@@ -42,22 +42,64 @@ func GetPosition(unitEntry *donburi.Entry) Position {
 func GetUnitsByFaction(world donburi.World, faction string) []*donburi.Entry {
 	units := make([]*donburi.Entry, 0)
 	newUnitQuery().Each(world, func(entry *donburi.Entry) {
-		if UnitStatsC.Get(entry).Faction == faction {
+		if IsAlive(entry) && UnitStatsC.Get(entry).Faction == faction {
 			units = append(units, entry)
 		}
 	})
 	return units
 }
 
+func GetUnitAtNode(world donburi.World, pos Position) (*donburi.Entry, bool) {
+	var found *donburi.Entry
+	newUnitQuery().Each(world, func(entry *donburi.Entry) {
+		if found != nil || !IsAlive(entry) {
+			return
+		}
+		p := PositionC.Get(entry)
+		if p.Q == pos.Q && p.R == pos.R {
+			found = entry
+		}
+	})
+	return found, found != nil
+}
+
+func HasUnitAtNode(world donburi.World, pos Position) bool {
+	_, ok := GetUnitAtNode(world, pos)
+	return ok
+}
+
 func GetUnitsByNode(world donburi.World, pos Position) []*donburi.Entry {
 	units := make([]*donburi.Entry, 0)
 	newUnitQuery().Each(world, func(entry *donburi.Entry) {
+		if !IsAlive(entry) {
+			return
+		}
 		p := PositionC.Get(entry)
 		if p.Q == pos.Q && p.R == pos.R {
 			units = append(units, entry)
 		}
 	})
 	return units
+}
+
+func UnitOccupancyViolations(world donburi.World) map[Position][]*donburi.Entry {
+	byPos := make(map[Position][]*donburi.Entry)
+	newUnitQuery().Each(world, func(entry *donburi.Entry) {
+		if !IsAlive(entry) {
+			return
+		}
+		pos := PositionC.Get(entry)
+		key := Position{Q: pos.Q, R: pos.R}
+		byPos[key] = append(byPos[key], entry)
+	})
+
+	violations := make(map[Position][]*donburi.Entry)
+	for pos, units := range byPos {
+		if len(units) > 1 {
+			violations[pos] = units
+		}
+	}
+	return violations
 }
 
 func UnitsByFactionAtNode(world donburi.World, pos Position) map[string][]*donburi.Entry {

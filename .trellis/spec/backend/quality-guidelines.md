@@ -435,6 +435,69 @@ drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observ
 - Planning test verifies strong mode rejects a direct gameplay intent before state mutation.
 - Planning test verifies the same direct gameplay intent succeeds once mandate mode is enabled.
 
+### Scenario: Unit Occupancy Is Non-Stacking
+
+#### 1. Scope / Trigger
+- Trigger: any backend change that creates units, moves units, projects node unit counts, builds debug scenarios, or changes combat movement/conflict resolution.
+- Panoptes uses one-unit-per-node occupancy. Stacking is not a supported gameplay state.
+
+#### 2. Signatures
+- Domain occupancy helpers:
+  - `domain.GetUnitAtNode(world donburi.World, pos domain.Position) (*donburi.Entry, bool)`
+  - `domain.HasUnitAtNode(world donburi.World, pos domain.Position) bool`
+  - `domain.UnitOccupancyViolations(world donburi.World) map[domain.Position][]*donburi.Entry`
+- Spawn entrypoint: `domain.ResolveUnitSpawnPosition(state *domain.GameState, origin domain.Position) (domain.Position, bool)`
+- Combat rule points:
+  - `combat.StaticSnapshotBlockRule.SourceFor(...)`
+  - `combat.NodeConflictDetector.Detect(...)`
+  - `combat.MovementApplyPhase.Apply(...)`
+
+#### 3. Contracts
+- A stable authoritative world must not contain more than one living unit at the same `Position`.
+- Unit starting positions are frozen movement blockers for the entire resolving pass, regardless of faction or whether the unit moves away this turn.
+- Friendly units block movement but do not become `charge` targets and do not produce damage events.
+- If multiple units candidate the same node in resolving, all members are treated as a node occupancy collision and move by the node-conflict fallback rule.
+- Hostile pairs inside a node collision still produce normal conflict damage; friendly-only collisions only affect movement.
+- Spawn, production, research grants, bootstrap, and debug/scenario placement must consult the shared occupancy rule before creating a unit.
+- ECS `CreateUnit` is a low-level constructor. Gameplay entrypoints must validate or resolve occupancy before calling it.
+
+#### 4. Validation & Error Matrix
+- Spawn candidate occupied by any living unit -> skip candidate and keep searching.
+- No legal spawn candidate -> do not create the unit; existing event behavior may skip without a client error.
+- Friendly unit blocks path -> moving unit stops at the last legal non-conflicting tile.
+- Friendly-only same-destination collision -> no damage/conflict event, all members fall back by movement rules.
+- Hostile same-destination collision -> normal node conflict hostile-pair damage, all members fall back by movement rules.
+- Debug/scenario placement attempts occupied node -> fail fast rather than silently creating stacked fixtures.
+
+#### 5. Good/Base/Bad Cases
+- Good: two allied infantry both target `N1_1`; neither takes damage, both fall back, and `UnitOccupancyViolations` is empty.
+- Base: one infantry is produced near a barracks; `ResolveUnitSpawnPosition` skips buildings, reservations, impassable terrain, and occupied unit nodes.
+- Bad: a bootstrap helper only checks for an existing infantry and creates a new infantry on top of a settler.
+- Bad: `BlockRule` only blocks enemy units, allowing friendly units to move through or stop on each other.
+
+#### 6. Tests Required
+- Combat test for friendly same-destination collision with no damage and no final stack.
+- Combat test for friendly starting position blocking movement.
+- Combat test that hostile node conflict behavior still emits deterministic hostile pairs.
+- Spawn/production/research/bootstrap tests that occupied candidates are skipped.
+- Scenario/debug fixture tests or guards that fail on occupied placement.
+
+#### 7. Wrong vs Correct
+#### Wrong
+```go
+// Only enemy units block movement: this reintroduces friendly stacking.
+if sources.Unit != nil && sources.Unit.Owner != unit.PlayerID {
+    return *sources.Unit, true
+}
+```
+#### Correct
+```go
+// Any living unit occupies the node; faction only affects whether damage/charge applies.
+if sources.Unit != nil && sources.Unit.UnitID != unit.UnitID {
+    return *sources.Unit, true
+}
+```
+
 ---
 
 ## Testing Requirements
