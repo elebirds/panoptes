@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend guideline index for final review."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify errors and fallback behavior follow project conventions."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verify logging paths do not leak or over-log."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify Minister LLM JSON, role gating, and executable-target contracts."}
+{"file": ".trellis/spec/guides/index.md", "reason": "Shared quality thinking guide index."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review protocol/backend/client data flow consistency."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Review reuse of existing token/action/draft patterns."}
+{"file": ".trellis/tasks/05-08-minister-llm-deep-integration/research/codebase-analysis.md", "reason": "Verify implementation matches researched architecture and caveats."}

@@ -39,7 +39,7 @@ func TestInstitutionModifierIncreasesSharedRoadCapacity(t *testing.T) {
 
 	_, institutionState := newPriorityLogisticsScenario()
 	institutionState.AddResourceToCity("player-1", "C1", domain.ResourceOre, 1)
-	institutionState.Players["player-1"].Institutions.ActivePolicyIDs = []string{"logistics_corps"}
+	institutionState.Players["player-1"].Institutions.ActiveInstitutionIDs = []string{"logistics_corps"}
 	institutionEvents := economy.NewRunner().Run(institutionState.World, institutionState)
 	if countCompletedNodes(institutionEvents) != 2 {
 		t.Fatalf("logistics institution should complete two recipes with expanded capacity: %#v", institutionEvents)
@@ -95,7 +95,12 @@ func newPriorityLogisticsScenario() (donburi.World, *domain.GameState) {
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "war_preparedness", LogisticsPriority: []staticdata.LogisticsPriorityDefinition{{Tag: "military", Priority: 100}}},
 			{ID: "expansion", LogisticsPriority: []staticdata.LogisticsPriorityDefinition{{Tag: "expansion", Priority: 100}}},
-			{ID: "logistics_corps", Layer: "institutional", ModifierEffects: []staticdata.ModifierEffect{{Trigger: "logistics.road_capacity", ModifierType: "flat", Value: 1}}},
+		},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "logistics_corps", Category: "administration", ModifierEffects: []staticdata.ModifierEffect{{Trigger: "logistics.road_capacity", ModifierType: "flat", Value: 1}}},
 		},
 	}))
 	world, state := newTwoCityLogisticsWorld()

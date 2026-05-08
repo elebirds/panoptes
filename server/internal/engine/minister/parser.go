@@ -8,13 +8,9 @@ package minister
 
 import (
 	"encoding/json"
-	"log/slog"
 	"strings"
 	"unicode"
 
-	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/event"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
@@ -25,45 +21,53 @@ type MinisterOutput struct {
 	ActionID string
 }
 
-type DraftOutput struct {
-	Title     string
-	Summary   string
-	Rationale string
-	RiskNote  string
+// MinisterReportResponse is the exact JSON object expected from report prompts.
+type MinisterReportResponse struct {
+	Report    string                 `json:"report"`
+	Metrics   []MinisterMetricItem   `json:"metrics"`
+	Actions   []MinisterActionItem   `json:"actions"`
+	Proposals []MinisterProposalItem `json:"proposals"`
+	ActionID  string                 `json:"action_id"`
+}
+
+// MinisterMetricItem is the JSON shape for one report metric item.
+type MinisterMetricItem struct {
+	Label      string `json:"label"`
+	Value      string `json:"value"`
+	Trend      string `json:"trend"`
+	Confidence string `json:"confidence"`
+	IsDelayed  bool   `json:"is_delayed"`
 }
 
 type MinisterActionItem struct {
-	Type   string
-	Params map[string]any
+	Type      string         `json:"type"`
+	Params    map[string]any `json:"params"`
+	Title     string         `json:"title,omitempty"`
+	Summary   string         `json:"summary,omitempty"`
+	Rationale string         `json:"rationale,omitempty"`
+	RiskNote  string         `json:"risk_note,omitempty"`
+}
+
+// MinisterProposalItem lets the model group one approval card around one or
+// more executable actions. The runtime flattens it into the existing draft
+// stream until the wire protocol grows first-class grouped proposals.
+type MinisterProposalItem struct {
+	Title     string               `json:"title,omitempty"`
+	Summary   string               `json:"summary,omitempty"`
+	Rationale string               `json:"rationale,omitempty"`
+	RiskNote  string               `json:"risk_note,omitempty"`
+	Actions   []MinisterActionItem `json:"actions"`
 }
 
 const (
-	chineseReportFallback        = "大臣暂未生成中文汇报，请以当前观察和既定计划为准。"
-	chineseMetricLabelFallback   = "战局指标"
-	chineseMetricValueFallback   = "待补充中文说明"
-	chineseDraftTitleFallback    = "本轮建议待补充中文标题"
-	chineseDraftSummaryFallback  = "大臣暂未生成中文摘要，请结合当前局势评估。"
-	chineseDraftReasonFallback   = "中文理由暂缺，请以现有规则目标和观察信息为准。"
-	chineseDraftRiskNoteFallback = "风险提示暂缺，请谨慎执行。"
+	chineseReportFallback      = "大臣暂未生成中文汇报，请以当前观察和既定计划为准。"
+	chineseMetricLabelFallback = "战局指标"
+	chineseMetricValueFallback = "待补充中文说明"
 )
 
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	response = normalizeJSONObjectPayload(response)
-	var raw struct {
-		Report  string `json:"report"`
-		Metrics []struct {
-			Label      string `json:"label"`
-			Value      string `json:"value"`
-			Trend      string `json:"trend"`
-			Confidence string `json:"confidence"`
-			IsDelayed  bool   `json:"is_delayed"`
-		} `json:"metrics"`
-		Actions []struct {
-			Type   string         `json:"type"`
-			Params map[string]any `json:"params"`
-		} `json:"actions"`
-		ActionID string `json:"action_id"`
-	}
+	var raw MinisterReportResponse
 	if err := json.Unmarshal([]byte(response), &raw); err != nil {
 		return nil, err
 	}
@@ -79,31 +83,61 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 			IsDelayed:  m.IsDelayed,
 		})
 	}
-	out.Actions = make([]MinisterActionItem, 0, len(raw.Actions))
+	out.Actions = make([]MinisterActionItem, 0, len(raw.Actions)+proposalActionCount(raw.Proposals))
 	for _, a := range raw.Actions {
-		out.Actions = append(out.Actions, MinisterActionItem{Type: a.Type, Params: a.Params})
+		out.Actions = append(out.Actions, sanitizeMinisterAction(a))
+	}
+	for _, proposal := range raw.Proposals {
+		for _, action := range proposal.Actions {
+			out.Actions = append(out.Actions, sanitizeMinisterActionWithFallback(action, proposal))
+		}
 	}
 	out.Report = sanitizePlayerVisibleChinese(out.Report, chineseReportFallback)
 	return out, nil
 }
 
-func ParseDraftResponse(response string) (*DraftOutput, error) {
-	response = normalizeJSONObjectPayload(response)
-	var raw struct {
-		Title     string `json:"title"`
-		Summary   string `json:"summary"`
-		Rationale string `json:"rationale"`
-		RiskNote  string `json:"risk_note"`
+func proposalActionCount(proposals []MinisterProposalItem) int {
+	total := 0
+	for _, proposal := range proposals {
+		total += len(proposal.Actions)
 	}
-	if err := json.Unmarshal([]byte(response), &raw); err != nil {
-		return nil, err
+	return total
+}
+
+func sanitizeMinisterAction(action MinisterActionItem) MinisterActionItem {
+	return MinisterActionItem{
+		Type:      strings.TrimSpace(action.Type),
+		Params:    action.Params,
+		Title:     sanitizeOptionalPlayerVisibleChinese(action.Title),
+		Summary:   sanitizeOptionalPlayerVisibleChinese(action.Summary),
+		Rationale: sanitizeOptionalPlayerVisibleChinese(action.Rationale),
+		RiskNote:  sanitizeOptionalPlayerVisibleChinese(action.RiskNote),
 	}
-	return &DraftOutput{
-		Title:     sanitizePlayerVisibleChinese(raw.Title, chineseDraftTitleFallback),
-		Summary:   sanitizePlayerVisibleChinese(raw.Summary, chineseDraftSummaryFallback),
-		Rationale: sanitizePlayerVisibleChinese(raw.Rationale, chineseDraftReasonFallback),
-		RiskNote:  sanitizePlayerVisibleChinese(raw.RiskNote, chineseDraftRiskNoteFallback),
-	}, nil
+}
+
+func sanitizeMinisterActionWithFallback(action MinisterActionItem, proposal MinisterProposalItem) MinisterActionItem {
+	sanitized := sanitizeMinisterAction(action)
+	if sanitized.Title == "" {
+		sanitized.Title = sanitizeOptionalPlayerVisibleChinese(proposal.Title)
+	}
+	if sanitized.Summary == "" {
+		sanitized.Summary = sanitizeOptionalPlayerVisibleChinese(proposal.Summary)
+	}
+	if sanitized.Rationale == "" {
+		sanitized.Rationale = sanitizeOptionalPlayerVisibleChinese(proposal.Rationale)
+	}
+	if sanitized.RiskNote == "" {
+		sanitized.RiskNote = sanitizeOptionalPlayerVisibleChinese(proposal.RiskNote)
+	}
+	return sanitized
+}
+
+func sanitizeOptionalPlayerVisibleChinese(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" || isObviouslyEnglishText(text) {
+		return ""
+	}
+	return text
 }
 
 func normalizeJSONObjectPayload(response string) string {
@@ -235,62 +269,4 @@ func isObviouslyEnglishText(text string) bool {
 
 func isLatinLetter(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
-}
-
-type ActionRoom interface {
-	State() *domain.GameState
-}
-
-func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID string) []event.Event {
-	state := room.State()
-	events := make([]event.Event, 0)
-	for _, action := range actions {
-		switch action.Type {
-		case "build":
-			nodeID, _ := asString(action.Params["node_id"])
-			buildingType, _ := asString(action.Params["building_type"])
-			if nodeID == "" || buildingType == "" {
-				continue
-			}
-			state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
-		case "repair_road":
-			// 道路当前仍未接入 Chunk 3 统一预算与 map action 结算，
-			// 这里禁止部长直接落图，避免绕过点数账本。
-			continue
-		case "move_units":
-			unitID, _ := asString(action.Params["unit_id"])
-			targetNode, _ := asString(action.Params["target_node"])
-			if unitID == "" || targetNode == "" {
-				continue
-			}
-			nodeEntry, ok := state.GetNode(targetNode)
-			if !ok {
-				continue
-			}
-			p := ecs.PositionC.Get(nodeEntry)
-			pos := domain.Position{Q: p.Q, R: p.R}
-			state.TurnRuntime.Planning.MinisterMoves = append(state.TurnRuntime.Planning.MinisterMoves, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
-		case "redirect_flow":
-			// redirect_flow 暂时只记录，不直接修改持久配置。
-		default:
-			slog.Warn("unknown minister action", "type", action.Type)
-		}
-	}
-	return events
-}
-
-func asString(v any) (string, bool) {
-	s, ok := v.(string)
-	return s, ok
-}
-
-func asInt(v any) (int, bool) {
-	switch t := v.(type) {
-	case float64:
-		return int(t), true
-	case int:
-		return t, true
-	default:
-		return 0, false
-	}
 }

@@ -66,6 +66,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("LoadRequiredComponent<SettlementTimeline>(\"Prefabs/UI/SettlementTimeline\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<TurnReportPanel>(\"Prefabs/UI/TurnReportPanel\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<GameOverOverlay>(\"Prefabs/UI/GameOverOverlay\")"));
+            Assert.That(installer, Does.Contain("container.Resolve<GameOverOverlay>()"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<UnitInfoPanelController>"));
             Assert.That(installer, Does.Not.Contain("RecipeSynthesisPanel"));
             Assert.That(installer, Does.Not.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
@@ -81,6 +82,8 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RecipeSynthesisContextStore"));
             Assert.That(installer, Does.Contain("RecipeSynthesisViewModel"));
             Assert.That(installer, Does.Contain("RecipeSynthesisUiToolkitBinder"));
+            Assert.That(installer, Does.Contain("InstitutionViewModel"));
+            Assert.That(installer, Does.Contain("InstitutionUiToolkitBinder"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<BuildCatalogUiToolkitBinder>(\"Prefabs/UI/BuildCatalog\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>(\"Prefabs/UI/RecipeSynthesis\")"));
@@ -99,6 +102,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<MinisterReportUiToolkitBinder>(\"Prefabs/UI/MinisterReport\")"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<InstitutionUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>"));

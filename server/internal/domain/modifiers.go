@@ -13,7 +13,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-// ActiveModifierEffects 只读取“已正式解锁”的科技/政策修正。
+// ActiveModifierEffects 只读取“已正式解锁”的科技/政策/制度修正。
 //
 // 科技研究在当前语义下是回合末完成、下一回合生效，因此这里不暴露任何本回合
 // 尚未 Apply 的临时解锁状态。
@@ -42,9 +42,9 @@ func (s *GameState) ActiveModifierEffects(playerID string) []staticdata.Modifier
 			effects = append(effects, policy.ModifierEffects...)
 		}
 	}
-	for _, policyID := range playerState.Institutions.ActivePolicyIDs {
-		if policy, ok := staticdata.Default().GetPolicy(policyID); ok {
-			effects = append(effects, policy.ModifierEffects...)
+	for _, institutionID := range playerState.Institutions.ActiveInstitutionIDs {
+		if institution, ok := staticdata.Default().GetInstitution(institutionID); ok {
+			effects = append(effects, institution.ModifierEffects...)
 		}
 	}
 	if s.World != nil {

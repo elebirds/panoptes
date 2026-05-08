@@ -90,7 +90,7 @@ func unitSpawnCandidateAvailable(state *GameState, pos Position, reserved map[st
 	if !unitSpawnNodePassable(entry) || entry.HasComponent(BuildingC) {
 		return false
 	}
-	if unitSpawnNodeReserved(entry, reserved) || unitExistsAtPosition(state.World, pos) {
+	if unitSpawnNodeReserved(entry, reserved) || HasUnitAtNode(state.World, pos) {
 		return false
 	}
 	return true
@@ -147,21 +147,4 @@ func unitSpawnNodePassable(entry *donburi.Entry) bool {
 		return true
 	}
 	return terrain.Passable
-}
-
-func unitExistsAtPosition(world donburi.World, pos Position) bool {
-	if world == nil {
-		return false
-	}
-	found := false
-	newUnitQuery().Each(world, func(entry *donburi.Entry) {
-		if found || entry == nil {
-			return
-		}
-		unitPos := PositionC.Get(entry)
-		if unitPos.Q == pos.Q && unitPos.R == pos.R {
-			found = true
-		}
-	})
-	return found
 }

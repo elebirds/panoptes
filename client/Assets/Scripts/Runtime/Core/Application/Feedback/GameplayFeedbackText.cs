@@ -47,6 +47,12 @@ namespace Panoptes.Core.Application.Feedback
                     return "该位置已经有建筑";
                 case "no_tokens_left":
                     return "本回合不能继续执行该操作";
+                case "no_mandate_tokens":
+                    return "亲政令牌不足";
+                case "no_minister_actions":
+                    return "当前没有可否决的大臣行动";
+                case "unknown_mandate_action":
+                    return "未知的亲政操作";
                 case "building_technology_locked":
                     return "该建筑的科技未解锁";
                 case "recipe_technology_locked":

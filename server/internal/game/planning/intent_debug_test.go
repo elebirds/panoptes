@@ -40,7 +40,7 @@ func TestDebugIntentRecordForCoversAllPlanningIntents(t *testing.T) {
 			name:          "institution loadout",
 			kind:          participant.KindBot,
 			participantID: "bot-1",
-			intent:        SetInstitutionLoadoutIntent{PolicyIDs: []string{"card-a", "card-b"}},
+			intent:        SetInstitutionLoadoutIntent{InstitutionIDs: []string{"card-a", "card-b"}},
 			wantType:      "set_institution_loadout",
 			wantLabel:     "设置制度装配",
 			wantSource:    "ai",
@@ -297,5 +297,9 @@ func (s *planningSessionStub) Participant(participantID string) (participant.Par
 	if !ok || playerState == nil {
 		return participant.Participant{}, false
 	}
-	return participant.Participant{ID: participantID, Username: playerState.Username, Kind: participant.KindHuman}, true
+	kind := participant.KindHuman
+	if s.autonomousPlayers[participantID] {
+		kind = participant.KindBot
+	}
+	return participant.Participant{ID: participantID, Username: playerState.Username, Kind: kind}, true
 }

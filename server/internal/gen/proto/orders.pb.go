@@ -66,10 +66,10 @@ func (x *MsgSetPolicy) GetNationalPolicyId() string {
 }
 
 type MsgSetInstitutionLoadout struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PolicyIds     []string               `protobuf:"bytes,1,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	InstitutionIds []string               `protobuf:"bytes,1,rep,name=institution_ids,json=institutionIds,proto3" json:"institution_ids,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MsgSetInstitutionLoadout) Reset() {
@@ -102,9 +102,9 @@ func (*MsgSetInstitutionLoadout) Descriptor() ([]byte, []int) {
 	return file_panoptes_proto_v1_orders_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MsgSetInstitutionLoadout) GetPolicyIds() []string {
+func (x *MsgSetInstitutionLoadout) GetInstitutionIds() []string {
 	if x != nil {
-		return x.PolicyIds
+		return x.InstitutionIds
 	}
 	return nil
 }
@@ -1121,10 +1121,9 @@ const file_panoptes_proto_v1_orders_proto_rawDesc = "" +
 	"\n" +
 	"\x1epanoptes/proto/v1/orders.proto\x12\x11panoptes.proto.v1\"<\n" +
 	"\fMsgSetPolicy\x12,\n" +
-	"\x12national_policy_id\x18\x01 \x01(\tR\x10nationalPolicyId\"9\n" +
-	"\x18MsgSetInstitutionLoadout\x12\x1d\n" +
-	"\n" +
-	"policy_ids\x18\x01 \x03(\tR\tpolicyIds\";\n" +
+	"\x12national_policy_id\x18\x01 \x01(\tR\x10nationalPolicyId\"C\n" +
+	"\x18MsgSetInstitutionLoadout\x12'\n" +
+	"\x0finstitution_ids\x18\x01 \x03(\tR\x0einstitutionIds\";\n" +
 	"\x14MsgSetResearchTarget\x12#\n" +
 	"\rtechnology_id\x18\x01 \x01(\tR\ftechnologyId\"L\n" +
 	"\x14MsgSetBuildingRecipe\x12\x17\n" +

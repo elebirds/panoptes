@@ -17,6 +17,7 @@ import (
 	"github.com/elebirds/panoptes/internal/event"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/llm"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"google.golang.org/protobuf/proto"
 )
@@ -26,6 +27,7 @@ type RuntimeRoom interface {
 	HumanPlayerIDs() []string
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 	BuildMinisterReportInput(playerID string, role string) ReportPromptInput
+	ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error
 }
 
 type MinisterEngine struct {
@@ -54,7 +56,7 @@ func (e *MinisterEngine) SetEnabledRoles(roles []string) {
 	defer e.mu.Unlock()
 	e.enabledRoles = make(map[string]struct{}, len(roles))
 	for _, role := range roles {
-		role = strings.TrimSpace(role)
+		role = ministerroles.Canonical(role)
 		if role == "" {
 			continue
 		}
@@ -120,7 +122,7 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 	}
 	output, err := ParseMinisterResponse(raw)
 	if err != nil {
-		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "err", err)
+		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "raw_len", len(raw), "err", err)
 		output, err = ParseMinisterResponse(fallbackJSON(chineseReportFallback))
 		if err != nil {
 			slog.Warn("parse minister fallback response failed", "player_id", playerID, "role", profile.Role, "err", err)
@@ -139,7 +141,9 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 
 	state := room.State()
 	if len(output.Actions) > 0 {
-		slog.Info("minister actions ignored in current MVP", "player_id", playerID, "role", profile.Role, "count", len(output.Actions))
+		if err := room.ApplyMinisterActions(playerID, profile.Role, output.Actions); err != nil {
+			slog.Warn("apply minister actions failed", "player_id", playerID, "role", profile.Role, "count", len(output.Actions), "err", err)
+		}
 	}
 	if state != nil && state.World != nil {
 		event.MinisterActedEvent{
@@ -153,42 +157,17 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 	memory.Add(MemoryEntry{Turn: input.Turn, Type: "report", Content: output.Report, Outcome: "generated", PlayerResp: "ignored"})
 }
 
-func (e *MinisterEngine) PolishDraft(ctx context.Context, playerID string, draft domain.MinisterDraft, input DraftPromptInput) (*DraftOutput, bool) {
-	if e == nil || !e.roleEnabled(draft.MinisterRole) || e.llmClient == nil {
-		return nil, false
-	}
-	profile, ok := profileForRole(draft.MinisterRole)
-	if !ok {
-		return nil, false
-	}
-	input.Draft = draft
-	input.Memory = e.getOrCreateMemory(playerID, draft.MinisterRole)
-	req := BuildDraftPrompt(profile, input)
-	req.Model = e.requestModel()
-	req.SessionID = fmt.Sprintf("%s:%s:%s:%d", playerID, draft.MinisterRole, draft.DraftID, input.Turn)
-
-	raw, ok := e.collectText(ctx, req)
-	if !ok {
-		return nil, false
-	}
-	output, err := ParseDraftResponse(raw)
-	if err != nil {
-		slog.Warn("parse minister draft response failed", "player_id", playerID, "role", draft.MinisterRole, "draft_id", draft.DraftID, "err", err)
-		return nil, false
-	}
-	return output, true
-}
-
 func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.CompletionRequest) (string, bool) {
 	if e.llmClient == nil {
 		return fallbackJSON("目前局势稳定，建议优先巩固补给线并保持战区侦察。"), true
 	}
 
+	startedAt := time.Now()
 	ctx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 	stream, err := e.llmClient.Stream(ctx, req)
 	if err != nil {
-		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "err", err)
+		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "response_duration_ms", time.Since(startedAt).Milliseconds(), "err", err)
 		return fallbackJSON("当前汇报链路拥堵，建议按既定国策稳步推进。"), true
 	}
 
@@ -199,7 +178,14 @@ func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.Comp
 		}
 		b.WriteString(chunk)
 	}
-	return b.String(), true
+	raw := b.String()
+	responseDurationMs := time.Since(startedAt).Milliseconds()
+	slog.Debug("minister llm report response collected", "session_id", req.SessionID, "raw_len", len(raw), "response_duration_ms", responseDurationMs, "raw_preview", ministerDebugPreview(raw))
+	if strings.TrimSpace(raw) == "" {
+		slog.Warn("minister llm report response empty", "session_id", req.SessionID, "response_duration_ms", responseDurationMs)
+		return fallbackJSON("当前汇报链路没有返回内容，建议按既定国策稳步推进。"), true
+	}
+	return raw, true
 }
 
 func sendMinisterReport(room RuntimeRoom, playerID string, role string, report string) error {
@@ -222,27 +208,6 @@ func sendMinisterReport(room RuntimeRoom, playerID string, role string, report s
 	})
 }
 
-func (e *MinisterEngine) collectText(ctx context.Context, req llm.CompletionRequest) (string, bool) {
-	if e == nil || e.llmClient == nil {
-		return "", false
-	}
-	ctx, cancel := context.WithTimeout(ctx, e.timeout())
-	defer cancel()
-	stream, err := e.llmClient.Stream(ctx, req)
-	if err != nil {
-		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "err", err)
-		return "", false
-	}
-	var b strings.Builder
-	for chunk := range stream {
-		if chunk == "" {
-			continue
-		}
-		b.WriteString(chunk)
-	}
-	return b.String(), true
-}
-
 func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemory {
 	key := playerID + ":" + role
 	e.mu.Lock()
@@ -250,23 +215,27 @@ func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemor
 	if m, ok := e.memories[key]; ok {
 		return m
 	}
-	m := &MinisterMemory{PlayerID: playerID, Role: role}
+	m := &MinisterMemory{PlayerID: playerID, Role: role, Favor: 50}
 	e.memories[key] = m
 	return m
 }
 
 func pickProfiles() []MinisterProfile {
-	pool := staticdata.Default().Ministers()
+	pool := ministerroles.NormalizeMinisters(staticdata.Default().Ministers())
 	if len(pool) == 0 {
 		return []MinisterProfile{{
-			ID:              "finance",
-			Name:            "财政大臣",
-			Role:            "finance",
+			ID:              "domestic",
+			Name:            "内政大臣",
+			Role:            ministerroles.Domestic,
 			Ability:         5,
 			Personality:     "steady",
 			PersonalityDesc: "稳健",
 			Loyalty:         6,
 			Ambition:        5,
+			Cautiousness:    70,
+			Decisiveness:    50,
+			LoyaltyTendency: 80,
+			AmbitionStyle:   30,
 		}}
 	}
 	out := make([]MinisterProfile, 0, len(pool))
@@ -280,15 +249,19 @@ func pickProfiles() []MinisterProfile {
 			PersonalityDesc: p.PersonalityDesc,
 			Loyalty:         p.Loyalty,
 			Ambition:        p.Ambition,
+			Cautiousness:    p.Cautiousness,
+			Decisiveness:    p.Decisiveness,
+			LoyaltyTendency: p.LoyaltyTendency,
+			AmbitionStyle:   p.AmbitionStyle,
 		})
 	}
 	return out
 }
 
 func profileForRole(role string) (MinisterProfile, bool) {
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	for _, profile := range pickProfiles() {
-		if strings.TrimSpace(profile.Role) == role {
+		if ministerroles.Canonical(profile.Role) == role {
 			return profile, true
 		}
 	}
@@ -299,7 +272,7 @@ func (e *MinisterEngine) roleEnabled(role string) bool {
 	if e == nil {
 		return false
 	}
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if len(e.enabledRoles) == 0 {
@@ -331,5 +304,20 @@ func (e *MinisterEngine) requestModel() string {
 }
 
 func fallbackJSON(report string) string {
-	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
+	return `{"report":"` + report + `","metrics":[],"proposals":[],"actions":[],"action_id":"fallback"}`
+}
+
+func ministerDebugPreview(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	text = strings.ReplaceAll(text, "\r", "\\r")
+	text = strings.ReplaceAll(text, "\n", "\\n")
+	const limit = 1200
+	runes := []rune(text)
+	if len(runes) <= limit {
+		return text
+	}
+	return string(runes[:limit]) + "...(truncated)"
 }

@@ -634,12 +634,12 @@ func (x *ResearchProgressEntry) GetRequiredProgress() int32 {
 }
 
 type InstitutionStateView struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	SlotCount          int32                  `protobuf:"varint,1,opt,name=slot_count,json=slotCount,proto3" json:"slot_count,omitempty"`
-	CandidatePolicyIds []string               `protobuf:"bytes,2,rep,name=candidate_policy_ids,json=candidatePolicyIds,proto3" json:"candidate_policy_ids,omitempty"`
-	ActivePolicyIds    []string               `protobuf:"bytes,3,rep,name=active_policy_ids,json=activePolicyIds,proto3" json:"active_policy_ids,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	SlotCount               int32                  `protobuf:"varint,1,opt,name=slot_count,json=slotCount,proto3" json:"slot_count,omitempty"`
+	CandidateInstitutionIds []string               `protobuf:"bytes,2,rep,name=candidate_institution_ids,json=candidateInstitutionIds,proto3" json:"candidate_institution_ids,omitempty"`
+	ActiveInstitutionIds    []string               `protobuf:"bytes,3,rep,name=active_institution_ids,json=activeInstitutionIds,proto3" json:"active_institution_ids,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *InstitutionStateView) Reset() {
@@ -679,16 +679,16 @@ func (x *InstitutionStateView) GetSlotCount() int32 {
 	return 0
 }
 
-func (x *InstitutionStateView) GetCandidatePolicyIds() []string {
+func (x *InstitutionStateView) GetCandidateInstitutionIds() []string {
 	if x != nil {
-		return x.CandidatePolicyIds
+		return x.CandidateInstitutionIds
 	}
 	return nil
 }
 
-func (x *InstitutionStateView) GetActivePolicyIds() []string {
+func (x *InstitutionStateView) GetActiveInstitutionIds() []string {
 	if x != nil {
-		return x.ActivePolicyIds
+		return x.ActiveInstitutionIds
 	}
 	return nil
 }
@@ -854,13 +854,19 @@ func (x *WarZone) GetTargetNode() string {
 }
 
 type MinisterView struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Role          string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Ability       int32                  `protobuf:"varint,3,opt,name=ability,proto3" json:"ability,omitempty"`
-	Personality   string                 `protobuf:"bytes,4,opt,name=personality,proto3" json:"personality,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Role            string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Ability         int32                  `protobuf:"varint,3,opt,name=ability,proto3" json:"ability,omitempty"`
+	Personality     string                 `protobuf:"bytes,4,opt,name=personality,proto3" json:"personality,omitempty"`
+	Loyalty         int32                  `protobuf:"varint,5,opt,name=loyalty,proto3" json:"loyalty,omitempty"`
+	Ambition        int32                  `protobuf:"varint,6,opt,name=ambition,proto3" json:"ambition,omitempty"`
+	Cautiousness    int32                  `protobuf:"varint,7,opt,name=cautiousness,proto3" json:"cautiousness,omitempty"`
+	Decisiveness    int32                  `protobuf:"varint,8,opt,name=decisiveness,proto3" json:"decisiveness,omitempty"`
+	LoyaltyTendency int32                  `protobuf:"varint,9,opt,name=loyalty_tendency,json=loyaltyTendency,proto3" json:"loyalty_tendency,omitempty"`
+	AmbitionStyle   int32                  `protobuf:"varint,10,opt,name=ambition_style,json=ambitionStyle,proto3" json:"ambition_style,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *MinisterView) Reset() {
@@ -919,6 +925,48 @@ func (x *MinisterView) GetPersonality() string {
 		return x.Personality
 	}
 	return ""
+}
+
+func (x *MinisterView) GetLoyalty() int32 {
+	if x != nil {
+		return x.Loyalty
+	}
+	return 0
+}
+
+func (x *MinisterView) GetAmbition() int32 {
+	if x != nil {
+		return x.Ambition
+	}
+	return 0
+}
+
+func (x *MinisterView) GetCautiousness() int32 {
+	if x != nil {
+		return x.Cautiousness
+	}
+	return 0
+}
+
+func (x *MinisterView) GetDecisiveness() int32 {
+	if x != nil {
+		return x.Decisiveness
+	}
+	return 0
+}
+
+func (x *MinisterView) GetLoyaltyTendency() int32 {
+	if x != nil {
+		return x.LoyaltyTendency
+	}
+	return 0
+}
+
+func (x *MinisterView) GetAmbitionStyle() int32 {
+	if x != nil {
+		return x.AmbitionStyle
+	}
+	return 0
 }
 
 type InformationReportView struct {
@@ -1308,12 +1356,12 @@ const file_panoptes_proto_v1_game_state_proto_rawDesc = "" +
 	"\x15ResearchProgressEntry\x12#\n" +
 	"\rtechnology_id\x18\x01 \x01(\tR\ftechnologyId\x12)\n" +
 	"\x10current_progress\x18\x02 \x01(\x05R\x0fcurrentProgress\x12+\n" +
-	"\x11required_progress\x18\x03 \x01(\x05R\x10requiredProgress\"\x93\x01\n" +
+	"\x11required_progress\x18\x03 \x01(\x05R\x10requiredProgress\"\xa7\x01\n" +
 	"\x14InstitutionStateView\x12\x1d\n" +
 	"\n" +
-	"slot_count\x18\x01 \x01(\x05R\tslotCount\x120\n" +
-	"\x14candidate_policy_ids\x18\x02 \x03(\tR\x12candidatePolicyIds\x12*\n" +
-	"\x11active_policy_ids\x18\x03 \x03(\tR\x0factivePolicyIds\"\x92\x02\n" +
+	"slot_count\x18\x01 \x01(\x05R\tslotCount\x12:\n" +
+	"\x19candidate_institution_ids\x18\x02 \x03(\tR\x17candidateInstitutionIds\x124\n" +
+	"\x16active_institution_ids\x18\x03 \x03(\tR\x14activeInstitutionIds\"\x92\x02\n" +
 	"\x15BuildingOperationView\x12,\n" +
 	"\x12selected_recipe_id\x18\x01 \x01(\tR\x10selectedRecipeId\x12)\n" +
 	"\x10current_progress\x18\x02 \x01(\x05R\x0fcurrentProgress\x12+\n" +
@@ -1327,12 +1375,19 @@ const file_panoptes_proto_v1_game_state_proto_rawDesc = "" +
 	"\bnode_ids\x18\x03 \x03(\tR\anodeIds\x12\x1c\n" +
 	"\tdirective\x18\x04 \x01(\tR\tdirective\x12\x1f\n" +
 	"\vtarget_node\x18\x05 \x01(\tR\n" +
-	"targetNode\"r\n" +
+	"targetNode\"\xc2\x02\n" +
 	"\fMinisterView\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aability\x18\x03 \x01(\x05R\aability\x12 \n" +
-	"\vpersonality\x18\x04 \x01(\tR\vpersonality\"\xdf\x03\n" +
+	"\vpersonality\x18\x04 \x01(\tR\vpersonality\x12\x18\n" +
+	"\aloyalty\x18\x05 \x01(\x05R\aloyalty\x12\x1a\n" +
+	"\bambition\x18\x06 \x01(\x05R\bambition\x12\"\n" +
+	"\fcautiousness\x18\a \x01(\x05R\fcautiousness\x12\"\n" +
+	"\fdecisiveness\x18\b \x01(\x05R\fdecisiveness\x12)\n" +
+	"\x10loyalty_tendency\x18\t \x01(\x05R\x0floyaltyTendency\x12%\n" +
+	"\x0eambition_style\x18\n" +
+	" \x01(\x05R\rambitionStyle\"\xdf\x03\n" +
 	"\x15InformationReportView\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12\x1e\n" +
 	"\n" +

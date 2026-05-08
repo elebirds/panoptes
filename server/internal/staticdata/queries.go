@@ -73,6 +73,22 @@ func (c *Catalog) GetPolicy(id string) (PolicyDefinition, bool) {
 	return policy, ok
 }
 
+func (c *Catalog) GetInstitutionCategory(id string) (InstitutionCategoryDefinition, bool) {
+	if c == nil {
+		return InstitutionCategoryDefinition{}, false
+	}
+	category, ok := c.institutionCategories[id]
+	return category, ok
+}
+
+func (c *Catalog) GetInstitution(id string) (InstitutionDefinition, bool) {
+	if c == nil {
+		return InstitutionDefinition{}, false
+	}
+	institution, ok := c.institutions[id]
+	return institution, ok
+}
+
 func (c *Catalog) GetRecipe(id string) (RecipeDefinition, bool) {
 	if c == nil {
 		return RecipeDefinition{}, false
@@ -109,6 +125,38 @@ func (c *Catalog) Policies() []PolicyDefinition {
 	out := make([]PolicyDefinition, 0, len(ids))
 	for _, id := range ids {
 		out = append(out, c.policies[id])
+	}
+	return out
+}
+
+func (c *Catalog) InstitutionCategories() []InstitutionCategoryDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.institutionCategories))
+	for id := range c.institutionCategories {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]InstitutionCategoryDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.institutionCategories[id])
+	}
+	return out
+}
+
+func (c *Catalog) Institutions() []InstitutionDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.institutions))
+	for id := range c.institutions {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]InstitutionDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.institutions[id])
 	}
 	return out
 }

@@ -22,14 +22,17 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 				ExplicitEffects: []staticdata.ExplicitEffect{
 					{Type: "unlock_building", TargetID: "farm"},
 					{Type: "unlock_recipe", TargetID: "farm_food"},
-					{Type: "unlock_policy", TargetID: "academy_charter"},
+					{Type: "unlock_institution", TargetID: "academy_charter"},
 					{Type: "add_institution_slots", InstitutionSlots: 1},
 					{Type: "grant", GrantResources: staticdata.ResourceAmounts{"wood": 2}, GrantUnits: []string{"scout"}},
 				},
 			},
 		},
-		Policies: []staticdata.PolicyDefinition{
-			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 		Units: []staticdata.UnitDefinition{
 			{
@@ -65,7 +68,7 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 	state.Turn = 3
 	state.Players["player-1"].TokensLeft = 1
 	state.Players["player-1"].Research.MarkTechnologyCompleted("agrarian_foundations", 2)
-	state.Players["player-1"].Institutions.PendingPolicyIDs = []string{"academy_charter"}
+	state.Players["player-1"].Institutions.PendingInstitutionIDs = []string{"academy_charter"}
 	state.Players["player-1"].Institutions.PendingActivationTurn = 3
 	state.Players["player-1"].Institutions.SlotCount = 1
 	state.Players["player-1"].Institutions.UnlockCandidate("academy_charter")
@@ -81,7 +84,7 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 	if !state.IsRecipeUnlocked("player-1", "farm_food") {
 		t.Fatalf("farm_food should unlock on planning start")
 	}
-	if got := state.Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+	if got := state.Players["player-1"].Institutions.ActiveInstitutionIDs; len(got) != 1 || got[0] != "academy_charter" {
 		t.Fatalf("active institution policies = %#v, want academy_charter", got)
 	}
 	if got := state.Players["player-1"].TokensLeft; got != 1 {

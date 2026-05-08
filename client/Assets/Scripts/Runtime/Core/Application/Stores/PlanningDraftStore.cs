@@ -39,7 +39,7 @@ namespace Panoptes.Core.Application.Stores
                 current.CurrentRecipePreview,
                 current.PlannedResearchTargetTechnologyId,
                 current.PlannedNationalPolicyId,
-                current.PlannedInstitutionPolicyIds));
+                current.PlannedInstitutionIds));
         }
 
         protected override PlanningDraftState CloneState(PlanningDraftState state)
@@ -63,7 +63,7 @@ namespace Panoptes.Core.Application.Stores
                    string.Equals(left.SnapshotPhase, right.SnapshotPhase, StringComparison.Ordinal) &&
                    string.Equals(left.PlannedResearchTargetTechnologyId, right.PlannedResearchTargetTechnologyId, StringComparison.Ordinal) &&
                    string.Equals(left.PlannedNationalPolicyId, right.PlannedNationalPolicyId, StringComparison.Ordinal) &&
-                   StringListEquals(left.PlannedInstitutionPolicyIds, right.PlannedInstitutionPolicyIds) &&
+                   StringListEquals(left.PlannedInstitutionIds, right.PlannedInstitutionIds) &&
                    UnitOrdersEqual(left.UnitOrders, right.UnitOrders) &&
                    BuildOrdersEqual(left.BuildOrders, right.BuildOrders) &&
                    RecipeSelectionsEqual(left.RecipeSelections, right.RecipeSelections) &&
@@ -272,7 +272,53 @@ namespace Panoptes.Core.Application.Stores
                     a.Available != b.Available ||
                     a.Turn != b.Turn ||
                     !string.Equals(a.Source, b.Source, StringComparison.Ordinal) ||
-                    !StringArrayEquals(a.PolicyIds, b.PolicyIds) ||
+                    !StringArrayEquals(a.InstitutionIds, b.InstitutionIds) ||
+                    !string.Equals(a.NodeId, b.NodeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.BuildingTypeId, b.BuildingTypeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.CityId, b.CityId, StringComparison.Ordinal) ||
+                    !string.Equals(a.RecipeId, b.RecipeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.UnitId, b.UnitId, StringComparison.Ordinal) ||
+                    !string.Equals(a.Action, b.Action, StringComparison.Ordinal) ||
+                    !string.Equals(a.TargetNodeId, b.TargetNodeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.TargetUnitId, b.TargetUnitId, StringComparison.Ordinal) ||
+                    !string.Equals(a.SecondaryNodeId, b.SecondaryNodeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.OperationId, b.OperationId, StringComparison.Ordinal) ||
+                    !string.Equals(a.Objective, b.Objective, StringComparison.Ordinal) ||
+                    !MinisterOperationCommandsEqual(a.OperationCommands, b.OperationCommands))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool MinisterOperationCommandsEqual(
+            IReadOnlyList<MinisterOperationCommandDto> left,
+            IReadOnlyList<MinisterOperationCommandDto> right)
+        {
+            if (!SameCount(left, right))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < (left?.Count ?? 0); i++)
+            {
+                var a = left[i];
+                var b = right[i];
+                if (a == null || b == null)
+                {
+                    if (!ReferenceEquals(a, b))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (!string.Equals(a.Label, b.Label, StringComparison.Ordinal) ||
+                    !string.Equals(a.Kind, b.Kind, StringComparison.Ordinal) ||
+                    !string.Equals(a.RawJson, b.RawJson, StringComparison.Ordinal) ||
                     !string.Equals(a.NodeId, b.NodeId, StringComparison.Ordinal) ||
                     !string.Equals(a.BuildingTypeId, b.BuildingTypeId, StringComparison.Ordinal) ||
                     !string.Equals(a.CityId, b.CityId, StringComparison.Ordinal) ||

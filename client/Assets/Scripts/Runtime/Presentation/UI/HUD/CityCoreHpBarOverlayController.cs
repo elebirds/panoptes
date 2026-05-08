@@ -905,6 +905,11 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
+            if (IsSettlerLikeUnit(unitType) && HasHitPoints(unit))
+            {
+                return true;
+            }
+
             var units = _staticCatalogStore?.Snapshot?.Units;
             if (units != null && units.TryGetValue(unitType, out var catalogUnit) && catalogUnit != null)
             {
@@ -927,6 +932,18 @@ namespace Panoptes.Presentation.UI.HUD
                    unitType != "expander" &&
                    unitType != "engineer" &&
                    unitType != "scout";
+        }
+
+        private static bool IsSettlerLikeUnit(string unitType)
+        {
+            return string.Equals(unitType, "settler", System.StringComparison.Ordinal) ||
+                   string.Equals(unitType, "pioneer", System.StringComparison.Ordinal) ||
+                   string.Equals(unitType, "expander", System.StringComparison.Ordinal);
+        }
+
+        private static bool HasHitPoints(UnitView unit)
+        {
+            return unit != null && (unit.HitPoints > 0 || unit.MaxHitPoints > 0);
         }
 
         private Color ResolveHpColor(float ratio01)

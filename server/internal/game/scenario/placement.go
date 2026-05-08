@@ -27,6 +27,13 @@ func placeBuildingAtNode(state *domain.GameState, buildingType string, playerID 
 }
 
 func placeUnitWithID(state *domain.GameState, unitType string, playerID string, position domain.Position, unitID string) *donburi.Entry {
+	if state == nil || state.World == nil {
+		return nil
+	}
+	if domain.HasUnitAtNode(state.World, position) {
+		// 调试场景也必须遵守“不堆叠”规则；fixture 写错时直接失败，避免旧模型继续扩散。
+		panic(fmt.Sprintf("unit placement collision at (%d,%d)", position.Q, position.R))
+	}
 	entry := state.World.Entry(ecs.CreateUnit(state.World, unitType, playerID, position))
 	stats := ecs.UnitStatsC.Get(entry)
 	stats.ID = unitID

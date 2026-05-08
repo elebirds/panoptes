@@ -168,7 +168,7 @@ namespace Panoptes.Tests.EditMode.Core
                 {
                     new QueuedRecipeSelection { NodeId = "n4", RecipeId = "grain" }
                 },
-                PlannedInstitutionPolicyIds = { "labor" }
+                PlannedInstitutionIds = { "labor" }
             });
 
             Assert.That(mapped.SnapshotTurn, Is.EqualTo(6));
@@ -178,7 +178,88 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.RecipeSelections[0].RecipeId, Is.EqualTo("grain"));
             Assert.That(mapped.PlannedResearchTargetTechnologyId, Is.EqualTo("irrigation"));
             Assert.That(mapped.PlannedNationalPolicyId, Is.EqualTo("mobilize"));
-            Assert.That(mapped.PlannedInstitutionPolicyIds, Is.EqualTo(new[] { "labor" }));
+            Assert.That(mapped.PlannedInstitutionIds, Is.EqualTo(new[] { "labor" }));
+        }
+
+        [Test]
+        public void ToPlanningDraft_ShouldMapMinisterOperationDraftStepsFromJson()
+        {
+            var mapped = StoreHydrationProtocolMapper.ToPlanningDraft(new MsgPlanningSnapshot
+            {
+                Turn = 6,
+                Phase = "planning",
+                MinisterDrafts =
+                {
+                    new MinisterDraftView
+                    {
+                        MinisterRole = "military",
+                        Available = true,
+                        JsonPayload = "{\"draft_id\":\"op-1\",\"player_id\":\"player-1\",\"minister_role\":\"military\",\"kind\":\"operation\",\"target_id\":\"north_front\",\"target_label\":\"北线\",\"title\":\"北线行动\",\"summary\":\"压迫敌军前线。\",\"rationale\":\"敌军补给不足。\",\"risk_note\":\"侧翼会变薄。\",\"status\":\"pending\",\"available\":true,\"turn\":6,\"source\":\"llm_action\",\"operation_id\":\"north-front\",\"objective\":\"夺取北部渡口\",\"operation_steps\":[{\"draft_id\":\"step-1\",\"kind\":\"unit_order\",\"target_label\":\"弓兵前压至 N2\",\"unit_id\":\"u-archer\",\"action\":\"move\",\"target_node_id\":\"N2\"},{\"draft_id\":\"step-2\",\"kind\":\"build\",\"target_label\":\"V3 修筑箭塔\",\"node_id\":\"V3\",\"building_type_id\":\"watchtower\"}]}"
+                    }
+                }
+            });
+
+            Assert.That(mapped.MinisterDrafts[0].OperationId, Is.EqualTo("north-front"));
+            Assert.That(mapped.MinisterDrafts[0].Objective, Is.EqualTo("夺取北部渡口"));
+            Assert.That(mapped.MinisterDrafts[0].OperationCommands.Count, Is.EqualTo(2));
+            Assert.That(mapped.MinisterDrafts[0].OperationCommands[0].Label, Is.EqualTo("弓兵前压至 N2"));
+            Assert.That(mapped.MinisterDrafts[0].OperationCommands[0].UnitId, Is.EqualTo("u-archer"));
+            Assert.That(mapped.MinisterDrafts[0].OperationCommands[1].BuildingTypeId, Is.EqualTo("watchtower"));
+        }
+
+        [Test]
+        public void MergeMinisterProposals_ShouldOverlayTypedOperationCommands()
+        {
+            var current = new PlanningDraftState(
+                snapshotTurn: 6,
+                snapshotPhase: "planning",
+                ministerDrafts: new[]
+                {
+                    new MinisterDraftDto
+                    {
+                        DraftId = "op-1",
+                        MinisterRole = "military",
+                        Kind = "operation",
+                        Status = "pending",
+                        Available = true
+                    }
+                });
+
+            var merged = StoreHydrationProtocolMapper.MergeMinisterProposals(current, new[]
+            {
+                new MinisterProposalView
+                {
+                    ProposalId = "op-1",
+                    MinisterRole = "military",
+                    Kind = "operation",
+                    Title = "北线行动",
+                    Objective = "夺取北部渡口",
+                    OperationCommands =
+                    {
+                        new MinisterOperationCommandView
+                        {
+                            Label = "弓兵前压至 N2",
+                            Kind = "unit_order",
+                            Command = new CommandEnvelope
+                            {
+                                IssueUnitOrder = new MsgIssueUnitOrder
+                                {
+                                    UnitId = "u-archer",
+                                    Action = "move",
+                                    TargetNodeId = "N2"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            Assert.That(merged.MinisterDrafts.Count, Is.EqualTo(1));
+            Assert.That(merged.MinisterDrafts[0].Title, Is.EqualTo("北线行动"));
+            Assert.That(merged.MinisterDrafts[0].Objective, Is.EqualTo("夺取北部渡口"));
+            Assert.That(merged.MinisterDrafts[0].OperationCommands[0].Label, Is.EqualTo("弓兵前压至 N2"));
+            Assert.That(merged.MinisterDrafts[0].OperationCommands[0].UnitId, Is.EqualTo("u-archer"));
+            Assert.That(merged.MinisterDrafts[0].OperationCommands[0].TargetNodeId, Is.EqualTo("N2"));
         }
 
         [Test]

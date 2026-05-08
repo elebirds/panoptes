@@ -6,6 +6,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
@@ -24,7 +25,7 @@ func BuildMinisterDraftViews(state *domain.GameState, playerID string) []*pb.Min
 			continue
 		}
 		out = append(out, &pb.MinisterDraftView{
-			MinisterRole: strings.TrimSpace(draft.MinisterRole),
+			MinisterRole: ministerroles.Canonical(draft.MinisterRole),
 			JsonPayload:  string(payload),
 			Available:    draft.Available,
 		})
@@ -50,15 +51,18 @@ func BuildMinisterProposalViews(state *domain.GameState, playerID string) []*pb.
 			continue
 		}
 		out = append(out, &pb.MinisterProposalView{
-			ProposalId:      strings.TrimSpace(draft.DraftID),
-			MinisterRole:    strings.TrimSpace(draft.MinisterRole),
-			Kind:            string(draft.Kind),
-			Title:           strings.TrimSpace(draft.Title),
-			Summary:         strings.TrimSpace(draft.Summary),
-			Rationale:       strings.TrimSpace(draft.Rationale),
-			RiskNote:        strings.TrimSpace(draft.RiskNote),
-			ProposedCommand: commandEnvelopeForMinisterDraft(draft),
-			RawJson:         string(payload),
+			ProposalId:        strings.TrimSpace(draft.DraftID),
+			MinisterRole:      ministerroles.Canonical(draft.MinisterRole),
+			Kind:              string(draft.Kind),
+			Title:             strings.TrimSpace(draft.Title),
+			Summary:           strings.TrimSpace(draft.Summary),
+			Rationale:         strings.TrimSpace(draft.Rationale),
+			RiskNote:          strings.TrimSpace(draft.RiskNote),
+			ProposedCommand:   commandEnvelopeForMinisterDraft(draft),
+			OperationCommands: operationCommandViewsForMinisterDraft(draft),
+			OperationId:       strings.TrimSpace(draft.OperationID),
+			Objective:         strings.TrimSpace(draft.Objective),
+			RawJson:           string(payload),
 		})
 	}
 	return out
@@ -82,7 +86,7 @@ func commandEnvelopeForMinisterDraft(draft domain.MinisterDraft) *pb.CommandEnve
 		}
 	case domain.MinisterDraftKindInstitution:
 		envelope.Body = &pb.CommandEnvelope_SetInstitutionLoadout{
-			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: append([]string(nil), draft.PolicyIDs...)},
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{InstitutionIds: append([]string(nil), draft.InstitutionIDs...)},
 		}
 	case domain.MinisterDraftKindBuild:
 		envelope.Body = &pb.CommandEnvelope_BuildStructure{
@@ -110,10 +114,40 @@ func commandEnvelopeForMinisterDraft(draft domain.MinisterDraft) *pb.CommandEnve
 				Params:          cloneDraftParams(draft.Params),
 			},
 		}
+	case domain.MinisterDraftKindOperation:
+		return nil
 	default:
 		return nil
 	}
 	return envelope
+}
+
+func operationCommandViewsForMinisterDraft(draft domain.MinisterDraft) []*pb.MinisterOperationCommandView {
+	if draft.Kind != domain.MinisterDraftKindOperation || len(draft.OperationSteps) == 0 {
+		return nil
+	}
+	out := make([]*pb.MinisterOperationCommandView, 0, len(draft.OperationSteps))
+	for _, step := range draft.OperationSteps {
+		envelope := commandEnvelopeForMinisterDraft(step)
+		if envelope == nil {
+			continue
+		}
+		out = append(out, &pb.MinisterOperationCommandView{
+			Label:   strings.TrimSpace(step.TargetLabel),
+			Kind:    string(step.Kind),
+			Command: envelope,
+			RawJson: marshalDraftJSON(step),
+		})
+	}
+	return out
+}
+
+func marshalDraftJSON(draft domain.MinisterDraft) string {
+	payload, err := json.Marshal(draft)
+	if err != nil {
+		return ""
+	}
+	return string(payload)
 }
 
 func cloneDraftParams(src map[string]string) map[string]string {
@@ -128,21 +162,27 @@ func cloneDraftParams(src map[string]string) map[string]string {
 }
 
 func BuildMinisterRosterViews() []*pb.MinisterView {
-	ministers := staticdata.Default().Ministers()
+	ministers := ministerroles.NormalizeMinisters(staticdata.Default().Ministers())
 	if len(ministers) == 0 {
 		return nil
 	}
 	out := make([]*pb.MinisterView, 0, len(ministers))
 	for _, minister := range ministers {
-		role := strings.TrimSpace(minister.Role)
+		role := ministerroles.Canonical(minister.Role)
 		if role == "" {
 			continue
 		}
 		out = append(out, &pb.MinisterView{
-			Role:        role,
-			Name:        strings.TrimSpace(minister.Name),
-			Ability:     int32(minister.Ability),
-			Personality: strings.TrimSpace(minister.Personality),
+			Role:            role,
+			Name:            strings.TrimSpace(minister.Name),
+			Ability:         int32(minister.Ability),
+			Personality:     strings.TrimSpace(minister.Personality),
+			Loyalty:         int32(minister.Loyalty),
+			Ambition:        int32(minister.Ambition),
+			Cautiousness:    int32(minister.Cautiousness),
+			Decisiveness:    int32(minister.Decisiveness),
+			LoyaltyTendency: int32(minister.LoyaltyTendency),
+			AmbitionStyle:   int32(minister.AmbitionStyle),
 		})
 	}
 	return out

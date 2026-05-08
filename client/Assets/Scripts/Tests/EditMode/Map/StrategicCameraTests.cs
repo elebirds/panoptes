@@ -61,6 +61,8 @@ namespace Panoptes.Tests.EditMode.Map
             var content = File.ReadAllText(_unitMoveAnimPath);
             Assert.That(content, Does.Not.Contain("followCamera.transform.position ="),
                 "UnitMoveAnim 不应继续直接写相机 Transform。");
+            Assert.That(content, Does.Not.Contain("CinemachineMapCameraController.TryFocus"),
+                "UnitMoveAnim 不应在单位移动帧内驱动战略相机。");
         }
 
         [Test]

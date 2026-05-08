@@ -114,7 +114,7 @@ namespace Panoptes.Protocol.V1 {
             "bmcSSQoNcGxheWVyX2tpY2tlZBgEIAEoCzIiLnBhbm9wdGVzLnByb3RvLnYx",
             "Lk1zZ1BsYXllcktpY2tlZEgAUgxwbGF5ZXJLaWNrZWQSQwoLbG9iYnlfZXJy",
             "b3IYBSABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dMb2JieUVycm9ySABS",
-            "CmxvYmJ5RXJyb3JCBgoEYm9keSLMEwoJR2FtZUV2ZW50EmUKF3N0YXRpY19j",
+            "CmxvYmJ5RXJyb3JCBgoEYm9keSKaFAoJR2FtZUV2ZW50EmUKF3N0YXRpY19j",
             "YXRhbG9nX21hbmlmZXN0GAEgASgLMisucGFub3B0ZXMucHJvdG8udjEuTXNn",
             "U3RhdGljQ2F0YWxvZ01hbmlmZXN0SABSFXN0YXRpY0NhdGFsb2dNYW5pZmVz",
             "dBJlChdzdGF0aWNfY2F0YWxvZ19zbmFwc2hvdBgCIAEoCzIrLnBhbm9wdGVz",
@@ -170,15 +170,17 @@ namespace Panoptes.Protocol.V1 {
             "dFN5bmMSQwoLY29tbWFuZF9hY2sYGyABKAsyIC5wYW5vcHRlcy5wcm90by52",
             "MS5Nc2dDb21tYW5kQWNrSABSCmNvbW1hbmRBY2sSPQoJZ2FtZV9zeW5jGBwg",
             "ASgLMh4ucGFub3B0ZXMucHJvdG8udjEuTXNnR2FtZVN5bmNIAFIIZ2FtZVN5",
-            "bmNCBgoEYm9keSKgAgoLU2VydmVyRnJhbWUSMAoEbWV0YRgBIAEoCzIcLnBh",
-            "bm9wdGVzLnByb3RvLnYxLkV2ZW50TWV0YVIEbWV0YRIyCgRhdXRoGAogASgL",
-            "MhwucGFub3B0ZXMucHJvdG8udjEuQXV0aEV2ZW50SABSBGF1dGgSNQoFbG9i",
-            "YnkYCyABKAsyHS5wYW5vcHRlcy5wcm90by52MS5Mb2JieUV2ZW50SABSBWxv",
-            "YmJ5EjIKBGdhbWUYDCABKAsyHC5wYW5vcHRlcy5wcm90by52MS5HYW1lRXZl",
-            "bnRIAFIEZ2FtZRI2Cgdwcm9ibGVtGA0gASgLMhoucGFub3B0ZXMucHJvdG8u",
-            "djEuUHJvYmxlbUgAUgdwcm9ibGVtQggKBnRhcmdldEJQWjdnaXRodWIuY29t",
-            "L2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90bztwcm90b3Yx",
-            "qgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "bmMSTAoObWFuZGF0ZV9yZXN1bHQYHSABKAsyIy5wYW5vcHRlcy5wcm90by52",
+            "MS5Nc2dNYW5kYXRlUmVzdWx0SABSDW1hbmRhdGVSZXN1bHRCBgoEYm9keSKg",
+            "AgoLU2VydmVyRnJhbWUSMAoEbWV0YRgBIAEoCzIcLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLkV2ZW50TWV0YVIEbWV0YRIyCgRhdXRoGAogASgLMhwucGFub3B0ZXMu",
+            "cHJvdG8udjEuQXV0aEV2ZW50SABSBGF1dGgSNQoFbG9iYnkYCyABKAsyHS5w",
+            "YW5vcHRlcy5wcm90by52MS5Mb2JieUV2ZW50SABSBWxvYmJ5EjIKBGdhbWUY",
+            "DCABKAsyHC5wYW5vcHRlcy5wcm90by52MS5HYW1lRXZlbnRIAFIEZ2FtZRI2",
+            "Cgdwcm9ibGVtGA0gASgLMhoucGFub3B0ZXMucHJvdG8udjEuUHJvYmxlbUgA",
+            "Ugdwcm9ibGVtQggKBnRhcmdldEJQWjdnaXRodWIuY29tL2VsZWJpcmRzL3Bh",
+            "bm9wdGVzL2ludGVybmFsL2dlbi9wcm90bztwcm90b3YxqgIUUGFub3B0ZXMu",
+            "UHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.ChatReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.ConfigReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -193,7 +195,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ClientFrame), global::Panoptes.Protocol.V1.ClientFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game" }, new[]{ "Target" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthEvent), global::Panoptes.Protocol.V1.AuthEvent.Parser, new[]{ "LoginSuccess", "AuthError", "ClientRuntimeConfig" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.LobbyEvent), global::Panoptes.Protocol.V1.LobbyEvent.Parser, new[]{ "RoomCreated", "RoomState", "GameStarting", "PlayerKicked", "LobbyError" }, new[]{ "Body" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult", "IssueUnitOrderResult", "ConfigBatchJson", "StaticCatalogSectionChunk", "StaticCatalogSyncComplete", "BuildStructurePreviewResponse", "SetBuildingRecipePreviewResponse", "GameChatPosted", "GameChatSync", "CommandAck", "GameSync" }, new[]{ "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult", "IssueUnitOrderResult", "ConfigBatchJson", "StaticCatalogSectionChunk", "StaticCatalogSyncComplete", "BuildStructurePreviewResponse", "SetBuildingRecipePreviewResponse", "GameChatPosted", "GameChatSync", "CommandAck", "GameSync", "MandateResult" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ServerFrame), global::Panoptes.Protocol.V1.ServerFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game", "Problem" }, new[]{ "Target" }, null, null, null)
           }));
     }
@@ -4850,6 +4852,9 @@ namespace Panoptes.Protocol.V1 {
         case BodyOneofCase.GameSync:
           GameSync = other.GameSync.Clone();
           break;
+        case BodyOneofCase.MandateResult:
+          MandateResult = other.MandateResult.Clone();
+          break;
       }
 
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -5185,6 +5190,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "mandate_result" field.</summary>
+    public const int MandateResultFieldNumber = 29;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgMandateResult MandateResult {
+      get { return bodyCase_ == BodyOneofCase.MandateResult ? (global::Panoptes.Protocol.V1.MsgMandateResult) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.MandateResult;
+      }
+    }
+
     private object body_;
     /// <summary>Enum of possible cases for the "body" oneof.</summary>
     public enum BodyOneofCase {
@@ -5216,6 +5233,7 @@ namespace Panoptes.Protocol.V1 {
       GameChatSync = 26,
       CommandAck = 27,
       GameSync = 28,
+      MandateResult = 29,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5273,6 +5291,7 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(GameChatSync, other.GameChatSync)) return false;
       if (!object.Equals(CommandAck, other.CommandAck)) return false;
       if (!object.Equals(GameSync, other.GameSync)) return false;
+      if (!object.Equals(MandateResult, other.MandateResult)) return false;
       if (BodyCase != other.BodyCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -5308,6 +5327,7 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.GameChatSync) hash ^= GameChatSync.GetHashCode();
       if (bodyCase_ == BodyOneofCase.CommandAck) hash ^= CommandAck.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GameSync) hash ^= GameSync.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.MandateResult) hash ^= MandateResult.GetHashCode();
       hash ^= (int) bodyCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -5435,6 +5455,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(226, 1);
         output.WriteMessage(GameSync);
       }
+      if (bodyCase_ == BodyOneofCase.MandateResult) {
+        output.WriteRawTag(234, 1);
+        output.WriteMessage(MandateResult);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -5553,6 +5577,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(226, 1);
         output.WriteMessage(GameSync);
       }
+      if (bodyCase_ == BodyOneofCase.MandateResult) {
+        output.WriteRawTag(234, 1);
+        output.WriteMessage(MandateResult);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -5643,6 +5671,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (bodyCase_ == BodyOneofCase.GameSync) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(GameSync);
+      }
+      if (bodyCase_ == BodyOneofCase.MandateResult) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(MandateResult);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -5818,6 +5849,12 @@ namespace Panoptes.Protocol.V1 {
             GameSync = new global::Panoptes.Protocol.V1.MsgGameSync();
           }
           GameSync.MergeFrom(other.GameSync);
+          break;
+        case BodyOneofCase.MandateResult:
+          if (MandateResult == null) {
+            MandateResult = new global::Panoptes.Protocol.V1.MsgMandateResult();
+          }
+          MandateResult.MergeFrom(other.MandateResult);
           break;
       }
 
@@ -6083,6 +6120,15 @@ namespace Panoptes.Protocol.V1 {
             GameSync = subBuilder;
             break;
           }
+          case 234: {
+            global::Panoptes.Protocol.V1.MsgMandateResult subBuilder = new global::Panoptes.Protocol.V1.MsgMandateResult();
+            if (bodyCase_ == BodyOneofCase.MandateResult) {
+              subBuilder.MergeFrom(MandateResult);
+            }
+            input.ReadMessage(subBuilder);
+            MandateResult = subBuilder;
+            break;
+          }
         }
       }
     #endif
@@ -6343,6 +6389,15 @@ namespace Panoptes.Protocol.V1 {
             }
             input.ReadMessage(subBuilder);
             GameSync = subBuilder;
+            break;
+          }
+          case 234: {
+            global::Panoptes.Protocol.V1.MsgMandateResult subBuilder = new global::Panoptes.Protocol.V1.MsgMandateResult();
+            if (bodyCase_ == BodyOneofCase.MandateResult) {
+              subBuilder.MergeFrom(MandateResult);
+            }
+            input.ReadMessage(subBuilder);
+            MandateResult = subBuilder;
             break;
           }
         }

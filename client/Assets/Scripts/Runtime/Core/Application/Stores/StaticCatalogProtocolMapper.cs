@@ -22,9 +22,9 @@ namespace Panoptes.Core.Application.Stores
                 recipes: MapRecipes(snapshot.Recipes),
                 technologies: MapTechnologies(snapshot.Technologies),
                 policies: MapPolicies(snapshot.Policies),
-                units: MapUnits(snapshot.Units),
-                emoteSeries: MapEmoteSeries(snapshot.EmoteSeries),
-                emotes: MapEmotes(snapshot.Emotes));
+                institutionCategories: MapInstitutionCategories(snapshot.InstitutionCategories),
+                institutions: MapInstitutions(snapshot.Institutions),
+                units: MapUnits(snapshot.Units));
         }
 
         private static Dictionary<string, CatalogHudEntryDto> MapResources(IEnumerable<ResourceDescriptor> source)
@@ -114,6 +114,35 @@ namespace Panoptes.Core.Application.Stores
             });
         }
 
+        private static Dictionary<string, CatalogInstitutionCategoryDto> MapInstitutionCategories(IEnumerable<InstitutionCategoryCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogInstitutionCategoryDto
+            {
+                Id = entry.Id,
+                Name = entry.Name,
+                Description = entry.Description,
+                SortOrder = entry.SortOrder,
+                Tags = ToList(entry.Tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogInstitutionDto> MapInstitutions(IEnumerable<InstitutionCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogInstitutionDto
+            {
+                Id = entry.Id,
+                Name = entry.Name,
+                Description = entry.Description,
+                IconKey = entry.IconKey,
+                Category = entry.Category,
+                ActivationTiming = entry.ActivationTiming,
+                Tags = ToList(entry.Tags),
+                Prerequisites = new List<CatalogTechnologyPrerequisiteDto>(),
+                ExplicitEffects = new List<CatalogTechnologyEffectDto>(),
+                ModifierEffects = new List<CatalogPolicyModifierEffectDto>()
+            });
+        }
+
         private static Dictionary<string, CatalogUnitDto> MapUnits(IEnumerable<UnitCatalogEntry> source)
         {
             return MapCatalog(source, entry => entry?.Id, entry => new CatalogUnitDto
@@ -125,32 +154,9 @@ namespace Panoptes.Core.Application.Stores
                 PrefabKey = entry.PrefabKey,
                 Flags = new CatalogUnitFlagsDto
                 {
-                    CanAttackStructures = entry.CanAttackStructures
+                    CanAttackStructures = entry.CanAttackStructures,
+                    CanDestroyRoad = false
                 },
-                Tags = ToList(entry.Tags)
-            });
-        }
-
-        private static Dictionary<string, CatalogEmoteSeriesDto> MapEmoteSeries(IEnumerable<EmoteSeriesCatalogEntry> source)
-        {
-            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteSeriesDto
-            {
-                Id = entry.Id,
-                DisplayName = entry.DisplayName,
-                IconKey = entry.IconKey,
-                SortOrder = entry.SortOrder
-            });
-        }
-
-        private static Dictionary<string, CatalogEmoteDto> MapEmotes(IEnumerable<EmoteCatalogEntry> source)
-        {
-            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteDto
-            {
-                Id = entry.Id,
-                SeriesId = entry.SeriesId,
-                DisplayName = entry.DisplayName,
-                AssetKey = entry.AssetKey,
-                SortOrder = entry.SortOrder,
                 Tags = ToList(entry.Tags)
             });
         }

@@ -106,8 +106,9 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 		}
 	}
 
-	targetNodeID := p.closestEnemyTargetNode(unitPos, visibleEnemies, memoryEnemies, enemyStructures)
+	targetNodeID := p.choosePressureTargetNode(unitID, unitPos, visibleEnemies, memoryEnemies, enemyStructures)
 	if targetNodeID != "" {
+		p.reserveMovementTarget(targetNodeID)
 		return combatCandidate{
 			key:   unitID + ":move:" + targetNodeID,
 			score: 50,
@@ -119,22 +120,11 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 		}
 	}
 
-	if targetNodeID := p.closestExplorationTargetNode(unitID, unitPos); targetNodeID != "" {
+	if targetNodeID := p.chooseExplorationTargetNode(unitID, unitPos); targetNodeID != "" {
+		p.reserveMovementTarget(targetNodeID)
 		return combatCandidate{
 			key:   unitID + ":explore:" + targetNodeID,
 			score: 20,
-			intent: planning.IssueUnitOrderIntent{
-				UnitID:       unitID,
-				Action:       string(gameorders.ActionMove),
-				TargetNodeID: targetNodeID,
-			},
-		}
-	}
-
-	if targetNodeID := p.closestPressureTargetNode(unitPos); targetNodeID != "" {
-		return combatCandidate{
-			key:   unitID + ":pressure:" + targetNodeID,
-			score: 10,
 			intent: planning.IssueUnitOrderIntent{
 				UnitID:       unitID,
 				Action:       string(gameorders.ActionMove),

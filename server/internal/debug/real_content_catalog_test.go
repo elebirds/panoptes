@@ -180,12 +180,12 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if len(mountedLogistics.ExplicitEffects) != 2 || mountedLogistics.ExplicitEffects[0].TargetID != "stable" || mountedLogistics.ExplicitEffects[1].TargetID != "stable_cavalry" {
 		t.Fatalf("mounted_logistics explicit effects = %#v, want stable unlocks", mountedLogistics.ExplicitEffects)
 	}
-	foundryDirectives, ok := catalog.GetPolicy("foundry_directives")
+	stateWorkshops, ok := catalog.GetInstitution("state_workshops")
 	if !ok {
-		t.Fatalf("foundry_directives missing")
+		t.Fatalf("state_workshops missing")
 	}
-	if foundryDirectives.Layer != "institutional" || len(foundryDirectives.LogisticsPriority) == 0 {
-		t.Fatalf("foundry_directives = %#v, want institutional logistics policy", foundryDirectives)
+	if stateWorkshops.Category != "economy" || len(stateWorkshops.LogisticsPriority) == 0 {
+		t.Fatalf("state_workshops = %#v, want economy logistics institution", stateWorkshops)
 	}
 
 	for _, tc := range []struct {
@@ -242,16 +242,25 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 		}
 	}
 	tradeLevies, _ := catalog.GetTechnology("trade_levies")
-	if len(tradeLevies.ExplicitEffects) != 5 || tradeLevies.ExplicitEffects[0].TargetID != "market" || tradeLevies.ExplicitEffects[4].TargetID != "mercantile_charter" {
-		t.Fatalf("trade_levies explicit effects = %#v, want market recipes and mercantile charter", tradeLevies.ExplicitEffects)
+	if len(tradeLevies.ExplicitEffects) != 8 || tradeLevies.ExplicitEffects[0].TargetID != "market" {
+		t.Fatalf("trade_levies explicit effects = %#v, want market recipes, trade institutions, and a slot", tradeLevies.ExplicitEffects)
 	}
-	for _, policyID := range []string{"mercantile_charter", "research_mandate"} {
-		policy, ok := catalog.GetPolicy(policyID)
-		if !ok {
-			t.Fatalf("%s missing", policyID)
+	institutionCategoryCounts := map[string]int{}
+	for _, institution := range catalog.Institutions() {
+		institutionCategoryCounts[institution.Category]++
+	}
+	for _, categoryID := range []string{"power", "citizenship", "economy", "trade", "military", "administration"} {
+		if institutionCategoryCounts[categoryID] != 4 {
+			t.Fatalf("institution category %s count = %d, want 4", categoryID, institutionCategoryCounts[categoryID])
 		}
-		if policy.Layer != "institutional" || len(policy.ModifierEffects) == 0 {
-			t.Fatalf("%s = %#v, want institutional modifier policy", policyID, policy)
+	}
+	for _, institutionID := range []string{"chartered_trade", "secretariat_cabinet", "munitions_committee"} {
+		institution, ok := catalog.GetInstitution(institutionID)
+		if !ok {
+			t.Fatalf("%s missing", institutionID)
+		}
+		if institution.Category == "" || len(institution.ModifierEffects) == 0 {
+			t.Fatalf("%s = %#v, want modifier institution", institutionID, institution)
 		}
 	}
 }

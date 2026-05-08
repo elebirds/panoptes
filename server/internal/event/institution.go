@@ -9,13 +9,13 @@ import (
 
 type InstitutionLoadoutChangedEvent struct {
 	PlayerID       string
-	PolicyIDs      []string
+	InstitutionIDs []string
 	ActivationTurn int
 }
 
 type InstitutionLoadoutActivatedEvent struct {
-	PlayerID  string
-	PolicyIDs []string
+	PlayerID       string
+	InstitutionIDs []string
 }
 
 func (e InstitutionLoadoutChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
@@ -26,7 +26,7 @@ func (e InstitutionLoadoutChangedEvent) Apply(_ donburi.World, state *domain.Gam
 	if !ok || playerState == nil {
 		return
 	}
-	playerState.Institutions.PendingPolicyIDs = append([]string(nil), e.PolicyIDs...)
+	playerState.Institutions.PendingInstitutionIDs = append([]string(nil), e.InstitutionIDs...)
 	playerState.Institutions.PendingActivationTurn = e.ActivationTurn
 }
 
@@ -45,8 +45,8 @@ func (e InstitutionLoadoutActivatedEvent) Apply(_ donburi.World, state *domain.G
 		return
 	}
 	playerState.Institutions.EnsureMaps()
-	playerState.Institutions.ActivePolicyIDs = append([]string(nil), e.PolicyIDs...)
-	playerState.Institutions.PendingPolicyIDs = nil
+	playerState.Institutions.ActiveInstitutionIDs = append([]string(nil), e.InstitutionIDs...)
+	playerState.Institutions.PendingInstitutionIDs = nil
 	playerState.Institutions.PendingActivationTurn = 0
 	state.RefreshBuildingMaxHPForPlayer(e.PlayerID)
 }
@@ -54,5 +54,5 @@ func (e InstitutionLoadoutActivatedEvent) Apply(_ donburi.World, state *domain.G
 func (e InstitutionLoadoutActivatedEvent) Kind() string { return "institution_loadout_activated" }
 
 func (e InstitutionLoadoutActivatedEvent) String() string {
-	return fmt.Sprintf("InstitutionLoadoutActivatedEvent player=%s policies=%v", e.PlayerID, e.PolicyIDs)
+	return fmt.Sprintf("InstitutionLoadoutActivatedEvent player=%s institutions=%v", e.PlayerID, e.InstitutionIDs)
 }

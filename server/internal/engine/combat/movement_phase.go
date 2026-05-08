@@ -31,6 +31,9 @@ func (MovementApplyPhase) Apply(ctx *ResolutionContext) {
 				To:        actual,
 				Timestamp: len(ctx.Events),
 			})
+			if roadEvent, ok := engineerRoadTrailBuiltEvent(ctx, unitID, actual); ok {
+				ctx.Events = append(ctx.Events, roadEvent)
+			}
 		}
 	}
 }

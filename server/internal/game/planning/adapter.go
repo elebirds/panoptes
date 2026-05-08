@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 )
@@ -102,7 +103,7 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 	case *pb.PlanningCommand_SetPolicy:
 		envelope.Intent = SetPolicyIntent{NationalPolicyID: strings.TrimSpace(body.SetPolicy.GetNationalPolicyId())}
 	case *pb.PlanningCommand_SetInstitutionLoadout:
-		envelope.Intent = SetInstitutionLoadoutIntent{PolicyIDs: append([]string(nil), body.SetInstitutionLoadout.GetPolicyIds()...)}
+		envelope.Intent = SetInstitutionLoadoutIntent{InstitutionIDs: append([]string(nil), body.SetInstitutionLoadout.GetInstitutionIds()...)}
 	case *pb.PlanningCommand_BuildStructure:
 		envelope.Intent = BuildStructureIntent{
 			NodeID:         strings.TrimSpace(body.BuildStructure.GetNodeId()),
@@ -158,9 +159,9 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	if msg == nil {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "minister directive is nil")
 	}
-	role := strings.TrimSpace(msg.GetMinisterRole())
+	role := ministerroles.Canonical(msg.GetMinisterRole())
 	switch role {
-	case "domestic", "military":
+	case ministerroles.Domestic, ministerroles.Works, ministerroles.Defense, ministerroles.Command, ministerroles.Frontier:
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister role")
 	}
@@ -176,7 +177,7 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
 	payload.SkillCardID = strings.TrimSpace(payload.SkillCardID)
 	switch payload.DirectiveType {
-	case "accept", "reject", "accept_role", "reject_role", "activate_skill":
+	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command", "activate_skill":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}

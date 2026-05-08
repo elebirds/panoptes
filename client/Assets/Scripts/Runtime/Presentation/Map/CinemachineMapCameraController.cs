@@ -62,6 +62,7 @@ namespace Panoptes.Presentation.Map
         private static int _presentationInputLockCount;
 
         public static bool IsPresentationInputLocked => _presentationInputLockCount > 0;
+        public static float LastManualInputRealtime { get; private set; } = -1f;
 
         private void Awake()
         {
@@ -116,9 +117,13 @@ namespace Panoptes.Presentation.Map
             else
             {
                 var pointerOverUI = IsPointerOverUI();
-                HandleZoom(pointerOverUI);
+                var zoomed = HandleZoom(pointerOverUI);
                 panDelta += GetKeyboardPanDelta(dt);
                 panDelta += GetDragPanDelta(pointerOverUI);
+                if (zoomed || panDelta.sqrMagnitude > 0.000001f)
+                {
+                    MarkManualCameraInput();
+                }
                 _targetAnchorXZ += panDelta;
             }
 
@@ -375,22 +380,28 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void HandleZoom(bool pointerOverUI)
+        private bool HandleZoom(bool pointerOverUI)
         {
             if (pointerOverUI && blockZoomWhenPointerOverUI)
             {
-                return;
+                return false;
             }
 
             var rawScroll = GetScrollDeltaY();
             if (Mathf.Abs(rawScroll) <= 0.0001f)
             {
-                return;
+                return false;
             }
 
             var normalizedScroll = Mathf.Clamp(rawScroll, -1f, 1f);
             var scrollDirection = invertScrollDirection ? 1f : -1f;
             _targetDistance = ClampDistance(_targetDistance + normalizedScroll * scrollDistanceStep * scrollDirection);
+            return true;
+        }
+
+        private static void MarkManualCameraInput()
+        {
+            LastManualInputRealtime = Time.unscaledTime;
         }
 
         private Vector2 GetKeyboardPanDelta(float dt)

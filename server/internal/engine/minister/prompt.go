@@ -6,12 +6,24 @@
 package minister
 
 import (
-	"fmt"
+	"bytes"
+	"embed"
 	"strings"
+	"text/template"
 
-	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/llm"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
+
+//go:embed prompts/*.md
+var promptFS embed.FS
+
+var promptTemplates = template.Must(template.New("minister-prompts").
+	Funcs(template.FuncMap{
+		"trim":     strings.TrimSpace,
+		"fallback": templateFallback,
+	}).
+	ParseFS(promptFS, "prompts/*.md"))
 
 type MinisterProfile struct {
 	ID              string
@@ -22,6 +34,12 @@ type MinisterProfile struct {
 	PersonalityDesc string
 	Loyalty         int
 	Ambition        int
+
+	// 性格四维度
+	Cautiousness    int // 谨慎度：0-100，鲁莽 ↔ 谨慎
+	Decisiveness    int // 果断度：0-100，优柔寡断 ↔ 果断
+	LoyaltyTendency int // 忠诚倾向：0-100，狡猾 ↔ 忠诚
+	AmbitionStyle   int // 野心表现：0-100，隐忍 ↔ 张扬
 }
 
 type ReportPromptInput struct {
@@ -29,18 +47,9 @@ type ReportPromptInput struct {
 	Phase              string
 	PlayerID           string
 	ObservationSummary string
+	ActionCandidates   string
 	CurrentPolicy      string
 	CurrentResearch    string
-	Memory             *MinisterMemory
-}
-
-type DraftPromptInput struct {
-	Turn               int
-	PlayerID           string
-	ObservationSummary string
-	CurrentPolicy      string
-	CurrentResearch    string
-	Draft              domain.MinisterDraft
 	Memory             *MinisterMemory
 }
 
@@ -51,62 +60,25 @@ func BuildReportPrompt(profile MinisterProfile, input ReportPromptInput) llm.Com
 	}
 }
 
-func BuildDraftPrompt(profile MinisterProfile, input DraftPromptInput) llm.CompletionRequest {
-	return llm.CompletionRequest{
-		SystemPrompt: buildDraftSystemPrompt(profile),
-		UserPrompt:   buildDraftUserPrompt(input),
-	}
-}
-
 func buildBaseSystemPrompt(profile MinisterProfile) string {
-	return fmt.Sprintf(
-		"你是 Panoptes 中的 %s 大臣。姓名：%s。性格：%s。描述：%s。能力：%d。忠诚：%d。野心：%d。只能基于玩家视角信息发言，不得编造隐藏信息，不得替玩家做不可逆决定，必须严格输出 JSON。所有面向玩家的自然语言内容必须使用简体中文，不得输出英文句子；仅允许 JSON 键名、action_id 以及 trend/confidence 这类枚举值保留英文。输出必须是裸 JSON 对象，不得使用 Markdown、代码块围栏、前缀说明或后缀解释。",
-		strings.TrimSpace(profile.Role),
-		strings.TrimSpace(profile.Name),
-		strings.TrimSpace(profile.Personality),
-		strings.TrimSpace(profile.PersonalityDesc),
-		profile.Ability,
-		profile.Loyalty,
-		profile.Ambition,
-	)
+	return renderPromptTemplate("base_system.md", newMinisterProfileTemplateData(profile))
 }
 
 func buildReportSystemPrompt(profile MinisterProfile) string {
-	return buildBaseSystemPrompt(profile) + "当前任务是 planning 阶段的局势汇报，只能输出 report、metrics、actions、action_id 四个字段。report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁止夹带英文描述。当前 MVP 中 actions 必须为空数组。"
-}
-
-func buildDraftSystemPrompt(profile MinisterProfile) string {
-	return buildBaseSystemPrompt(profile) + "当前任务是润色一张已由规则层选定目标的大臣建议卡。不得改写目标，不得新增字段，只能输出 title、summary、rationale、risk_note 四个字符串字段。以上四个字段都是直接展示给玩家的内容，必须使用简体中文，不得写成英文句子。"
+	return strings.TrimSpace(buildBaseSystemPrompt(profile) + "\n\n" + renderPromptTemplate("report_system.md", nil))
 }
 
 func buildReportUserPrompt(input ReportPromptInput) string {
-	return fmt.Sprintf(
-		"turn=%d\nphase=%s\nplayer=%s\ncurrent_policy=%s\ncurrent_research=%s\nobservation_summary=%s\nmemory=\n%s\n\n注意：report、metrics[].label、metrics[].value 是展示给玩家的文字，必须全部使用简体中文，不得输出英文。输出必须是裸 JSON 对象：不要 Markdown，不要 ``` 或 ```json 代码块，不要任何前缀说明或后缀解释。\n\n输出必须是 JSON：\n{\n  \"report\": \"\",\n  \"metrics\": [{\"label\":\"\",\"value\":\"\",\"trend\":\"up|down|stable\",\"confidence\":\"high|medium|low\",\"is_delayed\":false}],\n  \"actions\": [],\n  \"action_id\": \"\"\n}\n",
-		input.Turn,
-		strings.TrimSpace(input.Phase),
-		strings.TrimSpace(input.PlayerID),
-		emptyFallback(input.CurrentPolicy, "(none)"),
-		emptyFallback(input.CurrentResearch, "(none)"),
-		emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
-		memoryPrompt(input.Memory),
-	)
-}
-
-func buildDraftUserPrompt(input DraftPromptInput) string {
-	return fmt.Sprintf(
-		"turn=%d\nplayer=%s\ndraft_id=%s\nminister_role=%s\nkind=%s\ntarget_id=%s\ntarget_label=%s\ncurrent_policy=%s\ncurrent_research=%s\nobservation_summary=%s\nmemory=\n%s\n\n注意：title、summary、rationale、risk_note 都是直接展示给玩家的文字，必须全部使用简体中文，不得输出英文。输出必须是裸 JSON 对象：不要 Markdown，不要 ``` 或 ```json 代码块，不要任何前缀说明或后缀解释。\n\n输出必须是 JSON：\n{\n  \"title\": \"\",\n  \"summary\": \"\",\n  \"rationale\": \"\",\n  \"risk_note\": \"\"\n}\n",
-		input.Turn,
-		strings.TrimSpace(input.PlayerID),
-		strings.TrimSpace(input.Draft.DraftID),
-		strings.TrimSpace(input.Draft.MinisterRole),
-		strings.TrimSpace(string(input.Draft.Kind)),
-		strings.TrimSpace(input.Draft.TargetID),
-		strings.TrimSpace(input.Draft.TargetLabel),
-		emptyFallback(input.CurrentPolicy, "(none)"),
-		emptyFallback(input.CurrentResearch, "(none)"),
-		emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
-		memoryPrompt(input.Memory),
-	)
+	return renderPromptTemplate("report_user.md", reportPromptTemplateData{
+		Turn:               input.Turn,
+		Phase:              strings.TrimSpace(input.Phase),
+		PlayerID:           strings.TrimSpace(input.PlayerID),
+		CurrentPolicy:      emptyFallback(input.CurrentPolicy, "(none)"),
+		CurrentResearch:    emptyFallback(input.CurrentResearch, "(none)"),
+		ObservationSummary: emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
+		ActionCandidates:   emptyFallback(input.ActionCandidates, "(none)"),
+		Memory:             memoryPrompt(input.Memory),
+	})
 }
 
 func memoryPrompt(memory *MinisterMemory) string {
@@ -122,4 +94,94 @@ func emptyFallback(v string, fallback string) string {
 		return fallback
 	}
 	return v
+}
+
+type ministerProfileTemplateData struct {
+	Role              string
+	Name              string
+	Personality       string
+	PersonalityDesc   string
+	Ability           int
+	Loyalty           int
+	Ambition          int
+	Cautiousness      int
+	Decisiveness      int
+	LoyaltyTendency   int
+	AmbitionStyle     int
+	StylePressureNote string
+	RoleDuty          string
+}
+
+type reportPromptTemplateData struct {
+	Turn               int
+	Phase              string
+	PlayerID           string
+	CurrentPolicy      string
+	CurrentResearch    string
+	ObservationSummary string
+	ActionCandidates   string
+	Memory             string
+}
+
+func newMinisterProfileTemplateData(profile MinisterProfile) ministerProfileTemplateData {
+	role := ministerroles.Canonical(profile.Role)
+	return ministerProfileTemplateData{
+		Role:              role,
+		Name:              strings.TrimSpace(profile.Name),
+		Personality:       strings.TrimSpace(profile.Personality),
+		PersonalityDesc:   strings.TrimSpace(profile.PersonalityDesc),
+		Ability:           profile.Ability,
+		Loyalty:           profile.Loyalty,
+		Ambition:          profile.Ambition,
+		Cautiousness:      profile.Cautiousness,
+		Decisiveness:      profile.Decisiveness,
+		LoyaltyTendency:   profile.LoyaltyTendency,
+		AmbitionStyle:     profile.AmbitionStyle,
+		StylePressureNote: stylePressureNote(profile),
+		RoleDuty:          roleDuty(profile.Role),
+	}
+}
+
+func roleDuty(role string) string {
+	switch ministerroles.Canonical(role) {
+	case ministerroles.Domestic:
+		return "你负责内政、研究、国策和制度，优先看民生、治理与长期秩序。"
+	case ministerroles.Works:
+		return "你负责工务、资源建筑、生产配方与修复，优先看产能、供给和设施利用率。"
+	case ministerroles.Defense:
+		return "你负责军备、征募、军工和防线，优先看兵力补充、驻防与战争准备。"
+	case ministerroles.Command:
+		return "你负责军队指挥、侦察、机动与接敌命令，优先看战术位置和回合内行动连续性。"
+	case ministerroles.Frontier:
+		return "你负责拓边、前哨、扩张和定居，优先看领土推进、边线压力与新据点落地。"
+	default:
+		return "你需要按照该职位的职责边界行动，不要越权覆盖其他部门。"
+	}
+}
+
+func stylePressureNote(profile MinisterProfile) string {
+	loyalty := profile.Loyalty + profile.LoyaltyTendency/10
+	ambition := profile.Ambition + profile.AmbitionStyle/10
+	switch {
+	case loyalty <= 10 && ambition >= 10:
+		return "低忠诚和高野心会让你更倾向淡化不利信息、突出自己的功劳，并把不确定性包装成谨慎判断。"
+	case profile.Cautiousness >= 70:
+		return "高谨慎度会让你更强调风险边界、情报盲区和延迟信息。"
+	case profile.Decisiveness >= 70:
+		return "高果断度会让你给出更明确的主张，但不能越过规则层目标。"
+	default:
+		return "保持有立场但克制的奏报语气，既不机械复述数据，也不虚构隐藏事实。"
+	}
+}
+
+func renderPromptTemplate(name string, data any) string {
+	var b bytes.Buffer
+	if err := promptTemplates.ExecuteTemplate(&b, name, data); err != nil {
+		panic(err)
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func templateFallback(v string, fallback string) string {
+	return emptyFallback(v, fallback)
 }

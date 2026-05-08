@@ -2,7 +2,7 @@ package turn
 
 import (
 	"context"
-	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -218,14 +218,11 @@ func TestCoordinatorBeginPlanningExposesHumanMinisterDefaultDraftsBeforeNotify(t
 		start.GetSnapshot().GetPlannedNationalPolicyId() != "" {
 		t.Fatalf("planning snapshot = %#v, want no applied minister defaults", start.GetSnapshot())
 	}
-	if status := ministerDraftStatusFromStart(t, start, "research"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("research draft status = %q, want pending", status)
+	if got := len(start.GetMinisterDrafts()); got != 0 {
+		t.Fatalf("planning start minister drafts = %d, want 0 before LLM selection", got)
 	}
-	if status := ministerDraftStatusFromStart(t, start, "policy"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("policy draft status = %q, want pending", status)
-	}
-	if status := ministerDraftStatusFromStart(t, start, "build"); status != string(domain.MinisterDraftStatusPending) {
-		t.Fatalf("build draft status = %q, want pending", status)
+	if summary := runtime.BuildMinisterActionCandidateSummary("player-1", "domestic"); !strings.Contains(summary, "candidate_id=") {
+		t.Fatalf("candidate summary = %q, want hidden minister candidates", summary)
 	}
 }
 
@@ -260,24 +257,6 @@ func newMinisterDefaultCoordinatorState(t *testing.T) *domain.GameState {
 	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	return state
-}
-
-func ministerDraftStatusFromStart(t *testing.T, start *pb.MsgPlanningStart, kind string) string {
-	t.Helper()
-	for _, draft := range start.GetMinisterDrafts() {
-		var payload struct {
-			Kind   string `json:"kind"`
-			Status string `json:"status"`
-		}
-		if err := json.Unmarshal([]byte(draft.GetJsonPayload()), &payload); err != nil {
-			t.Fatalf("unmarshal minister draft: %v", err)
-		}
-		if payload.Kind == kind {
-			return payload.Status
-		}
-	}
-	t.Fatalf("minister draft kind %q not found", kind)
-	return ""
 }
 
 type coordinatorCaptureTransport struct {
@@ -379,6 +358,12 @@ func (h *stubCoordinatorHost) NextChatSequence() int64                  { return
 func (h *stubCoordinatorHost) IsDevMode() bool {
 	return h != nil && h.runtime != nil && h.runtime.IsDevMode()
 }
+func (h *stubCoordinatorHost) IsMinisterStrongMode() bool {
+	return h != nil && h.runtime != nil && h.runtime.IsMinisterStrongMode()
+}
+func (h *stubCoordinatorHost) IsPlayerInMandateMode(playerID string) bool {
+	return h != nil && h.runtime != nil && h.runtime.IsPlayerInMandateMode(playerID)
+}
 func (h *stubCoordinatorHost) QueueBuildOrder(order domain.BuildOrder) {
 	if h.State() != nil {
 		h.State().TurnRuntime.Planning.UpsertBuildOrder(order)
@@ -389,9 +374,9 @@ func (h *stubCoordinatorHost) QueueRecipeSelection(order domain.RecipeSelectionO
 		h.State().TurnRuntime.Planning.UpsertRecipeSelection(order)
 	}
 }
-func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, policyIDs []string) {
+func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, institutionIDs []string) {
 	if h.State() != nil {
-		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, policyIDs)
+		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, institutionIDs)
 	}
 }
 func (h *stubCoordinatorHost) SetMinisterDirective(string, string)                {}
@@ -401,6 +386,11 @@ func (h *stubCoordinatorHost) SetUnitOrder(order gameorders.UnitOrder) {
 }
 func (h *stubCoordinatorHost) CancelUnitOrder(playerID string, unitID string) {
 	gameorders.CancelPlanningUnitOrder(h.State(), playerID, unitID)
+}
+func (h *stubCoordinatorHost) SetPlayerMandateMode(playerID string, enabled bool) {
+	if h != nil && h.runtime != nil {
+		h.runtime.SetPlayerMandateMode(playerID, enabled)
+	}
 }
 func (h *stubCoordinatorHost) SendPlanningSnapshot(context.Context, string) error { return nil }
 func (h *stubCoordinatorHost) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {

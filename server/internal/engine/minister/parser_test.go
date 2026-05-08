@@ -1,37 +1,6 @@
 package minister
 
-import (
-	"testing"
-
-	"github.com/elebirds/panoptes/internal/domain"
-)
-
-type parserTestRoom struct {
-	state *domain.GameState
-}
-
-func (r parserTestRoom) State() *domain.GameState {
-	return r.state
-}
-
-func TestExecuteActionsIgnoresRepairRoadInCurrentMVP(t *testing.T) {
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
-
-	events := ExecuteActions([]MinisterActionItem{
-		{
-			Type: "repair_road",
-			Params: map[string]any{
-				"from_node": "A1",
-				"to_node":   "A2",
-				"cost":      1,
-			},
-		},
-	}, parserTestRoom{state: state}, "player-1")
-
-	if len(events) != 0 {
-		t.Fatalf("repair_road should be ignored in current MVP, got %d events", len(events))
-	}
-}
+import "testing"
 
 func TestParseMinisterResponseSanitizesObviouslyEnglishPlayerText(t *testing.T) {
 	out, err := ParseMinisterResponse(`{
@@ -104,47 +73,88 @@ func TestParseMinisterResponseSkipsBraceNoiseBeforeJSONObject(t *testing.T) {
 	}
 }
 
-func TestParseDraftResponseSanitizesObviouslyEnglishPlayerText(t *testing.T) {
-	out, err := ParseDraftResponse(`{
-		"title":"Hold the Line",
-		"summary":"Keep the border secure this turn.",
-		"rationale":"Enemy scouts were seen nearby.",
-		"risk_note":"Supply lines may be exposed."
+func TestParseMinisterResponsePreservesActionObjects(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议尽快批准青铜冶炼。",
+		"metrics":[],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:research:bronze_working:4"},"title":"青铜研究","summary":"建议先研究青铜冶炼。","rationale":"此举能补强后续军备。","risk_note":"若边境告急，可暂缓。"}],
+		"action_id":"select_research"
 	}`)
 	if err != nil {
-		t.Fatalf("ParseDraftResponse error = %v", err)
+		t.Fatalf("ParseMinisterResponse error = %v", err)
 	}
 
-	if out.Title != chineseDraftTitleFallback {
-		t.Fatalf("Title = %q, want %q", out.Title, chineseDraftTitleFallback)
+	if len(out.Actions) != 1 {
+		t.Fatalf("actions len = %d, want 1", len(out.Actions))
 	}
-	if out.Summary != chineseDraftSummaryFallback {
-		t.Fatalf("Summary = %q, want %q", out.Summary, chineseDraftSummaryFallback)
+	if out.Actions[0].Type != "select_candidate" {
+		t.Fatalf("Action type = %q, want select_candidate", out.Actions[0].Type)
 	}
-	if out.Rationale != chineseDraftReasonFallback {
-		t.Fatalf("Rationale = %q, want %q", out.Rationale, chineseDraftReasonFallback)
+	if got, _ := out.Actions[0].Params["draft_id"].(string); got != "domestic:research:bronze_working:4" {
+		t.Fatalf("Action draft_id = %q, want candidate id", got)
 	}
-	if out.RiskNote != chineseDraftRiskNoteFallback {
-		t.Fatalf("RiskNote = %q, want %q", out.RiskNote, chineseDraftRiskNoteFallback)
+	if out.Actions[0].Title != "青铜研究" || out.Actions[0].Summary != "建议先研究青铜冶炼。" ||
+		out.Actions[0].Rationale != "此举能补强后续军备。" || out.Actions[0].RiskNote != "若边境告急，可暂缓。" {
+		t.Fatalf("Action proposal copy = %#v, want preserved Chinese optional fields", out.Actions[0])
+	}
+	if out.ActionID != "select_research" {
+		t.Fatalf("ActionID = %q, want select_research", out.ActionID)
 	}
 }
 
-func TestParseDraftResponseExtractsFirstJSONObjectFromNoisyInput(t *testing.T) {
-	out, err := ParseDraftResponse("下面是整理后的建议，请直接采用。\n{\"title\":\"整备边防\",\"summary\":\"本轮优先巩固边境驻防。\",\"rationale\":\"侦察回报显示边境压力上升。\",\"risk_note\":\"若同时扩张，后勤会更紧张。\"}\n补充说明：其余内容可忽略。")
+func TestParseMinisterResponseDropsEnglishActionProposalText(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议维持当前节奏。",
+		"metrics":[],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:policy:expansion:4"},"title":"Expansion Plan","summary":"Take expansion now."}],
+		"action_id":"select_policy"
+	}`)
 	if err != nil {
-		t.Fatalf("ParseDraftResponse error = %v", err)
+		t.Fatalf("ParseMinisterResponse error = %v", err)
 	}
+	if len(out.Actions) != 1 {
+		t.Fatalf("actions len = %d, want 1", len(out.Actions))
+	}
+	if out.Actions[0].Title != "" || out.Actions[0].Summary != "" {
+		t.Fatalf("English action copy should be dropped, got %#v", out.Actions[0])
+	}
+}
 
-	if out.Title != "整备边防" {
-		t.Fatalf("Title = %q, want extracted JSON title", out.Title)
+func TestParseMinisterResponseFlattensProposalsIntoActions(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议分两步推进。",
+		"metrics":[],
+		"proposals":[
+			{
+				"title":"先修道路",
+				"summary":"先处理补给线。",
+				"rationale":"道路优先。",
+				"risk_note":"会占用一回合。",
+				"actions":[
+					{"type":"build","params":{"node_id":"A2","building_type":"road"}}
+				]
+			},
+			{
+				"title":"再整备军令",
+				"summary":"随后移动部队。",
+				"actions":[
+					{"type":"select_candidate","params":{"draft_id":"command:operation:secure_a2:4"}}
+				]
+			}
+		],
+		"actions":[],
+		"action_id":"multi_step"
+	}`)
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
 	}
-	if out.Summary != "本轮优先巩固边境驻防。" {
-		t.Fatalf("Summary = %q, want extracted JSON summary", out.Summary)
+	if len(out.Actions) != 2 {
+		t.Fatalf("actions len = %d, want 2", len(out.Actions))
 	}
-	if out.Rationale != "侦察回报显示边境压力上升。" {
-		t.Fatalf("Rationale = %q, want extracted JSON rationale", out.Rationale)
+	if out.Actions[0].Title != "先修道路" || out.Actions[0].Summary != "先处理补给线。" || out.Actions[0].Rationale != "道路优先。" || out.Actions[0].RiskNote != "会占用一回合。" {
+		t.Fatalf("first flattened action = %#v, want proposal copy", out.Actions[0])
 	}
-	if out.RiskNote != "若同时扩张，后勤会更紧张。" {
-		t.Fatalf("RiskNote = %q, want extracted JSON risk note", out.RiskNote)
+	if out.Actions[1].Title != "再整备军令" || out.Actions[1].Summary != "随后移动部队。" {
+		t.Fatalf("second flattened action = %#v, want proposal copy", out.Actions[1])
 	}
 }

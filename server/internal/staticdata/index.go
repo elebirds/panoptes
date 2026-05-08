@@ -30,20 +30,20 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 
 	catalog := &Catalog{
-		bundle:          bundle,
-		resources:       make(map[string]ResourceDescriptor, len(bundle.Resources)),
-		points:          make(map[string]PointDescriptor, len(bundle.Points)),
-		units:           make(map[string]UnitDefinition, len(bundle.Units)),
-		buildings:       make(map[string]BuildingDefinition, len(bundle.Buildings)),
-		technologies:    make(map[string]TechnologyDefinition, len(bundle.Technologies)),
-		policies:        make(map[string]PolicyDefinition, len(bundle.Policies)),
-		recipes:         make(map[string]RecipeDefinition, len(bundle.Recipes)),
-		terrains:        make(map[string]TerrainDefinition, len(bundle.Terrains)),
-		emoteSeries:     make(map[string]EmoteSeriesDefinition, len(bundle.EmoteSeries)),
-		emotes:          make(map[string]EmoteDefinition, len(bundle.Emotes)),
-		ministerSkills:  make(map[string]MinisterSkillCard, len(bundle.MinisterSkillCards)),
-		maps:            make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
-		sectionPayloads: sectionPayloads,
+		bundle:                bundle,
+		resources:             make(map[string]ResourceDescriptor, len(bundle.Resources)),
+		points:                make(map[string]PointDescriptor, len(bundle.Points)),
+		units:                 make(map[string]UnitDefinition, len(bundle.Units)),
+		buildings:             make(map[string]BuildingDefinition, len(bundle.Buildings)),
+		technologies:          make(map[string]TechnologyDefinition, len(bundle.Technologies)),
+		policies:              make(map[string]PolicyDefinition, len(bundle.Policies)),
+		institutionCategories: make(map[string]InstitutionCategoryDefinition, len(bundle.InstitutionCategories)),
+		institutions:          make(map[string]InstitutionDefinition, len(bundle.Institutions)),
+		recipes:               make(map[string]RecipeDefinition, len(bundle.Recipes)),
+		terrains:              make(map[string]TerrainDefinition, len(bundle.Terrains)),
+		ministerSkills:        make(map[string]MinisterSkillCard, len(bundle.MinisterSkillCards)),
+		maps:                  make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
+		sectionPayloads:       sectionPayloads,
 	}
 
 	for _, resource := range bundle.Resources {
@@ -64,17 +64,17 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	for _, policy := range bundle.Policies {
 		catalog.policies[policy.ID] = policy
 	}
+	for _, category := range bundle.InstitutionCategories {
+		catalog.institutionCategories[category.ID] = category
+	}
+	for _, institution := range bundle.Institutions {
+		catalog.institutions[institution.ID] = institution
+	}
 	for _, recipe := range bundle.Recipes {
 		catalog.recipes[recipe.ID] = recipe
 	}
 	for _, terrain := range bundle.Terrains {
 		catalog.terrains[terrain.ID] = terrain
-	}
-	for _, series := range bundle.EmoteSeries {
-		catalog.emoteSeries[series.ID] = series
-	}
-	for _, emote := range bundle.Emotes {
-		catalog.emotes[emote.ID] = emote
 	}
 	for _, skill := range bundle.MinisterSkillCards {
 		catalog.ministerSkills[skill.ID] = skill

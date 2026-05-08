@@ -452,6 +452,16 @@ MonoBehaviour:
   resourceAnchor: {fileID: 1697120485641667070}
   buildingAnchor: {fileID: 7505964873251956980}
   unitAnchor: {fileID: 7253903450159226267}
+  autoCreateRoadOverlay: 1
+  roadOverlayTextureResourcesPath: Textures/Map/road_overlay
+  roadOverlayTexture: {fileID: 0}
+  roadOverlayLocalY: 0.045
+  roadOverlayScale: {x: 1.08, y: 0.74}
+  roadConnectionWidth: 0.34
+  roadConnectionLengthScale: 0.58
+  roadConnectedColor: {r: 1, g: 1, b: 1, a: 0.94}
+  roadDisconnectedColor: {r: 0.58, g: 0.55, b: 0.5, a: 0.62}
+  roadDamagedColor: {r: 0.95, g: 0.68, b: 0.34, a: 0.75}
   plainMaterial: {fileID: 2100000, guid: 05b34cc807a500743b0bde3f6ef0008b, type: 2}
   mountainMaterial: {fileID: 2100000, guid: 16f15eb689c24f549ab6104b3129b7ed, type: 2}
   forestMaterial: {fileID: 2100000, guid: 4c17f0e5a517f6749a9f3d074d97991b, type: 2}

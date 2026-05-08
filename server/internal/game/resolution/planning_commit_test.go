@@ -18,7 +18,7 @@ func TestBuildPlanningCommitEventsBuildsPolicyResearchAndInstitutionEvents(t *te
 				Policy:   domain.Policy("reorganization"),
 				Research: domain.ResearchState{CurrentTargetTechnologyID: "mining"},
 				Institutions: domain.InstitutionState{
-					PendingPolicyIDs:      []string{"old_charter"},
+					PendingInstitutionIDs: []string{"old_charter"},
 					PendingActivationTurn: 7,
 				},
 			},
@@ -54,8 +54,8 @@ func TestBuildPlanningCommitEventsBuildsPolicyResearchAndInstitutionEvents(t *te
 	if institutionEvent.PlayerID != "player-1" || institutionEvent.ActivationTurn != 8 {
 		t.Fatalf("institution event = %#v, want player-1 activation turn 8", *institutionEvent)
 	}
-	if len(institutionEvent.PolicyIDs) != 1 || institutionEvent.PolicyIDs[0] != "academy_charter" {
-		t.Fatalf("institution policy ids = %#v, want [academy_charter]", institutionEvent.PolicyIDs)
+	if len(institutionEvent.InstitutionIDs) != 1 || institutionEvent.InstitutionIDs[0] != "academy_charter" {
+		t.Fatalf("institution ids = %#v, want [academy_charter]", institutionEvent.InstitutionIDs)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestBuildPlanningCommitEventsSkipsUnchangedAndMissingPlayers(t *testing.T) 
 				Policy:   domain.PolicyExpansion,
 				Research: domain.ResearchState{CurrentTargetTechnologyID: "agrarian_foundations"},
 				Institutions: domain.InstitutionState{
-					PendingPolicyIDs:      []string{"academy_charter"},
+					PendingInstitutionIDs: []string{"academy_charter"},
 					PendingActivationTurn: 4,
 				},
 			},

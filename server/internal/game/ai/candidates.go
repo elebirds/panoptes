@@ -47,6 +47,12 @@ type combatCandidate struct {
 	intent planning.Intent
 }
 
+type movementCandidate struct {
+	key    string
+	score  int
+	nodeID string
+}
+
 func pickBestScoredIntent(rng *rand.Rand, candidates []scoredIntent) (planning.Intent, bool) {
 	if len(candidates) == 0 {
 		return nil, false
@@ -104,6 +110,24 @@ func pickBestRecipeCandidate(rng *rand.Rand, candidates []recipeCandidate) (reci
 func pickBestExpansionCandidate(rng *rand.Rand, candidates []expansionCandidate) (expansionCandidate, bool) {
 	if len(candidates) == 0 {
 		return expansionCandidate{}, false
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].score == candidates[j].score {
+			return candidates[i].key < candidates[j].key
+		}
+		return candidates[i].score > candidates[j].score
+	})
+	best := candidates[0].score
+	end := 1
+	for end < len(candidates) && candidates[end].score == best {
+		end++
+	}
+	return candidates[rng.Intn(end)], true
+}
+
+func pickBestMovementCandidate(rng *rand.Rand, candidates []movementCandidate) (movementCandidate, bool) {
+	if len(candidates) == 0 {
+		return movementCandidate{}, false
 	}
 	sort.Slice(candidates, func(i, j int) bool {
 		if candidates[i].score == candidates[j].score {

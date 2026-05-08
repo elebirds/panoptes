@@ -42,6 +42,16 @@ namespace Panoptes.Core.Application.Services
             return SendDirective("reject_role", string.Empty, ministerRole);
         }
 
+        public bool MandateOverride(string ministerRole)
+        {
+            return SendDirective("mandate_override", string.Empty, ministerRole);
+        }
+
+        public bool EnterDirectCommand(string ministerRole)
+        {
+            return SendDirective("direct_command", string.Empty, ministerRole);
+        }
+
         public bool ActivateSkill(string ministerRole, string skillCardId)
         {
             return SendDirective("activate_skill", string.Empty, ministerRole, skillCardId);

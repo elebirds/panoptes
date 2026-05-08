@@ -32,7 +32,7 @@ type planningDeliveryPort interface {
 type planningDraftPort interface {
 	QueueBuildOrder(order domain.BuildOrder)
 	QueueRecipeSelection(order domain.RecipeSelectionOrder)
-	SetInstitutionLoadout(playerID string, policyIDs []string)
+	SetInstitutionLoadout(playerID string, institutionIDs []string)
 	SetUnitOrder(order gameorders.UnitOrder)
 	CancelUnitOrder(playerID string, unitID string)
 }
@@ -43,6 +43,9 @@ type planningViewPort interface {
 
 type planningModePort interface {
 	IsDevMode() bool
+	IsMinisterStrongMode() bool
+	IsPlayerInMandateMode(playerID string) bool
+	SetPlayerMandateMode(playerID string, enabled bool)
 }
 
 type planningSubmitPort interface {

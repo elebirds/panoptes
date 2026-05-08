@@ -80,48 +80,53 @@ namespace Panoptes.Protocol.V1 {
             "Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJjaFByb2dyZXNzRW50cnkSIwoN",
             "dGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5vbG9neUlkEikKEGN1cnJlbnRf",
             "cHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9w",
-            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKTAQoUSW5zdGl0dXRp",
-            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjAK",
-            "FGNhbmRpZGF0ZV9wb2xpY3lfaWRzGAIgAygJUhJjYW5kaWRhdGVQb2xpY3lJ",
-            "ZHMSKgoRYWN0aXZlX3BvbGljeV9pZHMYAyADKAlSD2FjdGl2ZVBvbGljeUlk",
-            "cyKSAgoVQnVpbGRpbmdPcGVyYXRpb25WaWV3EiwKEnNlbGVjdGVkX3JlY2lw",
-            "ZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJZBIpChBjdXJyZW50X3Byb2dy",
-            "ZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jl",
-            "c3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSIwoNYmFzZV9wcm9ncmVzcxgE",
-            "IAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2NrZWRfcmVhc29uGAUgASgJUg1i",
-            "bG9ja2VkUmVhc29uEicKD2Jsb2NrZWRfbWVzc2FnZRgGIAEoCVIOYmxvY2tl",
-            "ZE1lc3NhZ2UihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUY",
-            "AiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJZHMSHAoJZGly",
-            "ZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUYBSABKAlS",
-            "CnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUYASABKAlSBHJv",
-            "bGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMgASgFUgdhYmls",
-            "aXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSLfAwoVSW5m",
-            "b3JtYXRpb25SZXBvcnRWaWV3EhIKBG1vZGUYASABKAlSBG1vZGUSHgoKY29u",
-            "ZmlkZW5jZRgCIAEoCVIKY29uZmlkZW5jZRIsChJ2aXNpYmxlX25vZGVfY291",
-            "bnQYAyABKAVSEHZpc2libGVOb2RlQ291bnQSKgoRbWVtb3J5X25vZGVfY291",
-            "bnQYBCABKAVSD21lbW9yeU5vZGVDb3VudBIsChJ1bmtub3duX25vZGVfY291",
-            "bnQYBSABKAVSEHVua25vd25Ob2RlQ291bnQSLAoSdmlzaWJsZV91bml0X2Nv",
-            "dW50GAYgASgFUhB2aXNpYmxlVW5pdENvdW50EioKEW1lbW9yeV91bml0X2Nv",
-            "dW50GAcgASgFUg9tZW1vcnlVbml0Q291bnQSIwoNb21pdHRlZF9jb3VudBgI",
-            "IAEoBVIMb21pdHRlZENvdW50EiMKDWRlbGF5ZWRfY291bnQYCSABKAVSDGRl",
-            "bGF5ZWRDb3VudBIjCg1taXNyZWFkX2NvdW50GAogASgFUgxtaXNyZWFkQ291",
-            "bnQSKwoRZGlyZWN0X2luc3BlY3Rpb24YCyABKAhSEGRpcmVjdEluc3BlY3Rp",
-            "b24SFAoFbm90ZXMYDCADKAlSBW5vdGVzIuwDCgtNc2dHYW1lSW5pdBIXCgdn",
-            "YW1lX2lkGAEgASgJUgZnYW1lSWQSJAoOeW91cl9wbGF5ZXJfaWQYAiABKAlS",
-            "DHlvdXJQbGF5ZXJJZBISCgR0dXJuGAMgASgFUgR0dXJuEhQKBXBoYXNlGAQg",
-            "ASgJUgVwaGFzZRIxCgVub2RlcxgFIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYx",
-            "Lk5vZGVWaWV3UgVub2RlcxIxCgV1bml0cxgGIAMoCzIbLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLlVuaXRWaWV3UgV1bml0cxI6CglteV9wbGF5ZXIYByABKAsyHS5w",
-            "YW5vcHRlcy5wcm90by52MS5QbGF5ZXJWaWV3UghteVBsYXllchI9CgltaW5p",
-            "c3RlcnMYCCADKAsyHy5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlclZpZXdS",
-            "CW1pbmlzdGVycxIbCgltYXBfd2lkdGgYCSABKAVSCG1hcFdpZHRoEh0KCm1h",
-            "cF9oZWlnaHQYCiABKAVSCW1hcEhlaWdodBJXChJpbmZvcm1hdGlvbl9yZXBv",
-            "cnQYCyABKAsyKC5wYW5vcHRlcy5wcm90by52MS5JbmZvcm1hdGlvblJlcG9y",
-            "dFZpZXdSEWluZm9ybWF0aW9uUmVwb3J0ImAKC01zZ0dhbWVPdmVyEhsKCXdp",
-            "bm5lcl9pZBgBIAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFz",
-            "b24SHAoJbmFycmF0aXZlGAMgASgJUgluYXJyYXRpdmVCUFo3Z2l0aHViLmNv",
-            "bS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG87cHJvdG92",
-            "MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKnAQoUSW5zdGl0dXRp",
+            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjoK",
+            "GWNhbmRpZGF0ZV9pbnN0aXR1dGlvbl9pZHMYAiADKAlSF2NhbmRpZGF0ZUlu",
+            "c3RpdHV0aW9uSWRzEjQKFmFjdGl2ZV9pbnN0aXR1dGlvbl9pZHMYAyADKAlS",
+            "FGFjdGl2ZUluc3RpdHV0aW9uSWRzIpICChVCdWlsZGluZ09wZXJhdGlvblZp",
+            "ZXcSLAoSc2VsZWN0ZWRfcmVjaXBlX2lkGAEgASgJUhBzZWxlY3RlZFJlY2lw",
+            "ZUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVz",
+            "cxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVz",
+            "cxIjCg1iYXNlX3Byb2dyZXNzGAQgASgFUgxiYXNlUHJvZ3Jlc3MSJQoOYmxv",
+            "Y2tlZF9yZWFzb24YBSABKAlSDWJsb2NrZWRSZWFzb24SJwoPYmxvY2tlZF9t",
+            "ZXNzYWdlGAYgASgJUg5ibG9ja2VkTWVzc2FnZSKHAQoHV2FyWm9uZRIOCgJp",
+            "ZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIZCghub2RlX2lkcxgD",
+            "IAMoCVIHbm9kZUlkcxIcCglkaXJlY3RpdmUYBCABKAlSCWRpcmVjdGl2ZRIf",
+            "Cgt0YXJnZXRfbm9kZRgFIAEoCVIKdGFyZ2V0Tm9kZSLCAgoMTWluaXN0ZXJW",
+            "aWV3EhIKBHJvbGUYASABKAlSBHJvbGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIY",
+            "CgdhYmlsaXR5GAMgASgFUgdhYmlsaXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJ",
+            "UgtwZXJzb25hbGl0eRIYCgdsb3lhbHR5GAUgASgFUgdsb3lhbHR5EhoKCGFt",
+            "Yml0aW9uGAYgASgFUghhbWJpdGlvbhIiCgxjYXV0aW91c25lc3MYByABKAVS",
+            "DGNhdXRpb3VzbmVzcxIiCgxkZWNpc2l2ZW5lc3MYCCABKAVSDGRlY2lzaXZl",
+            "bmVzcxIpChBsb3lhbHR5X3RlbmRlbmN5GAkgASgFUg9sb3lhbHR5VGVuZGVu",
+            "Y3kSJQoOYW1iaXRpb25fc3R5bGUYCiABKAVSDWFtYml0aW9uU3R5bGUi3wMK",
+            "FUluZm9ybWF0aW9uUmVwb3J0VmlldxISCgRtb2RlGAEgASgJUgRtb2RlEh4K",
+            "CmNvbmZpZGVuY2UYAiABKAlSCmNvbmZpZGVuY2USLAoSdmlzaWJsZV9ub2Rl",
+            "X2NvdW50GAMgASgFUhB2aXNpYmxlTm9kZUNvdW50EioKEW1lbW9yeV9ub2Rl",
+            "X2NvdW50GAQgASgFUg9tZW1vcnlOb2RlQ291bnQSLAoSdW5rbm93bl9ub2Rl",
+            "X2NvdW50GAUgASgFUhB1bmtub3duTm9kZUNvdW50EiwKEnZpc2libGVfdW5p",
+            "dF9jb3VudBgGIAEoBVIQdmlzaWJsZVVuaXRDb3VudBIqChFtZW1vcnlfdW5p",
+            "dF9jb3VudBgHIAEoBVIPbWVtb3J5VW5pdENvdW50EiMKDW9taXR0ZWRfY291",
+            "bnQYCCABKAVSDG9taXR0ZWRDb3VudBIjCg1kZWxheWVkX2NvdW50GAkgASgF",
+            "UgxkZWxheWVkQ291bnQSIwoNbWlzcmVhZF9jb3VudBgKIAEoBVIMbWlzcmVh",
+            "ZENvdW50EisKEWRpcmVjdF9pbnNwZWN0aW9uGAsgASgIUhBkaXJlY3RJbnNw",
+            "ZWN0aW9uEhQKBW5vdGVzGAwgAygJUgVub3RlcyLsAwoLTXNnR2FtZUluaXQS",
+            "FwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQKDnlvdXJfcGxheWVyX2lkGAIg",
+            "ASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgDIAEoBVIEdHVybhIUCgVwaGFz",
+            "ZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSADKAsyGy5wYW5vcHRlcy5wcm90",
+            "by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5pdHMYBiADKAsyGy5wYW5vcHRl",
+            "cy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMSOgoJbXlfcGxheWVyGAcgASgL",
+            "Mh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVyVmlld1IIbXlQbGF5ZXISPQoJ",
+            "bWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMucHJvdG8udjEuTWluaXN0ZXJW",
+            "aWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRoGAkgASgFUghtYXBXaWR0aBId",
+            "CgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWlnaHQSVwoSaW5mb3JtYXRpb25f",
+            "cmVwb3J0GAsgASgLMigucGFub3B0ZXMucHJvdG8udjEuSW5mb3JtYXRpb25S",
+            "ZXBvcnRWaWV3UhFpbmZvcm1hdGlvblJlcG9ydCJgCgtNc2dHYW1lT3ZlchIb",
+            "Cgl3aW5uZXJfaWQYASABKAlSCHdpbm5lcklkEhYKBnJlYXNvbhgCIAEoCVIG",
+            "cmVhc29uEhwKCW5hcnJhdGl2ZRgDIAEoCVIJbmFycmF0aXZlQlBaN2dpdGh1",
+            "Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvO3By",
+            "b3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -130,10 +135,10 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchProgressEntry), global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser, new[]{ "TechnologyId", "CurrentProgress", "RequiredProgress" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidatePolicyIds", "ActivePolicyIds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidateInstitutionIds", "ActiveInstitutionIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason", "BlockedMessage" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality", "Loyalty", "Ambition", "Cautiousness", "Decisiveness", "LoyaltyTendency", "AmbitionStyle" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InformationReportView), global::Panoptes.Protocol.V1.InformationReportView.Parser, new[]{ "Mode", "Confidence", "VisibleNodeCount", "MemoryNodeCount", "UnknownNodeCount", "VisibleUnitCount", "MemoryUnitCount", "OmittedCount", "DelayedCount", "MisreadCount", "DirectInspection", "Notes" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight", "InformationReport" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameOver), global::Panoptes.Protocol.V1.MsgGameOver.Parser, new[]{ "WinnerId", "Reason", "Narrative" }, null, null, null, null)
@@ -2990,8 +2995,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public InstitutionStateView(InstitutionStateView other) : this() {
       slotCount_ = other.slotCount_;
-      candidatePolicyIds_ = other.candidatePolicyIds_.Clone();
-      activePolicyIds_ = other.activePolicyIds_.Clone();
+      candidateInstitutionIds_ = other.candidateInstitutionIds_.Clone();
+      activeInstitutionIds_ = other.activeInstitutionIds_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3013,26 +3018,26 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "candidate_policy_ids" field.</summary>
-    public const int CandidatePolicyIdsFieldNumber = 2;
-    private static readonly pb::FieldCodec<string> _repeated_candidatePolicyIds_codec
+    /// <summary>Field number for the "candidate_institution_ids" field.</summary>
+    public const int CandidateInstitutionIdsFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_candidateInstitutionIds_codec
         = pb::FieldCodec.ForString(18);
-    private readonly pbc::RepeatedField<string> candidatePolicyIds_ = new pbc::RepeatedField<string>();
+    private readonly pbc::RepeatedField<string> candidateInstitutionIds_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> CandidatePolicyIds {
-      get { return candidatePolicyIds_; }
+    public pbc::RepeatedField<string> CandidateInstitutionIds {
+      get { return candidateInstitutionIds_; }
     }
 
-    /// <summary>Field number for the "active_policy_ids" field.</summary>
-    public const int ActivePolicyIdsFieldNumber = 3;
-    private static readonly pb::FieldCodec<string> _repeated_activePolicyIds_codec
+    /// <summary>Field number for the "active_institution_ids" field.</summary>
+    public const int ActiveInstitutionIdsFieldNumber = 3;
+    private static readonly pb::FieldCodec<string> _repeated_activeInstitutionIds_codec
         = pb::FieldCodec.ForString(26);
-    private readonly pbc::RepeatedField<string> activePolicyIds_ = new pbc::RepeatedField<string>();
+    private readonly pbc::RepeatedField<string> activeInstitutionIds_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> ActivePolicyIds {
-      get { return activePolicyIds_; }
+    public pbc::RepeatedField<string> ActiveInstitutionIds {
+      get { return activeInstitutionIds_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3051,8 +3056,8 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if (SlotCount != other.SlotCount) return false;
-      if(!candidatePolicyIds_.Equals(other.candidatePolicyIds_)) return false;
-      if(!activePolicyIds_.Equals(other.activePolicyIds_)) return false;
+      if(!candidateInstitutionIds_.Equals(other.candidateInstitutionIds_)) return false;
+      if(!activeInstitutionIds_.Equals(other.activeInstitutionIds_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3061,8 +3066,8 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       if (SlotCount != 0) hash ^= SlotCount.GetHashCode();
-      hash ^= candidatePolicyIds_.GetHashCode();
-      hash ^= activePolicyIds_.GetHashCode();
+      hash ^= candidateInstitutionIds_.GetHashCode();
+      hash ^= activeInstitutionIds_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3085,8 +3090,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(8);
         output.WriteInt32(SlotCount);
       }
-      candidatePolicyIds_.WriteTo(output, _repeated_candidatePolicyIds_codec);
-      activePolicyIds_.WriteTo(output, _repeated_activePolicyIds_codec);
+      candidateInstitutionIds_.WriteTo(output, _repeated_candidateInstitutionIds_codec);
+      activeInstitutionIds_.WriteTo(output, _repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3101,8 +3106,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(8);
         output.WriteInt32(SlotCount);
       }
-      candidatePolicyIds_.WriteTo(ref output, _repeated_candidatePolicyIds_codec);
-      activePolicyIds_.WriteTo(ref output, _repeated_activePolicyIds_codec);
+      candidateInstitutionIds_.WriteTo(ref output, _repeated_candidateInstitutionIds_codec);
+      activeInstitutionIds_.WriteTo(ref output, _repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3116,8 +3121,8 @@ namespace Panoptes.Protocol.V1 {
       if (SlotCount != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(SlotCount);
       }
-      size += candidatePolicyIds_.CalculateSize(_repeated_candidatePolicyIds_codec);
-      size += activePolicyIds_.CalculateSize(_repeated_activePolicyIds_codec);
+      size += candidateInstitutionIds_.CalculateSize(_repeated_candidateInstitutionIds_codec);
+      size += activeInstitutionIds_.CalculateSize(_repeated_activeInstitutionIds_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -3133,8 +3138,8 @@ namespace Panoptes.Protocol.V1 {
       if (other.SlotCount != 0) {
         SlotCount = other.SlotCount;
       }
-      candidatePolicyIds_.Add(other.candidatePolicyIds_);
-      activePolicyIds_.Add(other.activePolicyIds_);
+      candidateInstitutionIds_.Add(other.candidateInstitutionIds_);
+      activeInstitutionIds_.Add(other.activeInstitutionIds_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -3159,11 +3164,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            candidatePolicyIds_.AddEntriesFrom(input, _repeated_candidatePolicyIds_codec);
+            candidateInstitutionIds_.AddEntriesFrom(input, _repeated_candidateInstitutionIds_codec);
             break;
           }
           case 26: {
-            activePolicyIds_.AddEntriesFrom(input, _repeated_activePolicyIds_codec);
+            activeInstitutionIds_.AddEntriesFrom(input, _repeated_activeInstitutionIds_codec);
             break;
           }
         }
@@ -3190,11 +3195,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            candidatePolicyIds_.AddEntriesFrom(ref input, _repeated_candidatePolicyIds_codec);
+            candidateInstitutionIds_.AddEntriesFrom(ref input, _repeated_candidateInstitutionIds_codec);
             break;
           }
           case 26: {
-            activePolicyIds_.AddEntriesFrom(ref input, _repeated_activePolicyIds_codec);
+            activeInstitutionIds_.AddEntriesFrom(ref input, _repeated_activeInstitutionIds_codec);
             break;
           }
         }
@@ -3961,6 +3966,12 @@ namespace Panoptes.Protocol.V1 {
       name_ = other.name_;
       ability_ = other.ability_;
       personality_ = other.personality_;
+      loyalty_ = other.loyalty_;
+      ambition_ = other.ambition_;
+      cautiousness_ = other.cautiousness_;
+      decisiveness_ = other.decisiveness_;
+      loyaltyTendency_ = other.loyaltyTendency_;
+      ambitionStyle_ = other.ambitionStyle_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -4018,6 +4029,78 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "loyalty" field.</summary>
+    public const int LoyaltyFieldNumber = 5;
+    private int loyalty_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Loyalty {
+      get { return loyalty_; }
+      set {
+        loyalty_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ambition" field.</summary>
+    public const int AmbitionFieldNumber = 6;
+    private int ambition_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Ambition {
+      get { return ambition_; }
+      set {
+        ambition_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cautiousness" field.</summary>
+    public const int CautiousnessFieldNumber = 7;
+    private int cautiousness_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Cautiousness {
+      get { return cautiousness_; }
+      set {
+        cautiousness_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "decisiveness" field.</summary>
+    public const int DecisivenessFieldNumber = 8;
+    private int decisiveness_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Decisiveness {
+      get { return decisiveness_; }
+      set {
+        decisiveness_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "loyalty_tendency" field.</summary>
+    public const int LoyaltyTendencyFieldNumber = 9;
+    private int loyaltyTendency_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int LoyaltyTendency {
+      get { return loyaltyTendency_; }
+      set {
+        loyaltyTendency_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ambition_style" field.</summary>
+    public const int AmbitionStyleFieldNumber = 10;
+    private int ambitionStyle_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int AmbitionStyle {
+      get { return ambitionStyle_; }
+      set {
+        ambitionStyle_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -4037,6 +4120,12 @@ namespace Panoptes.Protocol.V1 {
       if (Name != other.Name) return false;
       if (Ability != other.Ability) return false;
       if (Personality != other.Personality) return false;
+      if (Loyalty != other.Loyalty) return false;
+      if (Ambition != other.Ambition) return false;
+      if (Cautiousness != other.Cautiousness) return false;
+      if (Decisiveness != other.Decisiveness) return false;
+      if (LoyaltyTendency != other.LoyaltyTendency) return false;
+      if (AmbitionStyle != other.AmbitionStyle) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -4048,6 +4137,12 @@ namespace Panoptes.Protocol.V1 {
       if (Name.Length != 0) hash ^= Name.GetHashCode();
       if (Ability != 0) hash ^= Ability.GetHashCode();
       if (Personality.Length != 0) hash ^= Personality.GetHashCode();
+      if (Loyalty != 0) hash ^= Loyalty.GetHashCode();
+      if (Ambition != 0) hash ^= Ambition.GetHashCode();
+      if (Cautiousness != 0) hash ^= Cautiousness.GetHashCode();
+      if (Decisiveness != 0) hash ^= Decisiveness.GetHashCode();
+      if (LoyaltyTendency != 0) hash ^= LoyaltyTendency.GetHashCode();
+      if (AmbitionStyle != 0) hash ^= AmbitionStyle.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -4082,6 +4177,30 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(34);
         output.WriteString(Personality);
       }
+      if (Loyalty != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(Loyalty);
+      }
+      if (Ambition != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Ambition);
+      }
+      if (Cautiousness != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(AmbitionStyle);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4108,6 +4227,30 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(34);
         output.WriteString(Personality);
       }
+      if (Loyalty != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(Loyalty);
+      }
+      if (Ambition != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Ambition);
+      }
+      if (Cautiousness != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(AmbitionStyle);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4129,6 +4272,24 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Personality.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Personality);
+      }
+      if (Loyalty != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Loyalty);
+      }
+      if (Ambition != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ambition);
+      }
+      if (Cautiousness != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(AmbitionStyle);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -4153,6 +4314,24 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.Personality.Length != 0) {
         Personality = other.Personality;
+      }
+      if (other.Loyalty != 0) {
+        Loyalty = other.Loyalty;
+      }
+      if (other.Ambition != 0) {
+        Ambition = other.Ambition;
+      }
+      if (other.Cautiousness != 0) {
+        Cautiousness = other.Cautiousness;
+      }
+      if (other.Decisiveness != 0) {
+        Decisiveness = other.Decisiveness;
+      }
+      if (other.LoyaltyTendency != 0) {
+        LoyaltyTendency = other.LoyaltyTendency;
+      }
+      if (other.AmbitionStyle != 0) {
+        AmbitionStyle = other.AmbitionStyle;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -4189,6 +4368,30 @@ namespace Panoptes.Protocol.V1 {
             Personality = input.ReadString();
             break;
           }
+          case 40: {
+            Loyalty = input.ReadInt32();
+            break;
+          }
+          case 48: {
+            Ambition = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            AmbitionStyle = input.ReadInt32();
+            break;
+          }
         }
       }
     #endif
@@ -4222,6 +4425,30 @@ namespace Panoptes.Protocol.V1 {
           }
           case 34: {
             Personality = input.ReadString();
+            break;
+          }
+          case 40: {
+            Loyalty = input.ReadInt32();
+            break;
+          }
+          case 48: {
+            Ambition = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            AmbitionStyle = input.ReadInt32();
             break;
           }
         }

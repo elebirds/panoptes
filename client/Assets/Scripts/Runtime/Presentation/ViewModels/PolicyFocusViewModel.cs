@@ -43,11 +43,8 @@ namespace Panoptes.Presentation.ViewModels
             var draft = _planningDraftStore.Snapshot;
             var plannedNational = Normalize(draft.PlannedNationalPolicyId);
             var activeNational = Normalize(_gameStateCache?.GetActiveNationalPolicyId());
-            var plannedInstitutions = BuildIdSet(draft.PlannedInstitutionPolicyIds);
-            var activeInstitutions = BuildIdSet(_gameStateCache?.GetInstitutionState()?.ActivePolicyIds);
 
             var nationalRows = new List<ManagementPanelRowState>();
-            var institutionRows = new List<ManagementPanelRowState>();
             foreach (var pair in policies)
             {
                 var policy = pair.Value;
@@ -59,29 +56,27 @@ namespace Panoptes.Presentation.ViewModels
                 var policyId = Normalize(policy.Id);
                 var isNational = string.Equals(Normalize(policy.Layer), "national", StringComparison.Ordinal) ||
                                  string.Equals(Normalize(policy.Layer), "national_focus", StringComparison.Ordinal);
+                if (!isNational)
+                {
+                    continue;
+                }
+
                 var planned = isNational
                     ? string.Equals(policyId, plannedNational, StringComparison.Ordinal)
-                    : plannedInstitutions.Contains(policyId);
+                    : false;
                 var active = isNational
                     ? string.Equals(policyId, activeNational, StringComparison.Ordinal)
-                    : activeInstitutions.Contains(policyId);
+                    : false;
                 var status = planned ? "已规划" : active ? "已选择" : string.Empty;
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
-                    BuildPolicyEffectSummary(policy, _staticCatalogStore.Snapshot),
+                    ManagementEffectSummaryFormatter.Build(policy.ModifierEffects, policy.Description, _staticCatalogStore.Snapshot),
                     policy.Description,
                     status,
-                    isNational ? "采纳" : "设置",
+                    "采纳",
                     policy.IconKey);
-                if (isNational)
-                {
-                    nationalRows.Add(row);
-                }
-                else
-                {
-                    institutionRows.Add(row);
-                }
+                nationalRows.Add(row);
             }
 
             var groups = new List<ManagementPanelGroupState>();
@@ -90,102 +85,7 @@ namespace Panoptes.Presentation.ViewModels
                 groups.Add(new ManagementPanelGroupState("national", "国家方针", nationalRows));
             }
 
-            if (institutionRows.Count > 0)
-            {
-                groups.Add(new ManagementPanelGroupState("institution", "制度国策", institutionRows));
-            }
-
             return new ManagementPanelState("国策", groups);
-        }
-
-        private static string BuildPolicyEffectSummary(CatalogPolicyDto policy, StaticCatalogState catalog)
-        {
-            var effects = policy?.ModifierEffects;
-            if (effects == null || effects.Count == 0)
-            {
-                return policy?.Description ?? string.Empty;
-            }
-
-            var values = new List<string>();
-            for (var i = 0; i < effects.Count; i++)
-            {
-                var text = FormatModifierEffect(effects[i], catalog);
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    values.Add(text);
-                }
-            }
-
-            return values.Count > 0 ? string.Join("；", values) : policy?.Description ?? string.Empty;
-        }
-
-        private static string FormatModifierEffect(CatalogPolicyModifierEffectDto effect, StaticCatalogState catalog)
-        {
-            if (effect == null)
-            {
-                return string.Empty;
-            }
-
-            var value = FormatSigned(effect.Value);
-            var target = CatalogDisplayNameResolver.ResolveEffectTargetName(effect.TargetId, catalog);
-            var trigger = Normalize(effect.Trigger);
-            switch (trigger)
-            {
-                case "recipe.work_amount":
-                    return string.IsNullOrWhiteSpace(target) ? $"工时 {value}" : $"{target} 工时 {value}";
-                case "recipe.resource_output":
-                    var resource = CatalogDisplayNameResolver.ResolveResourceName(effect.ResourceKey);
-                    return string.IsNullOrWhiteSpace(target)
-                        ? $"{resource}产出 {value}"
-                        : $"{target} {resource}产出 {value}";
-                case "recipe.base_progress":
-                    return string.IsNullOrWhiteSpace(target) ? $"基础进度 {value}" : $"{target} 基础进度 {value}";
-                case "point.output":
-                    var point = CatalogDisplayNameResolver.ResolvePointName(effect.PointKey);
-                    return string.IsNullOrWhiteSpace(point) ? $"点数产出 {value}" : $"{point} {value}";
-                case "logistics.road_capacity":
-                    return $"道路运力 {value}";
-                default:
-                    return string.IsNullOrWhiteSpace(trigger) ? value : $"{FormatTrigger(trigger)} {value}";
-            }
-        }
-
-        private static string FormatSigned(int value)
-        {
-            return value > 0 ? "+" + value : value.ToString();
-        }
-
-        private static string FormatTrigger(string trigger)
-        {
-            return Normalize(trigger) switch
-            {
-                "recipe.work_amount" => "配方工时",
-                "recipe.resource_output" => "配方资源产出",
-                "recipe.base_progress" => "配方基础进度",
-                "point.output" => "点数产出",
-                "logistics.road_capacity" => "道路运力",
-                _ => CatalogDisplayNameResolver.ToReadableKey(trigger)
-            };
-        }
-
-        private static HashSet<string> BuildIdSet(IReadOnlyList<string> ids)
-        {
-            var result = new HashSet<string>(StringComparer.Ordinal);
-            if (ids == null)
-            {
-                return result;
-            }
-
-            for (var i = 0; i < ids.Count; i++)
-            {
-                var id = Normalize(ids[i]);
-                if (!string.IsNullOrEmpty(id))
-                {
-                    result.Add(id);
-                }
-            }
-
-            return result;
         }
     }
 }

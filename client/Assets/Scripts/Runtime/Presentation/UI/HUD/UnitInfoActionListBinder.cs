@@ -18,7 +18,7 @@ namespace Panoptes.Presentation.UI.HUD
     {
         private static readonly (string ActionId, string Label)[] DefaultSlots =
         {
-            ("settle_city", "坐城"),
+            ("settle_city", "建立城堡"),
             ("action_2", "操作2"),
             ("action_3", "建造"),
             ("action_4", "操作4")
@@ -26,7 +26,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private static readonly (string ActionId, string Label)[] RequiredSlots =
         {
-            ("expand_territory", "扩张"),
+            ("expand_territory", "建立城堡"),
             ("action_2", "操作2"),
             ("action_3", "建造"),
             ("action_4", "操作4"),
@@ -399,6 +399,7 @@ namespace Panoptes.Presentation.UI.HUD
             var buttonHandler = handler;
             var boundUnit = currentUnit;
             slot.button.onClick.AddListener(() => buttonHandler(boundUnit));
+            slot.button.interactable = true;
 
             if (slot.label != null)
             {
@@ -412,8 +413,8 @@ namespace Panoptes.Presentation.UI.HUD
         {
             return NormalizeToken(actionId) switch
             {
-                "settle_city" => "坐城",
-                "expand_territory" => "扩张",
+                "settle_city" => "建立城堡",
+                "expand_territory" => "建立城堡",
                 "open_recipe_synthesis" => "配方",
                 "open_policy_focus" => "国策",
                 "action_2" => "操作2",

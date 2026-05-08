@@ -385,6 +385,8 @@ func commandResultOutcome(msg proto.Message) (bool, string, bool) {
 		return typed.GetSuccess(), typed.GetErrorCode(), true
 	case *pb.MsgTokenResult:
 		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgMandateResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
 	case *pb.MsgPlanningPathPreviewResponse:
 		return typed.GetValid(), typed.GetErrorCode(), true
 	case *pb.MsgRevealResult:

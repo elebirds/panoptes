@@ -57,11 +57,12 @@ func (StaticSnapshotBlockRule) SourceFor(ctx *ResolutionContext, unit SnapshotUn
 	if !ok {
 		return BlockSource{}, false
 	}
-	// 优先级固定为 Unit > Structure。
-	// 这样 charge 遇到“单位站在建筑格上”时仍会锁定第一接敌单位。
-	if sources.Unit != nil && sources.Unit.Owner != unit.PlayerID {
+	// 单位占位对所有阵营生效：友军阻断移动，敌军阻断并可成为接敌目标。
+	// 这条规则是“不堆叠”的核心，不能退回只阻断敌军的旧语义。
+	if sources.Unit != nil && sources.Unit.UnitID != unit.UnitID {
 		return *sources.Unit, true
 	}
+	// 建筑仍只按敌对关系阻断；己方建筑格可以站单位，建筑本身不是单位堆叠。
 	if sources.Structure != nil && sources.Structure.Owner != unit.PlayerID {
 		return *sources.Structure, true
 	}

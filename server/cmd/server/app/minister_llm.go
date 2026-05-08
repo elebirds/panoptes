@@ -9,6 +9,7 @@ import (
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/llm"
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 )
 
 func buildMinisterChatClient(cfg *config.Config) chatmodule.ChatClient {
@@ -26,23 +27,18 @@ func buildMinisterChatClient(cfg *config.Config) chatmodule.ChatClient {
 		opts = append(opts, chatmodule.WithModel(model))
 	}
 
-	switch provider {
-	case "qwen":
-		if strings.TrimSpace(cfg.QwenAPIKey) == "" {
-			slog.Warn("minister llm enabled but qwen api key missing")
-			return nil
-		}
-		return chatmodule.NewQwenClient(cfg.QwenAPIKey, opts...)
-	case "deepseek":
-		if strings.TrimSpace(cfg.DeepSeekAPIKey) == "" {
-			slog.Warn("minister llm enabled but deepseek api key missing")
-			return nil
-		}
-		return chatmodule.NewDeepSeekClient(cfg.DeepSeekAPIKey, opts...)
-	default:
+	apiKey := strings.TrimSpace(cfg.MinisterLLMAPIKey)
+	if apiKey == "" {
+		slog.Warn("minister llm enabled but api key missing", "provider", provider)
+		return nil
+	}
+
+	client, ok := chatmodule.NewProviderClient(provider, apiKey, opts...)
+	if !ok {
 		slog.Warn("unsupported minister llm provider", "provider", provider)
 		return nil
 	}
+	return client
 }
 
 func buildMinisterLLMClient(cfg *config.Config) llm.LLMClient {
@@ -76,7 +72,7 @@ func parseMinisterEnabledRoles(raw string) []string {
 	roles := make([]string, 0, len(parts))
 	seen := make(map[string]struct{}, len(parts))
 	for _, part := range parts {
-		role := strings.ToLower(strings.TrimSpace(part))
+		role := ministerroles.Canonical(part)
 		if role == "" {
 			continue
 		}
@@ -87,7 +83,7 @@ func parseMinisterEnabledRoles(raw string) []string {
 		roles = append(roles, role)
 	}
 	if len(roles) == 0 {
-		return []string{"domestic", "military"}
+		return ministerroles.OrderedRoles()
 	}
 	return roles
 }

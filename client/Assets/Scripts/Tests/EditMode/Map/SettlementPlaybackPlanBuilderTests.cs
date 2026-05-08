@@ -97,6 +97,100 @@ namespace Panoptes.Tests.EditMode.Map
         }
 
         [Test]
+        public void SchedulerBatchesIndependentAmbientMoves()
+        {
+            var settlement = Settlement(
+                Move("unit-a", 0, 0, 1, 0),
+                Move("unit-b", 2, 0, 3, 0),
+                Move("unit-c", 4, 0, 5, 0));
+
+            var schedule = SettlementPlaybackScheduler.Build(SettlementPlaybackPlanBuilder.Build(settlement));
+
+            Assert.AreEqual(1, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackWindowKind.MoveBatch, schedule.Windows[0].Kind);
+            Assert.AreEqual(SettlementPlaybackTier.Ambient, schedule.Windows[0].Tier);
+            Assert.AreEqual(3, schedule.Windows[0].Steps.Count);
+        }
+
+        [Test]
+        public void SchedulerSplitsRepeatedActorMovesToPreserveUnitOrder()
+        {
+            var settlement = Settlement(
+                Move("unit-a", 0, 0, 1, 0),
+                Move("unit-a", 1, 0, 2, 0),
+                Move("unit-b", 2, 0, 3, 0));
+
+            var schedule = SettlementPlaybackScheduler.Build(SettlementPlaybackPlanBuilder.Build(settlement));
+
+            Assert.AreEqual(2, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackWindowKind.MoveBatch, schedule.Windows[0].Kind);
+            Assert.AreEqual(1, schedule.Windows[0].Steps.Count);
+            Assert.AreEqual("unit-a", schedule.Windows[0].Steps[0].ActorUnitId);
+            Assert.AreEqual(SettlementPlaybackWindowKind.MoveBatch, schedule.Windows[1].Kind);
+            Assert.AreEqual(2, schedule.Windows[1].Steps.Count);
+        }
+
+        [Test]
+        public void SchedulerKeepsMoveWithDamageAsFocusedImportantStep()
+        {
+            var settlement = Settlement(
+                Move("attacker-1", 0, 0, 1, 0),
+                Damage("defender-1", "attacker-1"));
+
+            var schedule = SettlementPlaybackScheduler.Build(SettlementPlaybackPlanBuilder.Build(settlement));
+
+            Assert.AreEqual(1, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackWindowKind.FocusedStep, schedule.Windows[0].Kind);
+            Assert.AreEqual(SettlementPlaybackTier.Important, schedule.Windows[0].Tier);
+            Assert.IsTrue(schedule.Windows[0].AllowsCameraFocus);
+        }
+
+        [Test]
+        public void SchedulerClassifiesCityCoreDestroyedAsCritical()
+        {
+            var settlement = Settlement(CityCoreDestroyed("A1"));
+
+            var schedule = SettlementPlaybackScheduler.Build(SettlementPlaybackPlanBuilder.Build(settlement));
+
+            Assert.AreEqual(1, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackWindowKind.FocusedStep, schedule.Windows[0].Kind);
+            Assert.AreEqual(SettlementPlaybackTier.Critical, schedule.Windows[0].Tier);
+        }
+
+        [Test]
+        public void SchedulerCriticalOnlySkipsAmbientAndImportantWindows()
+        {
+            var settlement = Settlement(
+                Move("unit-a", 0, 0, 1, 0),
+                Damage("defender-1", "attacker-1"),
+                CityCoreDestroyed("A1"));
+
+            var schedule = SettlementPlaybackScheduler.Build(
+                SettlementPlaybackPlanBuilder.Build(settlement),
+                SettlementPlaybackMode.CriticalOnly);
+
+            Assert.AreEqual(1, schedule.Windows.Count);
+            Assert.AreEqual(SettlementPlaybackTier.Critical, schedule.Windows[0].Tier);
+        }
+
+        [Test]
+        public void CameraPolicyAllowsOnlyCriticalFocusInCriticalOnlyMode()
+        {
+            var important = new SettlementPlaybackWindow(
+                SettlementPlaybackWindowKind.FocusedStep,
+                SettlementPlaybackTier.Important,
+                new[] { new SettlementPlaybackStep { ActorUnitId = "unit-a" } });
+            var critical = new SettlementPlaybackWindow(
+                SettlementPlaybackWindowKind.FocusedStep,
+                SettlementPlaybackTier.Critical,
+                new[] { new SettlementPlaybackStep { ActorUnitId = "unit-b" } });
+            var policy = new SettlementCameraPolicy(SettlementPlaybackMode.CriticalOnly, float.MaxValue);
+
+            Assert.IsFalse(policy.ShouldFocus(important));
+            Assert.IsTrue(policy.ShouldFocus(critical));
+        }
+
+        [Test]
         public void BuildCreatesAttackOnlyStep()
         {
             var settlement = Settlement(Damage("defender-1", "attacker-1"));
@@ -187,6 +281,15 @@ namespace Panoptes.Tests.EditMode.Map
                 AttackerUnitId = attackerUnitId,
                 Damage = 7,
                 HpAfter = 0
+            };
+        }
+
+        private static TurnEventDto CityCoreDestroyed(string nodeId)
+        {
+            return new TurnEventDto
+            {
+                Type = "city_core_destroyed",
+                NodeId = nodeId
             };
         }
     }

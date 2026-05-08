@@ -732,6 +732,255 @@ func TestSetMinisterDirectiveIntentAcceptsPolicyDraft(t *testing.T) {
 	}
 }
 
+func TestSetMinisterDirectiveAcceptsOperationDraftAsBatch(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-operation-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindOperation,
+			TargetID:     "domestic_plan",
+			TargetLabel:  "内政调整方案",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+			OperationID:  "domestic_plan",
+			Objective:    "完成研究与国策调整",
+			OperationSteps: []domain.MinisterDraft{
+				{
+					DraftID:      "draft-operation-1:step_1",
+					PlayerID:     "player-1",
+					MinisterRole: "domestic",
+					Kind:         domain.MinisterDraftKindResearch,
+					TargetID:     "agrarian_foundations",
+					TargetLabel:  "Agrarian Foundations",
+					Turn:         1,
+				},
+				{
+					DraftID:      "draft-operation-1:step_2",
+					PlayerID:     "player-1",
+					MinisterRole: "domestic",
+					Kind:         domain.MinisterDraftKindPolicy,
+					TargetID:     "expansion",
+					TargetLabel:  "Expansion",
+					Turn:         1,
+				},
+			},
+		},
+	})
+
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		Intent: SetMinisterDirectiveIntent{
+			MinisterRole:  "domestic",
+			DirectiveType: "accept",
+			DraftID:       "draft-operation-1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleIntent() error = %v", err)
+	}
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research = %q, want agrarian_foundations", got)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
+		t.Fatalf("pending policy = %q, want expansion", got)
+	}
+	if result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"]); result == nil || !result.GetSuccess() {
+		t.Fatalf("policy result = %#v, want operation step success", result)
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 || drafts[0].Status != domain.MinisterDraftStatusAccepted {
+		t.Fatalf("operation draft = %#v, want accepted", drafts)
+	}
+}
+
+func TestSetMinisterDirectiveRejectsInvalidOperationWithoutPartialApply(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-operation-invalid",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindOperation,
+			TargetID:     "bad_plan",
+			TargetLabel:  "无效方案",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+			OperationID:  "bad_plan",
+			Objective:    "先研究再切换到非法国策",
+			OperationSteps: []domain.MinisterDraft{
+				{
+					DraftID:      "draft-operation-invalid:step_1",
+					PlayerID:     "player-1",
+					MinisterRole: "domestic",
+					Kind:         domain.MinisterDraftKindResearch,
+					TargetID:     "agrarian_foundations",
+					TargetLabel:  "Agrarian Foundations",
+					Turn:         1,
+				},
+				{
+					DraftID:      "draft-operation-invalid:step_2",
+					PlayerID:     "player-1",
+					MinisterRole: "domestic",
+					Kind:         domain.MinisterDraftKindPolicy,
+					TargetID:     "unknown_policy",
+					TargetLabel:  "Unknown Policy",
+					Turn:         1,
+				},
+			},
+		},
+	})
+
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		Intent: SetMinisterDirectiveIntent{
+			MinisterRole:  "domestic",
+			DirectiveType: "accept",
+			DraftID:       "draft-operation-invalid",
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleIntent() error = %v", err)
+	}
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
+		t.Fatalf("pending research = %q, want empty after rejected batch", got)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty after rejected batch", got)
+	}
+	if result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"]); result == nil || result.GetSuccess() {
+		t.Fatalf("policy result = %#v, want failed operation step", result)
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 || drafts[0].Status != domain.MinisterDraftStatusPending || !drafts[0].Available {
+		t.Fatalf("operation draft = %#v, want still pending after rejected batch", drafts)
+	}
+}
+
+func TestSetMinisterDirectiveMandateOverrideRejectsDraftsAndConsumesToken(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+		{
+			DraftID:      "draft-research-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "agrarian_foundations",
+			TargetLabel:  "Agrarian Foundations",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"mandate_override"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 1 {
+		t.Fatalf("tokens left = %d, want 1", got)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetAction() != "override" || result.GetTokensLeft() != 1 {
+		t.Fatalf("mandate result = %#v, want successful override", result)
+	}
+	for _, draft := range state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1") {
+		if draft.Status != domain.MinisterDraftStatusRejected || draft.Available {
+			t.Fatalf("draft = %#v, want rejected unavailable", draft)
+		}
+	}
+	if got := len(session.memoryEntries); got != 2 {
+		t.Fatalf("memory entries = %d, want 2 rejected transitions", got)
+	}
+}
+
+func TestSetMinisterDirectiveMandateOverrideWithoutDraftDoesNotConsumeToken(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"mandate_override"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 2 {
+		t.Fatalf("tokens left = %d, want unchanged 2", got)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "no_minister_actions" {
+		t.Fatalf("mandate result = %#v, want no_minister_actions", result)
+	}
+}
+
+func TestSetMinisterDirectiveDirectCommandConsumesTokenAndSetsMode(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"direct_command"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 1 {
+		t.Fatalf("tokens left = %d, want 1", got)
+	}
+	if !session.mandateModeByPlayer["player-1"] {
+		t.Fatalf("mandate mode not enabled")
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetAction() != "direct_command" || result.GetTokensLeft() != 1 {
+		t.Fatalf("mandate result = %#v, want direct command success", result)
+	}
+}
+
 func TestManualPolicyChangeMarksAcceptedDraftStale(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
@@ -1087,11 +1336,16 @@ func TestIssueUnitOrderRejectsInvalidRoadEndpointsWithoutStateWrites(t *testing.
 	}
 }
 
-func TestSetPolicyRejectsInstitutionLayer(t *testing.T) {
+func TestSetPolicyRejectsInstitutionID(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
-			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 	}))
 
@@ -1108,8 +1362,8 @@ func TestSetPolicyRejectsInstitutionLayer(t *testing.T) {
 	}
 
 	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
-	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
-		t.Fatalf("set policy result = %#v, want invalid_directive", result)
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_target" {
+		t.Fatalf("set policy result = %#v, want invalid_target", result)
 	}
 	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
 		t.Fatalf("pending policy = %q, want empty", got)
@@ -1185,11 +1439,108 @@ func TestSetPolicyQueuesDraftAndSnapshot(t *testing.T) {
 	}
 }
 
-func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
+func TestStrongModeBlocksDirectPlanningUntilMandateModeIsEnabled(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
-			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+			{ID: "frontier", Layer: "national", ActivationTiming: "same_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-strong-mode", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].TokensLeft = 3
+	session := newPlanningSessionStub(state)
+	session.ministerStrongMode = true
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("mandate result = %#v, want invalid_directive", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty", got)
+	}
+
+	session.sent["player-1"] = nil
+	state.Players["player-1"].TokensLeft = 0
+	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "frontier"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() with no tokens error = %v", err)
+	}
+	result = lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "no_mandate_tokens" || result.GetMessage() != "亲政令牌不足，无法进入亲政模式" {
+		t.Fatalf("mandate result = %#v, want no_mandate_tokens with token guidance", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty after no-token rejection", got)
+	}
+
+	session.sent["player-1"] = nil
+	state.Players["player-1"].TokensLeft = 3
+	session.mandateModeByPlayer["player-1"] = true
+	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	resultPolicy := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if resultPolicy == nil || !resultPolicy.GetSuccess() {
+		t.Fatalf("set policy result = %#v, want success after mandate mode", resultPolicy)
+	}
+}
+
+func TestStrongModeDoesNotBlockAutonomousPlanning(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-strong-mode-bot", []string{"bot-1"}, []string{"bot"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	session.ministerStrongMode = true
+	session.autonomousPlayers = map[string]bool{"bot-1": true}
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "bot-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	resultPolicy := lastMessage[*pb.MsgSetPolicyResult](session.sent["bot-1"])
+	if resultPolicy == nil || !resultPolicy.GetSuccess() {
+		t.Fatalf("set policy result = %#v, want autonomous success in strong mode", resultPolicy)
+	}
+}
+
+func TestSetInstitutionLoadoutRejectsNationalPolicy(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+		},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 	}))
 
@@ -1201,7 +1552,7 @@ func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
 	service := &Service{}
 	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_SetInstitutionLoadout{
-			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: []string{"expansion"}},
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{InstitutionIds: []string{"expansion"}},
 		},
 	})
 	if err != nil {
@@ -1209,8 +1560,8 @@ func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
 	}
 
 	result := lastMessage[*pb.MsgSetInstitutionLoadoutResult](session.sent["player-1"])
-	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
-		t.Fatalf("institution result = %#v, want invalid_directive", result)
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_target" {
+		t.Fatalf("institution result = %#v, want invalid_target", result)
 	}
 	if state.TurnRuntime.Planning.HasPendingInstitutionLoadout("player-1") {
 		t.Fatalf("pending institution loadout should stay empty")
@@ -1219,8 +1570,11 @@ func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
 
 func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Policies: []staticdata.PolicyDefinition{
-			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 	}))
 
@@ -1232,7 +1586,7 @@ func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
 	service := &Service{}
 	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_SetInstitutionLoadout{
-			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: []string{"academy_charter"}},
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{InstitutionIds: []string{"academy_charter"}},
 		},
 	})
 	if err != nil {
@@ -1247,8 +1601,8 @@ func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
 		t.Fatalf("pending institution loadout = %#v, want [academy_charter]", got)
 	}
 	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || len(snapshot.GetPlannedInstitutionPolicyIds()) != 1 || snapshot.GetPlannedInstitutionPolicyIds()[0] != "academy_charter" {
-		t.Fatalf("planned institution ids = %#v, want [academy_charter]", snapshot.GetPlannedInstitutionPolicyIds())
+	if snapshot == nil || len(snapshot.GetPlannedInstitutionIds()) != 1 || snapshot.GetPlannedInstitutionIds()[0] != "academy_charter" {
+		t.Fatalf("planned institution ids = %#v, want [academy_charter]", snapshot.GetPlannedInstitutionIds())
 	}
 }
 
@@ -1304,11 +1658,14 @@ func TestHandleIntentSubmitTurnCallsSessionSubmit(t *testing.T) {
 }
 
 type planningSessionStub struct {
-	state         *domain.GameState
-	sent          map[string][]proto.Message
-	devMode       bool
-	submitted     []string
-	memoryEntries []planningSessionMemoryRecord
+	state               *domain.GameState
+	sent                map[string][]proto.Message
+	devMode             bool
+	ministerStrongMode  bool
+	autonomousPlayers   map[string]bool
+	submitted           []string
+	memoryEntries       []planningSessionMemoryRecord
+	mandateModeByPlayer map[string]bool
 }
 
 type planningSessionMemoryRecord struct {
@@ -1319,9 +1676,10 @@ type planningSessionMemoryRecord struct {
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
 	return &planningSessionStub{
-		state:   state,
-		sent:    make(map[string][]proto.Message),
-		devMode: true,
+		state:               state,
+		sent:                make(map[string][]proto.Message),
+		devMode:             true,
+		mandateModeByPlayer: make(map[string]bool),
 	}
 }
 
@@ -1419,6 +1777,12 @@ func (s *planningSessionStub) SendToPlayer(_ context.Context, playerID string, m
 
 func (s *planningSessionStub) IsDevMode() bool { return s.devMode }
 
+func (s *planningSessionStub) IsMinisterStrongMode() bool { return s.ministerStrongMode }
+
+func (s *planningSessionStub) IsPlayerInMandateMode(playerID string) bool {
+	return s.mandateModeByPlayer[playerID]
+}
+
 func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 	s.state.TurnRuntime.Planning.UpsertBuildOrder(order)
 }
@@ -1477,6 +1841,10 @@ func (s *planningSessionStub) RecordMinisterMemory(playerID string, role string,
 		Role:     role,
 		Entry:    entry,
 	})
+}
+
+func (s *planningSessionStub) SetPlayerMandateMode(playerID string, enabled bool) {
+	s.mandateModeByPlayer[playerID] = enabled
 }
 
 func lastMessage[T proto.Message](msgs []proto.Message) T {

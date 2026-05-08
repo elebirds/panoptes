@@ -121,6 +121,8 @@ func classifyCommandResultMessage(msg proto.Message) (string, int) {
 		return "MsgRevealResult", 1
 	case *pb.MsgTokenResult:
 		return "MsgTokenResult", 1
+	case *pb.MsgMandateResult:
+		return "MsgMandateResult", 1
 	default:
 		return "", 0
 	}

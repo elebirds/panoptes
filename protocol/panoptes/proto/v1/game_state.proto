@@ -79,8 +79,8 @@ message ResearchProgressEntry {
 
 message InstitutionStateView {
   int32 slot_count = 1;
-  repeated string candidate_policy_ids = 2;
-  repeated string active_policy_ids = 3;
+  repeated string candidate_institution_ids = 2;
+  repeated string active_institution_ids = 3;
 }
 
 message BuildingOperationView {
@@ -105,6 +105,12 @@ message MinisterView {
   string name = 2;
   int32 ability = 3;
   string personality = 4;
+  int32 loyalty = 5;
+  int32 ambition = 6;
+  int32 cautiousness = 7;
+  int32 decisiveness = 8;
+  int32 loyalty_tendency = 9;
+  int32 ambition_style = 10;
 }
 
 message InformationReportView {

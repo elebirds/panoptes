@@ -98,6 +98,12 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			"to_node":   strings.TrimSpace(e.ToNode),
 			"owner":     strings.TrimSpace(e.Owner),
 		}
+	case event.EngineerRoadTrailBuiltEvent:
+		return e.Kind(), map[string]string{
+			"unit_id": strings.TrimSpace(e.UnitID),
+			"owner":   strings.TrimSpace(e.Owner),
+			"nodes":   strings.Join(e.NodeIDs, ","),
+		}
 	case event.UnitProducedEvent:
 		return e.Kind(), map[string]string{
 			"node_id":   strings.TrimSpace(e.NodeID),
@@ -270,8 +276,8 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 		data := map[string]string{
 			"player_id": strings.TrimSpace(e.PlayerID),
 		}
-		if len(e.PolicyIDs) > 0 {
-			data["policy_ids"] = strings.Join(e.PolicyIDs, ",")
+		if len(e.InstitutionIDs) > 0 {
+			data["institution_ids"] = strings.Join(e.InstitutionIDs, ",")
 		}
 		return e.Kind(), data
 	case event.TokenUsedEvent:

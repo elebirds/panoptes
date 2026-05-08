@@ -8,7 +8,6 @@ package ai
 
 import (
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -96,65 +95,44 @@ func (p *ruleBotPlanner) chooseInstitutionIntent() (planning.Intent, bool) {
 	if p.req.State.TurnRuntime.Planning.HasPendingInstitutionLoadout(p.playerID) {
 		return nil, false
 	}
-	slotCount := p.player.Institutions.SlotCount
-	if slotCount <= 0 {
-		return nil, false
-	}
-
-	candidates := make([]struct {
-		key   string
-		score int
-	}, 0)
-	for _, policyID := range p.player.Institutions.CandidateIDs() {
-		policy, ok := staticdata.Default().GetPolicy(policyID)
-		if !ok || !strings.EqualFold(policy.Layer, "institutional") || !prerequisitesMet(p.req.State, p.playerID, policy.Prerequisites) {
+	candidates := make([]scoredIntent, 0)
+	for _, institutionID := range p.player.Institutions.CandidateIDs() {
+		institution, ok := staticdata.Default().GetInstitution(institutionID)
+		if !ok || !prerequisitesMet(p.req.State, p.playerID, institution.Prerequisites) {
 			continue
 		}
-		candidates = append(candidates, struct {
-			key   string
-			score int
-		}{key: policyID, score: p.scoreInstitutionPolicy(policy)})
-	}
-	if len(candidates) == 0 {
-		return nil, false
-	}
-	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].score == candidates[j].score {
-			return candidates[i].key < candidates[j].key
+		selected := replaceInstitutionInCategory(p.player.Institutions.ActiveInstitutionIDs, institutionID, institution.Category)
+		normalized, errCode := planning.ValidateInstitutionLoadout(p.req.State, p.playerID, p.player, selected)
+		if errCode != "" || slices.Equal(normalized, p.player.Institutions.ActiveInstitutionIDs) {
+			continue
 		}
-		return candidates[i].score > candidates[j].score
-	})
-	threshold := candidates[0].score
-	tied := candidates[:0]
-	for _, candidate := range candidates {
-		if candidate.score < threshold {
-			break
-		}
-		tied = append(tied, candidate)
-	}
-	if len(tied) > slotCount {
-		p.rng.Shuffle(len(tied), func(i, j int) {
-			tied[i], tied[j] = tied[j], tied[i]
+		candidates = append(candidates, scoredIntent{
+			key:   institutionID,
+			score: p.scoreInstitution(institution),
+			intent: planning.SetInstitutionLoadoutIntent{
+				InstitutionIDs: normalized,
+			},
 		})
-		tied = tied[:slotCount]
 	}
-	selected := make([]string, 0, min(slotCount, len(candidates)))
-	if len(tied) > 0 {
-		for _, candidate := range tied {
-			selected = append(selected, candidate.key)
-		}
-	}
-	if len(selected) < slotCount {
-		for _, candidate := range candidates[len(tied):] {
-			selected = append(selected, candidate.key)
-			if len(selected) >= slotCount {
-				break
+	return pickBestScoredIntent(p.rng, candidates)
+}
+
+func replaceInstitutionInCategory(active []string, institutionID string, category string) []string {
+	selected := make([]string, 0, len(active)+1)
+	replaced := false
+	for _, activeID := range active {
+		activeInstitution, ok := staticdata.Default().GetInstitution(activeID)
+		if ok && strings.EqualFold(activeInstitution.Category, category) {
+			if !replaced {
+				selected = append(selected, institutionID)
+				replaced = true
 			}
+			continue
 		}
+		selected = append(selected, activeID)
 	}
-	selected = domain.NormalizePolicyIDList(selected)
-	if slices.Equal(selected, p.player.Institutions.ActivePolicyIDs) {
-		return nil, false
+	if !replaced {
+		selected = append(selected, institutionID)
 	}
-	return planning.SetInstitutionLoadoutIntent{PolicyIDs: selected}, true
+	return domain.NormalizeInstitutionIDList(selected)
 }

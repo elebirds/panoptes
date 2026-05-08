@@ -6,6 +6,8 @@
 
 package chatmodule
 
+import "strings"
+
 // provider.go 各厂商预设配置。
 // 所有厂商均走 OpenAI 兼容格式，只是 baseURL 和默认模型不同。
 // 使用 Option 函数可在调用时覆盖任意默认值。
@@ -18,11 +20,29 @@ const (
 )
 
 func qwenDefaults() clientCfg {
-	return clientCfg{defaultModel: "qwen3.6-flash", temperature: 0.8, topP: 0.8, maxTokens: 1500}
+	return clientCfg{
+		defaultModel: "qwen3.6-flash",
+		temperature:  0.8,
+		topP:         0.8,
+		maxTokens:    1500,
+		extraFields: map[string]any{
+			"enable_thinking": false,
+		},
+	}
 }
 
 func deepSeekDefaults() clientCfg {
-	return clientCfg{defaultModel: "deepseek-chat", temperature: 0.7, topP: 0.9, maxTokens: 2048}
+	return clientCfg{
+		defaultModel: "deepseek-v4-flash",
+		temperature:  0.7,
+		topP:         0.9,
+		maxTokens:    2048,
+		extraFields: map[string]any{
+			"thinking": map[string]any{
+				"type": "disabled",
+			},
+		},
+	}
 }
 
 func openAIDefaults() clientCfg {
@@ -31,6 +51,22 @@ func openAIDefaults() clientCfg {
 
 func moonshotDefaults() clientCfg {
 	return clientCfg{defaultModel: "moonshot-v1-8k", temperature: 0.3, topP: 1.0, maxTokens: 2048}
+}
+
+// NewProviderClient 根据 provider 名称创建 OpenAI 兼容客户端。
+func NewProviderClient(provider, apiKey string, opts ...Option) (*Client, bool) {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "", "qwen":
+		return NewQwenClient(apiKey, opts...), true
+	case "deepseek":
+		return NewDeepSeekClient(apiKey, opts...), true
+	case "openai":
+		return NewOpenAIClient(apiKey, opts...), true
+	case "moonshot":
+		return NewMoonshotClient(apiKey, opts...), true
+	default:
+		return nil, false
+	}
 }
 
 // NewQwenClient 通义千问（DashScope OpenAI 兼容模式）

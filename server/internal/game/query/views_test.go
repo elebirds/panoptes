@@ -23,8 +23,11 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
 			{ID: "civic_institutions", Branch: "governance", Tier: 1, ResearchCost: 1},
 		},
-		Policies: []staticdata.PolicyDefinition{
-			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
+			{ID: "academy_charter", Category: "administration", ActivationTiming: "next_turn"},
 		},
 	}))
 
@@ -41,7 +44,7 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 	player.Research.MarkTechnologyCompleted("civic_institutions", 1)
 	player.Institutions.SlotCount = 1
 	player.Institutions.UnlockCandidate("academy_charter")
-	player.Institutions.ActivePolicyIDs = []string{"academy_charter"}
+	player.Institutions.ActiveInstitutionIDs = []string{"academy_charter"}
 
 	view := BuildPlayerView(state, "player-1")
 
@@ -69,11 +72,11 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 	if got := view.GetInstitutions().GetSlotCount(); got != 1 {
 		t.Fatalf("institution slot_count = %d, want 1", got)
 	}
-	if got := view.GetInstitutions().GetCandidatePolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
-		t.Fatalf("candidate_policy_ids = %#v, want [academy_charter]", got)
+	if got := view.GetInstitutions().GetCandidateInstitutionIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("candidate_institution_ids = %#v, want [academy_charter]", got)
 	}
-	if got := view.GetInstitutions().GetActivePolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
-		t.Fatalf("active_policy_ids = %#v, want [academy_charter]", got)
+	if got := view.GetInstitutions().GetActiveInstitutionIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("active_institution_ids = %#v, want [academy_charter]", got)
 	}
 }
 

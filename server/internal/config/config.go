@@ -30,14 +30,14 @@ type Config struct {
 	// 对局配置
 	DefaultMaxPlayers int `env:"DEFAULT_MAX_PLAYERS" envDefault:"2"`
 
-	// LLM 配置
-	QwenAPIKey     string `env:"QWEN_API_KEY" envDefault:""`
-	DeepSeekAPIKey string `env:"DEEPSEEK_API_KEY" envDefault:""`
-
 	// Minister LLM 配置
 	MinisterLLMEnabled   bool   `env:"MINISTER_LLM_ENABLED" envDefault:"false"`
 	MinisterLLMProvider  string `env:"MINISTER_LLM_PROVIDER" envDefault:"qwen"`
+	MinisterLLMAPIKey    string `env:"MINISTER_LLM_API_KEY" envDefault:""`
 	MinisterLLMModel     string `env:"MINISTER_LLM_MODEL" envDefault:""`
 	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"50000"`
-	MinisterLLMRoles     string `env:"MINISTER_LLM_ENABLED_ROLES" envDefault:"domestic,military"`
+	MinisterLLMRoles     string `env:"MINISTER_LLM_ENABLED_ROLES" envDefault:"domestic,works,defense,command,frontier"`
+	// weak: players may issue normal planning commands freely.
+	// strong: direct gameplay commands require mandate-mode authority.
+	MinisterLLMParticipationMode string `env:"MINISTER_LLM_PARTICIPATION_MODE" envDefault:"weak"`
 }

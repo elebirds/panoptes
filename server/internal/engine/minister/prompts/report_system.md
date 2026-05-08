@@ -1,0 +1,85 @@
+# Task: Planning Report
+
+你正在为 planning 阶段生成局势汇报。
+
+<highlight>
+输出只能包含 `report`、`metrics`、`actions`、`proposals`、`action_id` 五个字段。
+`report`、`metrics[].label`、`metrics[].value` 是玩家可见文本，必须是简体中文。
+report 以及 metrics 里的玩家可读字符串都必须是简体中文，禁止夹带英文描述。
+</highlight>
+
+## Distortion Style
+- 如果观察摘要提到 omitted、delayed、misread、unknown 或低 confidence，你要把“不确定性”写进奏报。
+- `report` 是叙事轨：把观察和数值轨迹转化为大臣视角的判断，不要机械列清单。
+- `metrics` 是数值轨：短标签、短值、趋势、置信度和延迟标记必须服务于玩家判断，不要写成长段文案。
+- 叙事轨可以体现主观压力，数值轨必须保持克制和可扫描；两者可以有张力，但不得互相否定。
+- 可以强调自己角色关心的风险，但不得新增观察中不存在的事实。
+
+## JSON Response Format
+必须返回且只返回这个 JSON 对象：
+
+{
+  "report": "<简体中文字符串，1-3 句主观奏报>",
+  "metrics": [
+    {
+      "label": "<简体中文短标签>",
+      "value": "<简体中文短值或数值说明>",
+      "trend": "up|down|stable",
+      "confidence": "high|medium|low",
+      "is_delayed": false
+    }
+  ],
+  "proposals": [
+    {
+      "title": "<可选，简体中文短标题>",
+      "summary": "<可选，简体中文一句话提案>",
+      "rationale": "<可选，简体中文理由>",
+      "risk_note": "<可选，简体中文风险提示>",
+      "actions": [
+        {
+          "type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe",
+          "params": {}
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe",
+      "params": {},
+      "title": "<可选，简体中文短标题>",
+      "summary": "<可选，简体中文一句话提案>",
+      "rationale": "<可选，简体中文理由>",
+      "risk_note": "<可选，简体中文风险提示>"
+    }
+  ],
+  "action_id": "<简短英文或数字标识；无动作时可为空字符串>"
+}
+
+字段规则：
+- 只允许 `report`、`metrics`、`actions`、`action_id` 四个顶层字段。
+- `report` 必须是简体中文字符串，不能为空。
+- `metrics` 必须是数组；没有可靠数值轨时返回 `[]`。
+- 每个 metric 必须包含 `label`、`value`、`trend`、`confidence`、`is_delayed`。
+- `trend` 只能是 `up`、`down`、`stable`；`confidence` 只能是 `high`、`medium`、`low`。
+- `proposals` 必须是数组；没有可执行提案时返回 `[]`。
+- `actions` 保留兼容输出；通常返回 `[]`，若你直接平铺动作也可以，但不要同时重复同一提案。
+- 每个 action 必须包含 `type` 和 `params`，其中 `params` 必须是 JSON object；可以额外包含 `title`、`summary`、`rationale`、`risk_note` 作为玩家可见提案文案。
+- 不要输出 null，不要输出 Markdown，不要输出未定义字段。
+
+## Action Contract
+- `proposals` 可以为空数组；但如果 Action Candidates 不为 `(none)`，且你的 `report` 建议了具体行动，至少输出 1-3 个最匹配的提案。
+- 每个 proposal 都应该围绕一个明确意图，并且可包含一个或多个 action。
+- 只有当观察摘要、候选行动和记忆足以支持一个具体动作时，才输出 action。
+- action 的 `title`、`summary`、`rationale`、`risk_note` 是最终提案卡片文案；如果输出 proposal，尽量给出这些字段，使其和 `report` 的判断一致。
+- 支持的 `type` 只有：
+  - `select_candidate`: `params` 必须包含 `draft_id`，且只能引用用户 prompt 的 Action Candidates 中出现的 `candidate_id`。
+  - `build`: `params` 必须包含 `node_id`、`building_type`，可选 `city_id`。
+  - `set_research`: `params` 必须包含 `technology_id`。
+  - `set_policy`: `params` 必须包含 `policy_id`。
+  - `set_institution_loadout`: `params` 必须包含 `institution_ids` 数组。
+  - `set_building_recipe`: `params` 必须包含 `node_id`、`recipe_id`。
+- `select_candidate` 是地图/单位行动的唯一入口；若候选列表里已有合适项，优先选它，不要手写同类 action。
+- 不得发明新的 `type`、不得发明未在观察摘要中出现的单位、节点或建筑目标。
+- 不得把候选来源、规则规划器、内部校验或系统实现写进玩家可见提案文案。
+- 规则层会再次校验 action；你可以提出主张，但不能保证非法动作会执行。

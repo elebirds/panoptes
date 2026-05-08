@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend layering and implementation conventions for a cross-layer gameplay rule change."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend quality constraints, required patterns, and forbidden approaches for the occupancy refactor."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Error-code and validation conventions for any new occupancy or placement failures."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"This change touches domain, engine, event, protocol, and client-facing views."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"The refactor should eliminate duplicated occupancy checks and preserve a single authoritative helper."}

@@ -1,20 +1,22 @@
 package session
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
-	"github.com/elebirds/panoptes/internal/game/ai"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
-const domesticMinisterRole = "domestic"
-const militaryMinisterRole = "military"
+const domesticMinisterRole = ministerroles.Domestic
+const worksMinisterRole = ministerroles.Works
+const defenseMinisterRole = ministerroles.Defense
+const commandMinisterRole = ministerroles.Command
+const frontierMinisterRole = ministerroles.Frontier
+const militaryMinisterRole = ministerroles.Command
 
 func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 	if r == nil || r.state == nil || turn <= 0 {
@@ -28,45 +30,13 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 	r.preparedMinisterDraftsMu.RUnlock()
 
 	draftsByPlayer := make(map[string][]domain.MinisterDraft, len(r.participants))
-	jobs := make([]preparedMinisterDraftPolishJob, 0, len(r.participants))
 	for _, binding := range r.participants {
 		playerID := strings.TrimSpace(binding.Participant.ID)
 		if playerID == "" {
 			continue
 		}
 		observation := r.BuildObservation(playerID)
-		req := ai.Request{
-			Participant: binding.Participant,
-			State:       r.state,
-			Observation: observation,
-		}
-		intents, _ := (ai.RuleBotProvider{}).BuildPlanningIntents(context.Background(), req)
-		drafts := buildMinisterDraftsFromIntents(turn, playerID, intents)
-		draftsByPlayer[playerID] = drafts
-		for _, draft := range drafts {
-			r.RecordMinisterMemory(playerID, draft.MinisterRole, ministerengine.MemoryEntry{
-				Turn:       turn,
-				Type:       "draft",
-				Content:    fmt.Sprintf("%s:%s", draft.Kind, strings.TrimSpace(draft.TargetLabel)),
-				Outcome:    "generated",
-				PlayerResp: "pending",
-			})
-			if r.ministerEngine == nil {
-				continue
-			}
-			jobs = append(jobs, preparedMinisterDraftPolishJob{
-				Turn:     turn,
-				PlayerID: playerID,
-				Draft:    draft,
-				Input: ministerengine.DraftPromptInput{
-					Turn:               turn,
-					PlayerID:           playerID,
-					ObservationSummary: buildMinisterObservationSummary(r.state, observation),
-					CurrentPolicy:      currentPolicyValue(r.state, playerID),
-					CurrentResearch:    currentResearchValue(r.state, playerID),
-				},
-			})
-		}
+		draftsByPlayer[playerID] = buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
 	}
 
 	r.preparedMinisterDraftsMu.Lock()
@@ -78,33 +48,21 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 		delete(r.preparedMinisterDrafts, cachedTurn)
 	}
 	r.preparedMinisterDraftsMu.Unlock()
-
-	for _, job := range jobs {
-		go r.polishPreparedMinisterDraft(job)
-	}
 }
 
-func (r *Runtime) ApplyPreparedMinisterDrafts(turn int) {
-	if r == nil || r.state == nil || turn <= 0 || r.state.Turn != turn {
-		return
-	}
-	if len(r.state.TurnRuntime.Planning.MinisterDrafts) > 0 {
-		return
+func (r *Runtime) preparedMinisterDraftsForPlayer(turn int, playerID string) []domain.MinisterDraft {
+	if r == nil || turn <= 0 || strings.TrimSpace(playerID) == "" {
+		return nil
 	}
 	r.preparedMinisterDraftsMu.RLock()
-	_, ok := r.preparedMinisterDrafts[turn]
-	r.preparedMinisterDraftsMu.RUnlock()
-	if !ok {
-		r.PrepareMinisterDraftCacheForTurn(turn)
+	defer r.preparedMinisterDraftsMu.RUnlock()
+	playerDrafts := r.preparedMinisterDrafts[turn][strings.TrimSpace(playerID)]
+	if len(playerDrafts) == 0 {
+		return nil
 	}
-
-	r.state.TurnRuntime.Planning.EnsureDraftMaps()
-	clear(r.state.TurnRuntime.Planning.MinisterDrafts)
-	r.preparedMinisterDraftsMu.RLock()
-	for playerID, drafts := range r.preparedMinisterDrafts[turn] {
-		r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
-	}
-	r.preparedMinisterDraftsMu.RUnlock()
+	out := make([]domain.MinisterDraft, len(playerDrafts))
+	copy(out, playerDrafts)
+	return out
 }
 
 func buildMinisterDraftsFromIntents(turn int, playerID string, intents []planning.Intent) []domain.MinisterDraft {
@@ -138,13 +96,13 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		}
 		return baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindPolicy, targetID, policyLabel(targetID)), true
 	case planning.SetInstitutionLoadoutIntent:
-		policyIDs := domain.NormalizePolicyIDList(typed.PolicyIDs)
-		if len(policyIDs) == 0 {
+		institutionIDs := domain.NormalizeInstitutionIDList(typed.InstitutionIDs)
+		if len(institutionIDs) == 0 {
 			return domain.MinisterDraft{}, false
 		}
-		targetID := strings.Join(policyIDs, ",")
-		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(policyIDs))
-		draft.PolicyIDs = policyIDs
+		targetID := strings.Join(institutionIDs, ",")
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(institutionIDs))
+		draft.InstitutionIDs = institutionIDs
 		return draft, true
 	case planning.BuildStructureIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -153,10 +111,14 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 			return domain.MinisterDraft{}, false
 		}
 		targetID := nodeID + ":" + buildingTypeID
-		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindBuild, targetID, buildingLabel(buildingTypeID)+" @ "+nodeID)
+		cityID := strings.TrimSpace(typed.CityID)
+		if cityID != "" {
+			targetID += ":" + cityID
+		}
+		draft := baseMinisterDraft(turn, playerID, ministerRoleForBuild(buildingTypeID), domain.MinisterDraftKindBuild, targetID, buildingLabel(buildingTypeID)+" @ "+nodeID)
 		draft.NodeID = nodeID
 		draft.BuildingTypeID = buildingTypeID
-		draft.CityID = strings.TrimSpace(typed.CityID)
+		draft.CityID = cityID
 		return draft, true
 	case planning.SetBuildingRecipeIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -165,7 +127,7 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 			return domain.MinisterDraft{}, false
 		}
 		targetID := nodeID + ":" + recipeID
-		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindRecipe, targetID, recipeLabel(recipeID)+" @ "+nodeID)
+		draft := baseMinisterDraft(turn, playerID, ministerRoleForRecipe(recipeID), domain.MinisterDraftKindRecipe, targetID, recipeLabel(recipeID)+" @ "+nodeID)
 		draft.NodeID = nodeID
 		draft.RecipeID = recipeID
 		return draft, true
@@ -175,11 +137,11 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		if unitID == "" || action == "" {
 			return domain.MinisterDraft{}, false
 		}
-		role := militaryMinisterRole
-		if gameorders.UnitAction(action) == gameorders.ActionSettleCity {
-			role = domesticMinisterRole
+		role := ministerRoleForUnitOrderAction(action)
+		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID) + ":" + strings.TrimSpace(typed.SecondaryNodeID)
+		if pairs := sortedParamPairs(typed.Params); len(pairs) > 0 {
+			targetID += ":" + strings.Join(pairs, ",")
 		}
-		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID)
 		draft := baseMinisterDraft(turn, playerID, role, domain.MinisterDraftKindUnitOrder, targetID, unitOrderLabel(typed))
 		draft.UnitID = unitID
 		draft.Action = action
@@ -194,6 +156,7 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 }
 
 func baseMinisterDraft(turn int, playerID string, role string, kind domain.MinisterDraftKind, targetID string, targetLabel string) domain.MinisterDraft {
+	role = ministerroles.Canonical(role)
 	targetID = strings.TrimSpace(targetID)
 	targetLabel = strings.TrimSpace(targetLabel)
 	if targetLabel == "" {
@@ -219,23 +182,108 @@ func baseMinisterDraft(turn int, playerID string, role string, kind domain.Minis
 }
 
 func ministerDraftText(role string, kind string, targetLabel string) (string, string, string, string) {
-	if strings.TrimSpace(role) == militaryMinisterRole {
-		return "军事建议", "建议本回合执行：" + targetLabel + "。", "该方案基于规则规划器当前的战术评估生成。", "如果你想手动下达军事命令，可以不采纳这条建议。"
+	switch ministerroles.Canonical(role) {
+	case worksMinisterRole:
+		return "工务提案", "建议本回合安排：" + targetLabel + "。", "工务署认为该项目能改善当前产能、资源或设施运转。", "若你希望把工业与物资留给其他部门，可以暂不采纳。"
+	case defenseMinisterRole:
+		return "军备提案", "建议本回合安排：" + targetLabel + "。", "国防部门认为该提案有助于补足兵力、军工或防御短板。", "若你希望优先发展民生或拓殖，可以暂不采纳。"
+	case commandMinisterRole:
+		return "军令提案", "建议本回合执行：" + targetLabel + "。", "军令官已将该部队行动整理为可批准命令。", "若你希望亲自调整部队行动，可以暂不采纳。"
+	case frontierMinisterRole:
+		return "边务提案", "建议本回合推进：" + targetLabel + "。", "边务署认为该提案有助于拓展疆界、前哨或定居空间。", "若你希望收缩边线、保存资源，可以暂不采纳。"
 	}
 	switch strings.TrimSpace(kind) {
 	case string(domain.MinisterDraftKindPolicy):
-		return "国策建议", targetLabel + " 更符合当前局势。", "这条建议来自规则规划器对国策收益的评估。", "如果你想保持当前国策不变，可以不采纳这条建议。"
+		return "国策提案", "建议本回合采纳：" + targetLabel + "。", "大臣认为该国策更能回应当前局势，并已整理为可批准提案。", "若你希望维持现行国策，可以暂不采纳。"
 	case string(domain.MinisterDraftKindInstitution):
-		return "制度建议", "建议启用：" + targetLabel + "。", "该搭配使用了本回合当前可用的较优制度组合。", "如果你想保持制度槽位不变，可以不采纳这条建议。"
+		return "制度提案", "建议启用：" + targetLabel + "。", "大臣已将当前制度选择整理为一项可批准调整。", "若你希望保持制度槽位不变，可以暂不采纳。"
 	case string(domain.MinisterDraftKindBuild):
-		return "建设建议", "建议建设：" + targetLabel + "。", "该建设方案从当前可见且已控制的节点与已解锁建筑中筛选得出。", "如果你想把工业留给其他建设项目，可以不采纳这条建议。"
+		return "建设提案", "建议建设：" + targetLabel + "。", "大臣已将该建设目标整理为本回合可批准工程。", "若你希望保留工业给其他项目，可以暂不采纳。"
 	case string(domain.MinisterDraftKindRecipe):
-		return "生产建议", "建议将生产切换为：" + targetLabel + "。", "该配方从建筑当前可用的生产选项中筛选得出。", "如果你想保持当前生产不变，可以不采纳这条建议。"
+		return "生产提案", "建议将生产切换为：" + targetLabel + "。", "大臣已将该生产调整整理为可批准提案。", "若你希望维持当前生产安排，可以暂不采纳。"
 	case string(domain.MinisterDraftKindUnitOrder):
-		return "扩张建议", "建议执行：" + targetLabel + "。", "这条命令有助于本回合的民用扩张推进。", "如果你想手动移动单位，可以不采纳这条建议。"
+		return "行动提案", "建议执行：" + targetLabel + "。", "大臣已将该单位行动整理为本回合可批准命令。", "若你希望亲自调整单位命令，可以暂不采纳。"
 	default:
-		return "研究建议", targetLabel + " 是当前优先研究目标。", "这条建议来自规则规划器对科研收益的评估。", "如果你想改选其他科技，可以不采纳这条建议。"
+		return "研究提案", "建议将 " + targetLabel + " 作为当前研究目标。", "大臣已将该研究方向整理为可批准提案。", "若你希望改选其他科技，可以暂不采纳。"
 	}
+}
+
+func ministerRoleForBuild(buildingTypeID string) string {
+	building, ok := staticdata.Default().GetBuilding(strings.TrimSpace(buildingTypeID))
+	if !ok {
+		return worksMinisterRole
+	}
+	if textMatchesAny(building.ID, building.Name, building.Description, building.Tags, []string{"frontier", "outpost", "border", "colon", "settle", "拓土", "前哨", "边", "开拓"}) {
+		return frontierMinisterRole
+	}
+	if textMatchesAny(building.ID, building.Name, building.Description, building.Tags, []string{"barracks", "stable", "tower", "wall", "fort", "garrison", "arsenal", "camp", "military", "war", "兵", "军", "防"}) {
+		return defenseMinisterRole
+	}
+	return worksMinisterRole
+}
+
+func ministerRoleForRecipe(recipeID string) string {
+	recipe, ok := staticdata.Default().GetRecipe(strings.TrimSpace(recipeID))
+	if !ok {
+		return worksMinisterRole
+	}
+	if textMatchesAny(recipe.ID, recipe.Name, recipe.Description, recipe.Tags, []string{"settler", "frontier", "outpost", "expansion", "colon", "拓土", "前哨", "开拓"}) {
+		return frontierMinisterRole
+	}
+	for _, unitID := range recipe.Outputs.Units {
+		if unitIsSettler(unitID) {
+			return frontierMinisterRole
+		}
+	}
+	if textMatchesAny(recipe.ID, recipe.Name, recipe.Description, recipe.Tags, []string{"infantry", "archer", "cavalry", "militia", "soldier", "military", "war", "兵", "军"}) {
+		return defenseMinisterRole
+	}
+	for _, unitID := range recipe.Outputs.Units {
+		if unitIsCombatant(unitID) {
+			return defenseMinisterRole
+		}
+	}
+	return worksMinisterRole
+}
+
+func ministerRoleForUnitOrderAction(action string) string {
+	if gameorders.UnitAction(strings.TrimSpace(action)) == gameorders.ActionSettleCity {
+		return frontierMinisterRole
+	}
+	return commandMinisterRole
+}
+
+func textMatchesAny(id string, name string, description string, tags []string, keywords []string) bool {
+	target := strings.ToLower(strings.Join([]string{id, name, description, strings.Join(tags, " ")}, " "))
+	for _, keyword := range keywords {
+		if strings.Contains(target, strings.ToLower(strings.TrimSpace(keyword))) {
+			return true
+		}
+	}
+	return false
+}
+
+func unitIsSettler(unitID string) bool {
+	unit, ok := staticdata.Default().GetUnit(strings.TrimSpace(unitID))
+	if !ok {
+		return strings.Contains(strings.ToLower(strings.TrimSpace(unitID)), "settler")
+	}
+	return strings.EqualFold(unit.ID, string(domain.UnitTypeSettler)) ||
+		textMatchesAny(unit.ID, unit.Name, unit.Description, unit.Tags, []string{"settler", "colon", "开拓"})
+}
+
+func unitIsCombatant(unitID string) bool {
+	unit, ok := staticdata.Default().GetUnit(strings.TrimSpace(unitID))
+	if !ok {
+		return textMatchesAny(unitID, "", "", nil, []string{"infantry", "archer", "cavalry", "militia", "soldier", "兵", "军"})
+	}
+	if strings.EqualFold(unit.ID, string(domain.UnitTypeSettler)) {
+		return false
+	}
+	if unit.Attack > 0 || unit.AttackRange > 0 {
+		return true
+	}
+	return textMatchesAny(unit.ID, unit.Name, unit.Description, unit.Tags, []string{"infantry", "archer", "cavalry", "militia", "soldier", "military", "war", "兵", "军"})
 }
 
 func technologyLabel(technologyID string) string {
@@ -252,10 +300,14 @@ func policyLabel(policyID string) string {
 	return strings.TrimSpace(policyID)
 }
 
-func institutionLabel(policyIDs []string) string {
-	labels := make([]string, 0, len(policyIDs))
-	for _, policyID := range policyIDs {
-		labels = append(labels, policyLabel(policyID))
+func institutionLabel(institutionIDs []string) string {
+	labels := make([]string, 0, len(institutionIDs))
+	for _, institutionID := range institutionIDs {
+		if institution, ok := staticdata.Default().GetInstitution(strings.TrimSpace(institutionID)); ok && strings.TrimSpace(institution.Name) != "" {
+			labels = append(labels, strings.TrimSpace(institution.Name))
+			continue
+		}
+		labels = append(labels, strings.TrimSpace(institutionID))
 	}
 	return strings.Join(labels, ", ")
 }
@@ -300,50 +352,4 @@ func cloneStringMap(src map[string]string) map[string]string {
 		dst[key] = value
 	}
 	return dst
-}
-
-type preparedMinisterDraftPolishJob struct {
-	Turn     int
-	PlayerID string
-	Draft    domain.MinisterDraft
-	Input    ministerengine.DraftPromptInput
-}
-
-func (r *Runtime) polishPreparedMinisterDraft(job preparedMinisterDraftPolishJob) {
-	if r == nil || r.ministerEngine == nil {
-		return
-	}
-	output, ok := r.ministerEngine.PolishDraft(context.Background(), job.PlayerID, job.Draft, job.Input)
-	if !ok || output == nil {
-		return
-	}
-	r.applyPreparedMinisterDraftPolish(job, output)
-}
-
-func (r *Runtime) applyPreparedMinisterDraftPolish(job preparedMinisterDraftPolishJob, output *ministerengine.DraftOutput) {
-	if r == nil || output == nil {
-		return
-	}
-	r.preparedMinisterDraftsMu.Lock()
-	defer r.preparedMinisterDraftsMu.Unlock()
-	if r.planningStartPreparedTurn == job.Turn {
-		return
-	}
-	playerDrafts, ok := r.preparedMinisterDrafts[job.Turn]
-	if !ok {
-		return
-	}
-	drafts := playerDrafts[job.PlayerID]
-	for idx := range drafts {
-		if strings.TrimSpace(drafts[idx].DraftID) != strings.TrimSpace(job.Draft.DraftID) {
-			continue
-		}
-		drafts[idx].Title = strings.TrimSpace(output.Title)
-		drafts[idx].Summary = strings.TrimSpace(output.Summary)
-		drafts[idx].Rationale = strings.TrimSpace(output.Rationale)
-		drafts[idx].RiskNote = strings.TrimSpace(output.RiskNote)
-		drafts[idx].Source = domain.MinisterDraftSourceRuleLLM
-		playerDrafts[job.PlayerID] = drafts
-		return
-	}
 }

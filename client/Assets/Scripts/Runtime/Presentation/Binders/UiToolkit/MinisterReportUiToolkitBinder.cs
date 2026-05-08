@@ -19,6 +19,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     {
         private const int MinisterSortingOrder = 5000;
         private const int HiddenManagementSortingOrder = -1000;
+        private const float MessageBubbleMinWidth = 96f;
+        private const float MessageBubbleMaxWidth = 720f;
+        private const float MessageBubbleHorizontalPadding = 24f;
+        private const float MessageBubbleReadableWidth = 560f;
         public const string RootName = "minister-report-root";
         public const string TitleName = "minister-report-title";
         public const string CloseButtonName = "minister-report-close";
@@ -39,6 +43,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private static readonly Color TextColor = new(0.98f, 0.9f, 0.72f, 1f);
         private static readonly Color MutedTextColor = new(0.66f, 0.72f, 0.75f, 1f);
         private static readonly Dictionary<string, Sprite> AvatarSprites = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> LoggedAttributeRoles = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly List<UguiButton> _optionButtons = new();
         private readonly List<UguiButton> _tabButtons = new();
@@ -60,6 +65,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private string _lastTabsSignature;
         private MinisterReportState _renderedState;
         private bool _skillsPanelVisible;
+        private bool _runtimeRefreshInProgress;
 
         [Inject]
         private void Construct(
@@ -156,10 +162,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private UguiButton CreateTab(MinisterTabState minister)
         {
             var rect = CreateUiObject("minister-tab-" + SafeName(minister.Role), _tabsContent);
-            rect.sizeDelta = new Vector2(0f, 82f);
+            rect.sizeDelta = new Vector2(0f, 130f);
             var layout = rect.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = 82f;
-            layout.preferredHeight = 82f;
+            layout.minHeight = 130f;
+            layout.preferredHeight = 130f;
 
             var image = rect.gameObject.AddComponent<UguiImage>();
             image.color = minister.IsSelected
@@ -192,11 +198,236 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
             Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -51f), new Vector2(-10f, -31f));
 
-            var affection = CreateText(rect, "Affection", "好感 " + minister.Affection, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
-            affection.color = new Color(1f, 0.77f, 0.88f, 1f);
-            Anchor(affection.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(74f, 8f), new Vector2(-10f, 26f));
+            CreateAttributeGrid(rect, minister);
 
             return button;
+        }
+
+        private static void CreateAttributeGrid(RectTransform parent, MinisterTabState minister)
+        {
+            var hasViewModelAttributes = HasAttributes(minister.Attributes);
+            var attributes = hasViewModelAttributes
+                ? minister.Attributes
+                : MinisterAttributeResourceFallback.ForRole(minister.Role);
+            if (attributes == null || attributes.Count == 0)
+            {
+                LogAttributeRender(minister.Role, hasViewModelAttributes ? "view-model" : "resource-fallback", attributes);
+                return;
+            }
+
+            var grid = CreateUiObject("Attributes", parent);
+            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(68f, 4f), new Vector2(-8f, 72f));
+            LogAttributeRender(minister.Role, hasViewModelAttributes ? "view-model" : "resource-fallback", attributes);
+
+            const float rowHeight = 15f;
+            const float rowGap = 1f;
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                var row = i / 2;
+                var column = i % 2;
+                var xMin = column == 0 ? 0f : 0.5f;
+                var xMax = column == 0 ? 0.5f : 1f;
+                var top = -(row * (rowHeight + rowGap));
+                var leftInset = column == 0 ? 0f : 4f;
+                var rightInset = column == 0 ? -4f : 0f;
+                var item = CreateAttributeItem(grid, attributes[i]);
+                Anchor(
+                    item,
+                    new Vector2(xMin, 1f),
+                    new Vector2(xMax, 1f),
+                    new Vector2(leftInset, top - rowHeight),
+                    new Vector2(rightInset, top));
+            }
+        }
+
+        private static bool HasAttributes(IReadOnlyList<MinisterAttributeState> attributes)
+        {
+            return attributes != null && attributes.Count > 0;
+        }
+
+        private static string NormalizeRole(string role)
+        {
+            return string.IsNullOrWhiteSpace(role) ? "domestic" : role.Trim().ToLowerInvariant();
+        }
+
+        private static RectTransform CreateAttributeItem(RectTransform parent, MinisterAttributeState attribute)
+        {
+            var color = AttributeColor(attribute.Key);
+            var item = CreateUiObject("Attribute-" + SafeName(attribute.Key), parent);
+
+            var label = CreateText(
+                item,
+                "Label",
+                attribute.Label,
+                9.2f,
+                FontStyles.Bold,
+                TextAlignmentOptions.Left);
+            label.color = color;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 7f;
+            label.fontSizeMax = 9.2f;
+            label.enableWordWrapping = false;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+            Anchor(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-24f, 0f));
+
+            var value = CreateText(
+                item,
+                "Value",
+                attribute.Value.ToString(),
+                9.8f,
+                FontStyles.Bold,
+                TextAlignmentOptions.Right);
+            value.color = color;
+            value.enableAutoSizing = true;
+            value.fontSizeMin = 7.5f;
+            value.fontSizeMax = 9.8f;
+            value.enableWordWrapping = false;
+            value.overflowMode = TextOverflowModes.Overflow;
+            Anchor(value.rectTransform, new Vector2(1f, 0f), Vector2.one, new Vector2(-24f, 0f), Vector2.zero);
+
+            return item;
+        }
+
+        private static void LogAttributeRender(string role, string source, IReadOnlyList<MinisterAttributeState> attributes)
+        {
+            var normalizedRole = NormalizeRole(role);
+            if (!LoggedAttributeRoles.Add(normalizedRole))
+            {
+                return;
+            }
+
+            Debug.Log("[MinisterReportUGUI][Attributes] role=" + normalizedRole +
+                      " source=" + source +
+                      " count=" + (attributes?.Count ?? 0) +
+                      " values=" + DescribeAttributes(attributes));
+        }
+
+        private static string DescribeAttributes(IReadOnlyList<MinisterAttributeState> attributes)
+        {
+            if (attributes == null || attributes.Count == 0)
+            {
+                return "<empty>";
+            }
+
+            var builder = new StringBuilder(attributes.Count * 16);
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                var attribute = attributes[i];
+                if (attribute == null)
+                {
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append(attribute.Key).Append('=').Append(attribute.Value);
+            }
+
+            return builder.Length == 0 ? "<empty>" : builder.ToString();
+        }
+
+        private static Color AttributeColor(string key)
+        {
+            return (key ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "ability" => new Color(0.66f, 0.88f, 1f, 1f),
+                "loyalty" => new Color(0.98f, 0.84f, 0.32f, 1f),
+                "ambition" => new Color(0.95f, 0.42f, 0.55f, 1f),
+                "cautiousness" => new Color(0.61f, 0.88f, 0.66f, 1f),
+                "decisiveness" => new Color(1f, 0.56f, 0.25f, 1f),
+                "loyalty_tendency" => new Color(0.79f, 0.69f, 1f, 1f),
+                "ambition_style" => new Color(1f, 0.72f, 0.46f, 1f),
+                _ => new Color(0.86f, 0.91f, 0.94f, 1f)
+            };
+        }
+
+        private static class MinisterAttributeResourceFallback
+        {
+            private static Dictionary<string, IReadOnlyList<MinisterAttributeState>> s_byRole;
+
+            public static IReadOnlyList<MinisterAttributeState> ForRole(string role)
+            {
+                EnsureLoaded();
+                return s_byRole.TryGetValue(NormalizeRole(role), out var attributes)
+                    ? attributes
+                    : Array.Empty<MinisterAttributeState>();
+            }
+
+            private static void EnsureLoaded()
+            {
+                if (s_byRole != null)
+                {
+                    return;
+                }
+
+                s_byRole = new Dictionary<string, IReadOnlyList<MinisterAttributeState>>(StringComparer.OrdinalIgnoreCase);
+                var asset = Resources.Load<TextAsset>("Data/sections/ministers");
+                if (asset == null || string.IsNullOrWhiteSpace(asset.text))
+                {
+                    Debug.LogWarning("[MinisterReportUGUI][Attributes] resource Data/sections/ministers is missing or empty.");
+                    return;
+                }
+
+                try
+                {
+                    var section = JsonUtility.FromJson<ResourceMinistersSection>(asset.text);
+                    var ministers = section?.ministers;
+                    if (ministers == null)
+                    {
+                        Debug.LogWarning("[MinisterReportUGUI][Attributes] resource Data/sections/ministers parsed without ministers array.");
+                        return;
+                    }
+
+                    for (var i = 0; i < ministers.Length; i++)
+                    {
+                        var minister = ministers[i];
+                        if (minister == null)
+                        {
+                            continue;
+                        }
+
+                        s_byRole[NormalizeRole(minister.role)] = new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", minister.ability),
+                            new MinisterAttributeState("loyalty", "忠诚", minister.loyalty),
+                            new MinisterAttributeState("ambition", "野心", minister.ambition),
+                            new MinisterAttributeState("cautiousness", "谨慎", minister.cautiousness),
+                            new MinisterAttributeState("decisiveness", "果断", minister.decisiveness),
+                            new MinisterAttributeState("loyalty_tendency", "忠诚倾向", minister.loyalty_tendency),
+                            new MinisterAttributeState("ambition_style", "野心表现", minister.ambition_style)
+                        };
+                    }
+
+                    Debug.Log("[MinisterReportUGUI][Attributes] loaded resource fallback roles=" + string.Join(",", s_byRole.Keys));
+                }
+                catch (ArgumentException ex)
+                {
+                    s_byRole.Clear();
+                    Debug.LogWarning("[MinisterReportUGUI][Attributes] failed to parse Data/sections/ministers: " + ex.Message);
+                }
+            }
+        }
+
+        [Serializable]
+        private sealed class ResourceMinistersSection
+        {
+            public ResourceMinisterProfile[] ministers;
+        }
+
+        [Serializable]
+        private sealed class ResourceMinisterProfile
+        {
+            public string role;
+            public int ability;
+            public int loyalty;
+            public int ambition;
+            public int cautiousness;
+            public int decisiveness;
+            public int loyalty_tendency;
+            public int ambition_style;
         }
 
         private void RenderMessages(MinisterReportState state)
@@ -273,7 +504,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             var bubbleRoot = CreateUiObject("Bubble", row);
             var bubbleLayoutElement = bubbleRoot.gameObject.AddComponent<LayoutElement>();
-            bubbleLayoutElement.preferredWidth = 920f;
+            bubbleLayoutElement.minWidth = MessageBubbleMinWidth;
             bubbleLayoutElement.flexibleWidth = 0f;
             var bubbleImage = bubbleRoot.gameObject.AddComponent<UguiImage>();
             bubbleImage.color = message.IsPlayer
@@ -289,21 +520,90 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             bubbleLayout.childForceExpandHeight = false;
             bubbleRoot.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            TextMeshProUGUI header = null;
             if (!message.IsPlayer)
             {
-                var header = CreateText(bubbleRoot, "Header", BuildMessageHeader(message), 12f, FontStyles.Bold, TextAlignmentOptions.Left);
+                header = CreateText(bubbleRoot, "Header", BuildMessageHeader(message), 12f, FontStyles.Bold, TextAlignmentOptions.Left);
                 header.color = new Color(0.96f, 0.83f, 0.55f, 1f);
             }
 
             var body = CreateText(bubbleRoot, "Text", message.Text + (message.IsStreaming ? " ..." : string.Empty), 14f, FontStyles.Normal, TextAlignmentOptions.Left);
             body.color = new Color(0.93f, 0.96f, 0.97f, 1f);
             body.textWrappingMode = TextWrappingModes.Normal;
+            body.overflowMode = TextOverflowModes.Overflow;
+            bubbleLayoutElement.preferredWidth = CalculateMessageBubbleWidth(message.Text, message.IsStreaming, header);
 
             if (!message.IsPlayer)
             {
                 var spacer = CreateUiObject("Spacer", row);
                 spacer.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
             }
+        }
+
+        private static float CalculateMessageBubbleWidth(string body, bool isStreaming, TMP_Text header)
+        {
+            var bodyText = (body ?? string.Empty) + (isStreaming ? " ..." : string.Empty);
+            var bodyWidth = EstimateReadableMessageWidth(bodyText);
+            var headerWidth = PreferredTextWidth(header);
+            var preferredWidth = Mathf.Max(bodyWidth, headerWidth) + MessageBubbleHorizontalPadding;
+            return Mathf.Clamp(preferredWidth, MessageBubbleMinWidth, MessageBubbleMaxWidth);
+        }
+
+        private static float EstimateReadableMessageWidth(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return MessageBubbleMinWidth - MessageBubbleHorizontalPadding;
+            }
+
+            var longestLineUnits = 0f;
+            var currentLineUnits = 0f;
+            var totalUnits = 0f;
+            for (var i = 0; i < text.Length; i++)
+            {
+                var ch = text[i];
+                if (ch == '\r')
+                {
+                    continue;
+                }
+
+                if (ch == '\n')
+                {
+                    longestLineUnits = Mathf.Max(longestLineUnits, currentLineUnits);
+                    currentLineUnits = 0f;
+                    continue;
+                }
+
+                if (char.IsWhiteSpace(ch))
+                {
+                    currentLineUnits += 0.45f;
+                    totalUnits += 0.45f;
+                    continue;
+                }
+
+                var units = ch <= 0x007f ? 0.58f : 1f;
+                currentLineUnits += units;
+                totalUnits += units;
+            }
+
+            longestLineUnits = Mathf.Max(longestLineUnits, currentLineUnits);
+            if (totalUnits >= 38f || longestLineUnits >= 24f)
+            {
+                return MessageBubbleReadableWidth;
+            }
+
+            return Mathf.Max(96f, longestLineUnits * 15f);
+        }
+
+        private static float PreferredTextWidth(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return 0f;
+            }
+
+            var preferred = text.GetPreferredValues(text.text ?? string.Empty, MessageBubbleMaxWidth, 0f);
+            return Mathf.Max(0f, preferred.x);
         }
 
         private void RenderOptions(MinisterReportState state)
@@ -491,7 +791,22 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     .Append(item.IsSelected).Append('|')
                     .Append(item.Affection).Append('|')
                     .Append(item.AffectionPulseSequence).Append('|')
-                    .Append(item.AffectionPulseDelta).Append('\n');
+                    .Append(item.AffectionPulseDelta).Append('|');
+                var attributes = HasAttributes(item.Attributes)
+                    ? item.Attributes
+                    : MinisterAttributeResourceFallback.ForRole(item.Role);
+                if (attributes != null)
+                {
+                    for (var j = 0; j < attributes.Count; j++)
+                    {
+                        var attribute = attributes[j];
+                        builder.Append(attribute?.Key).Append('=')
+                            .Append(attribute?.Label).Append(':')
+                            .Append(attribute?.Value).Append(';');
+                    }
+                }
+
+                builder.Append('\n');
             }
 
             return builder.ToString();
@@ -795,6 +1110,20 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             if (isVisible)
             {
+                if (!_runtimeRefreshInProgress)
+                {
+                    try
+                    {
+                        _runtimeRefreshInProgress = true;
+                        _lastTabsSignature = null;
+                        _viewModel?.RefreshFromRuntimeSources();
+                    }
+                    finally
+                    {
+                        _runtimeRefreshInProgress = false;
+                    }
+                }
+
                 HideOtherManagementDocuments();
                 PanoptesLog.Log($"[MinisterReportUGUI] visible ministers={_viewModel?.Current?.Ministers.Count ?? 0} messages={_viewModel?.Current?.Messages.Count ?? 0} options={_viewModel?.Current?.Options.Count ?? 0}");
             }

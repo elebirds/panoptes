@@ -7,6 +7,7 @@ using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Panoptes.Tests.EditMode.Presentation
@@ -115,6 +116,31 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void Render_ShouldAttachTooltipEventsToAllResourceIcons()
+        {
+            var listRoot = CreateResourceListRoot();
+            _binder = CreateBinder(listRoot);
+
+            _binder.Render(new ResourceHudState(new[]
+            {
+                new ResourceHudRowState("ore", 3, displayName: "Ore", description: "Basic mineral"),
+                new ResourceHudRowState("industry_output", 2, isPoint: true, displayName: "Industry", description: "Builds things")
+            }));
+
+            var resourceIcon = listRoot.GetChild(0).Find("Image").GetComponent<Image>();
+            var pointIcon = listRoot.GetChild(1).Find("Image").GetComponent<Image>();
+            var resourceTrigger = resourceIcon.GetComponent<EventTrigger>();
+            var pointTrigger = pointIcon.GetComponent<EventTrigger>();
+
+            Assert.That(resourceIcon.raycastTarget, Is.True);
+            Assert.That(resourceTrigger, Is.Not.Null);
+            Assert.That(resourceTrigger!.triggers.Count, Is.EqualTo(3));
+            Assert.That(pointIcon.raycastTarget, Is.True);
+            Assert.That(pointTrigger, Is.Not.Null);
+            Assert.That(pointTrigger!.triggers.Count, Is.EqualTo(3));
+        }
+
+        [Test]
         public void TechButton_ShouldToggleFinalTechTreeVisibilityStore()
         {
             _root = new GameObject("ResourceHudTechButtonTest", typeof(RectTransform));
@@ -158,6 +184,30 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             button.onClick.Invoke();
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.False);
+        }
+
+        [Test]
+        public void InstitutionButton_ShouldToggleInstitutionVisibilityStore()
+        {
+            _root = new GameObject("ResourceHudInstitutionButtonTest", typeof(RectTransform));
+            var listObject = new GameObject("ResourceList", typeof(RectTransform));
+            listObject.transform.SetParent(_root.transform, false);
+            var techButtonObject = new GameObject("TechBtn", typeof(RectTransform), typeof(Button));
+            techButtonObject.transform.SetParent(_root.transform, false);
+            var institutionButtonObject = new GameObject("InstitutionBtn", typeof(RectTransform), typeof(Button));
+            institutionButtonObject.transform.SetParent(_root.transform, false);
+
+            var hud = _root.AddComponent<ResourceHUD>();
+            using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectDependencies(hud, viewModel, visibilityStore);
+
+            var button = institutionButtonObject.GetComponent<Button>();
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.Institutions), Is.True);
+
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.Institutions), Is.False);
         }
 
         [Test]

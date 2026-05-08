@@ -23,11 +23,15 @@ namespace Panoptes.Presentation.UI.HUD
     public sealed class ResourceHUD : MonoBehaviour
     {
         private const string MinisterAttentionBadgeName = "MinisterAttentionBadge";
+        private const string InstitutionAttentionBadgeName = "InstitutionAttentionBadge";
+        private const string MinisterThinkingFeedbackCode = "minister_thinking";
+        private const string MinisterThinkingFeedbackMessage = "大臣正在思考中";
 
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
         [SerializeField] private Button techButton;
         [SerializeField] private Button policyButton;
+        [SerializeField] private Button institutionButton;
         [SerializeField] private Button ministerButton;
 
         [Header("Data")]
@@ -39,6 +43,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string panelBackgroundSpriteResource = "Textures/UI/resource_panel_parchment_bg";
         [SerializeField] private string techButtonSpriteResource = "Icons/UI/icon_tech_tree_round";
         [SerializeField] private string policyButtonSpriteResource = "Icons/UI/icon_policy_round";
+        [SerializeField] private string institutionButtonSpriteResource = "Icons/UI/icon_institution_round";
         [SerializeField] private string ministerButtonSpriteResource = "Icons/UI/icon_minister_round";
         [SerializeField] private Vector2 managementButtonSize = new(54f, 54f);
         [SerializeField] private float managementButtonSpacing = 8f;
@@ -53,10 +58,16 @@ namespace Panoptes.Presentation.UI.HUD
         private ResourceHudUguiBinder _binder;
         private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
         private MapPlanningInputController _mapPlanningInputController;
+        private GameObject _institutionAttentionBadge;
+        private IDisposable _institutionAttentionSubscription;
+        private InstitutionViewModel _institutionViewModel;
         private GameObject _ministerAttentionBadge;
         private IDisposable _ministerAttentionSubscription;
+        private IDisposable _ministerTurnSubscription;
+        private GameplayFeedbackStore _feedbackStore;
         private PlanningDraftStore _planningDraftStore;
         private IDisposable _stateSubscription;
+        private TurnStore _turnStore;
         private ResourceHudViewModel _viewModel;
 
         [Inject]
@@ -79,6 +90,25 @@ namespace Panoptes.Presentation.UI.HUD
         }
 
         [Inject]
+        private void ConstructMinisterGate(
+            TurnStore turnStore,
+            GameplayFeedbackStore feedbackStore)
+        {
+            _turnStore = turnStore;
+            _feedbackStore = feedbackStore;
+            SubscribeMinisterTurn();
+            UpdateMinisterAttentionBadge();
+        }
+
+        [Inject]
+        private void ConstructInstitutionAttention(InstitutionViewModel institutionViewModel)
+        {
+            _institutionViewModel = institutionViewModel;
+            SubscribeInstitutionAttention();
+            UpdateInstitutionAttentionBadge();
+        }
+
+        [Inject]
         private void ConstructPlanningInput(
             MapPlanningInputController mapPlanningInputController)
         {
@@ -97,24 +127,31 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureBinder();
             _viewModel?.SetIncludePoints(includePoints);
             SubscribeState();
+            SubscribeInstitutionAttention();
             SubscribeMinisterAttention();
+            SubscribeMinisterTurn();
             BindManagementButtons();
             ApplyGeneratedPanelArt();
             _binder?.Render(_viewModel?.Current ?? new ResourceHudState());
+            UpdateInstitutionAttentionBadge();
             UpdateMinisterAttentionBadge();
         }
 
         private void OnDisable()
         {
             UnsubscribeState();
+            UnsubscribeInstitutionAttention();
             UnsubscribeMinisterAttention();
+            UnsubscribeMinisterTurn();
             UnbindTechButton();
             _binder?.StopAllHideCoroutines();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeMinisterTurn();
             UnsubscribeMinisterAttention();
+            UnsubscribeInstitutionAttention();
             _binder?.Dispose();
             _binder = null;
         }
@@ -124,9 +161,12 @@ namespace Panoptes.Presentation.UI.HUD
             ResolveResourceListRoot();
             ResolveTechButtonReference();
             EnsurePolicyButtonReference();
+            EnsureInstitutionButtonReference();
             EnsureMinisterButtonReference();
             LayoutManagementButtons();
+            EnsureInstitutionAttentionBadge();
             EnsureMinisterAttentionBadge();
+            UpdateInstitutionAttentionBadge();
             UpdateMinisterAttentionBadge();
         }
 
@@ -206,6 +246,29 @@ namespace Panoptes.Presentation.UI.HUD
             policyButton = clone.GetComponent<Button>();
         }
 
+        private void EnsureInstitutionButtonReference()
+        {
+            if (institutionButton != null)
+            {
+                return;
+            }
+
+            var institutionBtnTransform = transform.Find("InstitutionBtn");
+            if (institutionBtnTransform != null)
+            {
+                institutionButton = institutionBtnTransform.GetComponent<Button>();
+                return;
+            }
+
+            var clone = CreateManagementButtonClone("InstitutionBtn");
+            if (clone == null)
+            {
+                return;
+            }
+
+            institutionButton = clone.GetComponent<Button>();
+        }
+
         private GameObject CreateManagementButtonClone(string buttonName)
         {
             if (techButton == null)
@@ -225,7 +288,8 @@ namespace Panoptes.Presentation.UI.HUD
             var origin = ResolveManagementButtonOrigin();
             LayoutManagementButton(techButton, origin);
             LayoutManagementButton(policyButton, origin + new Vector2(managementButtonSize.x + managementButtonSpacing, 0f));
-            LayoutManagementButton(ministerButton, origin + new Vector2((managementButtonSize.x + managementButtonSpacing) * 2f, 0f));
+            LayoutManagementButton(institutionButton, origin + new Vector2((managementButtonSize.x + managementButtonSpacing) * 2f, 0f));
+            LayoutManagementButton(ministerButton, origin + new Vector2((managementButtonSize.x + managementButtonSpacing) * 3f, 0f));
         }
 
         private Vector2 ResolveManagementButtonOrigin()
@@ -283,16 +347,54 @@ namespace Panoptes.Presentation.UI.HUD
             _ministerAttentionSubscription = null;
         }
 
+        private void SubscribeMinisterTurn()
+        {
+            if (_turnStore == null || _ministerTurnSubscription != null)
+            {
+                return;
+            }
+
+            _ministerTurnSubscription = _turnStore.State.Subscribe(
+                this,
+                static (_, self) => self.UpdateMinisterAttentionBadge());
+        }
+
+        private void UnsubscribeMinisterTurn()
+        {
+            _ministerTurnSubscription?.Dispose();
+            _ministerTurnSubscription = null;
+        }
+
+        private void SubscribeInstitutionAttention()
+        {
+            if (_institutionViewModel == null || _institutionAttentionSubscription != null)
+            {
+                return;
+            }
+
+            _institutionAttentionSubscription = _institutionViewModel.State.Subscribe(
+                this,
+                static (_, self) => self.UpdateInstitutionAttentionBadge());
+        }
+
+        private void UnsubscribeInstitutionAttention()
+        {
+            _institutionAttentionSubscription?.Dispose();
+            _institutionAttentionSubscription = null;
+        }
+
         private void BindManagementButtons()
         {
             _buttonSubscriptions.Clear();
             ResolveTechButtonReference();
             EnsurePolicyButtonReference();
+            EnsureInstitutionButtonReference();
             EnsureMinisterButtonReference();
             LayoutManagementButtons();
 
             BindButton(techButton, OnTechButtonClicked);
             BindButton(policyButton, OnPolicyButtonClicked);
+            BindButton(institutionButton, OnInstitutionButtonClicked);
             BindButton(ministerButton, OnMinisterButtonClicked);
         }
 
@@ -344,7 +446,77 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            if (!HasCurrentTurnMinisterDrafts(_planningDraftStore?.Snapshot, _turnStore?.Snapshot))
+            {
+                PublishMinisterThinkingFeedback();
+                return;
+            }
+
             OpenManagementPanel(ManagementPanelId.MinisterReport);
+        }
+
+        private void OnInstitutionButtonClicked()
+        {
+            if (_managementPanelVisibilityStore == null)
+            {
+                if (logWarnings)
+                {
+                    PanoptesLog.Warning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                }
+                return;
+            }
+
+            OpenManagementPanel(ManagementPanelId.Institutions);
+        }
+
+        private void EnsureInstitutionAttentionBadge()
+        {
+            if (institutionButton == null)
+            {
+                return;
+            }
+
+            var buttonRect = institutionButton.transform as RectTransform;
+            if (buttonRect == null)
+            {
+                return;
+            }
+
+            if (_institutionAttentionBadge != null)
+            {
+                return;
+            }
+
+            var existing = buttonRect.Find(InstitutionAttentionBadgeName);
+            if (existing != null)
+            {
+                _institutionAttentionBadge = existing.gameObject;
+                return;
+            }
+
+            var badge = new GameObject(InstitutionAttentionBadgeName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            badge.transform.SetParent(buttonRect, false);
+            var rect = badge.transform as RectTransform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(20f, 20f);
+            rect.anchoredPosition = new Vector2(-2f, 2f);
+
+            var image = badge.GetComponent<Image>();
+            image.sprite = CreateMinisterAttentionSprite();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            _institutionAttentionBadge = badge;
+        }
+
+        private void UpdateInstitutionAttentionBadge()
+        {
+            EnsureInstitutionAttentionBadge();
+            if (_institutionAttentionBadge != null)
+            {
+                _institutionAttentionBadge.SetActive(_institutionViewModel?.HasSelectableCandidate() == true);
+            }
         }
 
         private void EnsureMinisterAttentionBadge()
@@ -396,13 +568,28 @@ namespace Panoptes.Presentation.UI.HUD
         private void UpdateMinisterAttentionBadge(PlanningDraftState state)
         {
             EnsureMinisterAttentionBadge();
+            var turn = _turnStore?.Snapshot;
+            if (!HasCurrentTurnMinisterDrafts(state, turn) &&
+                _managementPanelVisibilityStore?.IsVisible(ManagementPanelId.MinisterReport) == true)
+            {
+                _managementPanelVisibilityStore.Hide();
+            }
+
             if (_ministerAttentionBadge != null)
             {
-                _ministerAttentionBadge.SetActive(HasInteractiveMinisterDrafts(state?.MinisterDrafts));
+                _ministerAttentionBadge.SetActive(HasCurrentTurnInteractiveMinisterDrafts(state, turn));
             }
         }
 
-        private static bool HasInteractiveMinisterDrafts(System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts)
+        private static bool HasCurrentTurnMinisterDrafts(PlanningDraftState state, TurnState turn)
+        {
+            return HasCurrentTurnMinisterDrafts(state?.MinisterDrafts, ResolveCurrentTurn(state, turn), state?.SnapshotTurn ?? 0);
+        }
+
+        private static bool HasCurrentTurnMinisterDrafts(
+            System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts,
+            int currentTurn,
+            int snapshotTurn)
         {
             if (drafts == null)
             {
@@ -411,13 +598,79 @@ namespace Panoptes.Presentation.UI.HUD
 
             for (var i = 0; i < drafts.Count; i++)
             {
-                if (drafts[i]?.IsInteractive == true)
+                if (IsCurrentTurnDraft(drafts[i], currentTurn, snapshotTurn))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool HasCurrentTurnInteractiveMinisterDrafts(PlanningDraftState state, TurnState turn)
+        {
+            return HasCurrentTurnInteractiveMinisterDrafts(state?.MinisterDrafts, ResolveCurrentTurn(state, turn), state?.SnapshotTurn ?? 0);
+        }
+
+        private static bool HasCurrentTurnInteractiveMinisterDrafts(
+            System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts,
+            int currentTurn,
+            int snapshotTurn)
+        {
+            if (drafts == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < drafts.Count; i++)
+            {
+                var draft = drafts[i];
+                if (draft?.IsInteractive == true && IsCurrentTurnDraft(draft, currentTurn, snapshotTurn))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsCurrentTurnDraft(MinisterDraftDto draft, int currentTurn, int snapshotTurn)
+        {
+            if (draft == null)
+            {
+                return false;
+            }
+
+            if (currentTurn <= 0)
+            {
+                return true;
+            }
+
+            if (draft.Turn == currentTurn)
+            {
+                return true;
+            }
+
+            return draft.Turn <= 0 && snapshotTurn == currentTurn;
+        }
+
+        private static int ResolveCurrentTurn(PlanningDraftState state, TurnState turn)
+        {
+            if (turn != null && turn.Turn > 0)
+            {
+                return turn.Turn;
+            }
+
+            return state != null && state.SnapshotTurn > 0 ? state.SnapshotTurn : 0;
+        }
+
+        private void PublishMinisterThinkingFeedback()
+        {
+            _feedbackStore?.PublishFeedback(
+                "minister",
+                MinisterThinkingFeedbackCode,
+                MinisterThinkingFeedbackMessage,
+                false);
         }
 
         private static Sprite CreateMinisterAttentionSprite()
@@ -490,6 +743,7 @@ namespace Panoptes.Presentation.UI.HUD
             ApplyPanelBackground();
             ApplyButtonSprite(techButton, techButtonSpriteResource);
             ApplyButtonSprite(policyButton, policyButtonSpriteResource);
+            ApplyButtonSprite(institutionButton, institutionButtonSpriteResource);
             ApplyButtonSprite(ministerButton, ministerButtonSpriteResource);
         }
 

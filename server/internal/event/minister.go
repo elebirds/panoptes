@@ -51,7 +51,7 @@ func (e PolicyChangedEvent) String() string {
 
 type TokenUsedEvent struct {
 	PlayerID   string
-	Action     string
+	Action     string // "reveal", "override", "direct_command"
 	TokensLeft int
 }
 

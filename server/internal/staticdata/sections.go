@@ -14,6 +14,7 @@ const (
 	SectionBuildings          = "buildings"
 	SectionTechnologies       = "technologies"
 	SectionPolicies           = "policies"
+	SectionInstitutions       = "institutions"
 	SectionRecipes            = "recipes"
 	SectionTerrains           = "terrains"
 	SectionEmotes             = "emotes"
@@ -55,6 +56,11 @@ type policiesSection struct {
 	Policies []PolicyDefinition `json:"policies"`
 }
 
+type institutionsSection struct {
+	Categories   []InstitutionCategoryDefinition `json:"categories"`
+	Institutions []InstitutionDefinition         `json:"institutions"`
+}
+
 type recipesSection struct {
 	Recipes []RecipeDefinition `json:"recipes"`
 }
@@ -92,6 +98,7 @@ func RequiredCatalogSections() []string {
 		SectionBuildings,
 		SectionTechnologies,
 		SectionPolicies,
+		SectionInstitutions,
 		SectionRecipes,
 		SectionTerrains,
 		SectionEmotes,
@@ -119,6 +126,7 @@ func CatalogSectionValues(bundle CatalogBundle) []struct {
 		{Name: SectionBuildings, Value: buildingsSection{Buildings: append([]BuildingDefinition(nil), bundle.Buildings...)}},
 		{Name: SectionTechnologies, Value: technologiesSection{Technologies: append([]TechnologyDefinition(nil), bundle.Technologies...)}},
 		{Name: SectionPolicies, Value: policiesSection{Policies: append([]PolicyDefinition(nil), bundle.Policies...)}},
+		{Name: SectionInstitutions, Value: institutionsSection{Categories: append([]InstitutionCategoryDefinition(nil), bundle.InstitutionCategories...), Institutions: append([]InstitutionDefinition(nil), bundle.Institutions...)}},
 		{Name: SectionRecipes, Value: recipesSection{Recipes: append([]RecipeDefinition(nil), bundle.Recipes...)}},
 		{Name: SectionTerrains, Value: terrainsSection{Terrains: append([]TerrainDefinition(nil), bundle.Terrains...)}},
 		{Name: SectionEmotes, Value: emotesSection{Series: append([]EmoteSeriesDefinition(nil), bundle.EmoteSeries...), Emotes: append([]EmoteDefinition(nil), bundle.Emotes...)}},

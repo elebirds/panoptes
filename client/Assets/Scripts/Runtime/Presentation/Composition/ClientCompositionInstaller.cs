@@ -251,6 +251,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<RecipeSynthesisViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterReportViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PolicyFocusViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<InstitutionViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<NationalLedgerViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<BuildCatalogUiToolkitBinder>("Prefabs/UI/BuildCatalog"),
@@ -264,6 +265,9 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<PolicyFocusUiToolkitBinder>("Prefabs/UI/PolicyFocus"),
                 Lifetime.Singleton);
+            builder.RegisterComponentOnNewGameObject<InstitutionUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Institution UiToolkit Binder");
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<MinisterReportUiToolkitBinder>("Prefabs/UI/MinisterReport"),
                 Lifetime.Singleton);
@@ -286,11 +290,13 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<InstitutionUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCoreHpBarOverlayController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCorePolicyFocusActionRegistrar>());
             builder.RegisterBuildCallback(container => container.Resolve<GameChatPanelController>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<GameOverOverlay>());
         }
 
         private static T LoadRequiredComponent<T>(string resourcePath) where T : Component

@@ -104,7 +104,7 @@ namespace Panoptes.DebugTools
                 "MsgJoinRoom" => "{\n  \"roomCode\": \"ABCD12\"\n}",
                 "MsgKickPlayer" => "{\n  \"playerId\": \"player-2\"\n}",
                 "MsgSetPolicy" => "{\n  \"nationalPolicyId\": \"war_preparedness\"\n}",
-                "MsgSetInstitutionLoadout" => "{\n  \"policyIds\": [\"academy_charter\"]\n}",
+                "MsgSetInstitutionLoadout" => "{\n  \"institutionIds\": [\"academy_charter\"]\n}",
                 "MsgSetMinisterDirective" => "{\n  \"ministerRole\": \"domestic\",\n  \"content\": \"{\\\"directive_type\\\":\\\"accept\\\",\\\"draft_id\\\":\\\"domestic:research:agrarian_foundations:3\\\"}\"\n}",
                 "MsgSetResearchTarget" => "{\n  \"technologyId\": \"tech_masonry\"\n}",
                 "MsgSetBuildingRecipe" => "{\n  \"nodeId\": \"node-a\",\n  \"recipeId\": \"recipe_swordsman\"\n}",

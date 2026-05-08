@@ -1282,6 +1282,7 @@ type GameEvent struct {
 	//	*GameEvent_GameChatSync
 	//	*GameEvent_CommandAck
 	//	*GameEvent_GameSync
+	//	*GameEvent_MandateResult
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1567,6 +1568,15 @@ func (x *GameEvent) GetGameSync() *MsgGameSync {
 	return nil
 }
 
+func (x *GameEvent) GetMandateResult() *MsgMandateResult {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_MandateResult); ok {
+			return x.MandateResult
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1679,6 +1689,10 @@ type GameEvent_GameSync struct {
 	GameSync *MsgGameSync `protobuf:"bytes,28,opt,name=game_sync,json=gameSync,proto3,oneof"`
 }
 
+type GameEvent_MandateResult struct {
+	MandateResult *MsgMandateResult `protobuf:"bytes,29,opt,name=mandate_result,json=mandateResult,proto3,oneof"`
+}
+
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
 
 func (*GameEvent_StaticCatalogSnapshot) isGameEvent_Body() {}
@@ -1732,6 +1746,8 @@ func (*GameEvent_GameChatSync) isGameEvent_Body() {}
 func (*GameEvent_CommandAck) isGameEvent_Body() {}
 
 func (*GameEvent_GameSync) isGameEvent_Body() {}
+
+func (*GameEvent_MandateResult) isGameEvent_Body() {}
 
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1947,7 +1963,7 @@ const file_panoptes_proto_v1_transport_proto_rawDesc = "" +
 	"\rplayer_kicked\x18\x04 \x01(\v2\".panoptes.proto.v1.MsgPlayerKickedH\x00R\fplayerKicked\x12C\n" +
 	"\vlobby_error\x18\x05 \x01(\v2 .panoptes.proto.v1.MsgLobbyErrorH\x00R\n" +
 	"lobbyErrorB\x06\n" +
-	"\x04body\"\xcc\x13\n" +
+	"\x04body\"\x9a\x14\n" +
 	"\tGameEvent\x12e\n" +
 	"\x17static_catalog_manifest\x18\x01 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogManifestH\x00R\x15staticCatalogManifest\x12e\n" +
 	"\x17static_catalog_snapshot\x18\x02 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogSnapshotH\x00R\x15staticCatalogSnapshot\x12=\n" +
@@ -1978,7 +1994,8 @@ const file_panoptes_proto_v1_transport_proto_rawDesc = "" +
 	"\x0egame_chat_sync\x18\x1a \x01(\v2\".panoptes.proto.v1.MsgGameChatSyncH\x00R\fgameChatSync\x12C\n" +
 	"\vcommand_ack\x18\x1b \x01(\v2 .panoptes.proto.v1.MsgCommandAckH\x00R\n" +
 	"commandAck\x12=\n" +
-	"\tgame_sync\x18\x1c \x01(\v2\x1e.panoptes.proto.v1.MsgGameSyncH\x00R\bgameSyncB\x06\n" +
+	"\tgame_sync\x18\x1c \x01(\v2\x1e.panoptes.proto.v1.MsgGameSyncH\x00R\bgameSync\x12L\n" +
+	"\x0emandate_result\x18\x1d \x01(\v2#.panoptes.proto.v1.MsgMandateResultH\x00R\rmandateResultB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -2078,6 +2095,7 @@ var file_panoptes_proto_v1_transport_proto_goTypes = []any{
 	(*MsgGameChatSync)(nil),                     // 72: panoptes.proto.v1.MsgGameChatSync
 	(*MsgCommandAck)(nil),                       // 73: panoptes.proto.v1.MsgCommandAck
 	(*MsgGameSync)(nil),                         // 74: panoptes.proto.v1.MsgGameSync
+	(*MsgMandateResult)(nil),                    // 75: panoptes.proto.v1.MsgMandateResult
 }
 var file_panoptes_proto_v1_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
@@ -2148,16 +2166,17 @@ var file_panoptes_proto_v1_transport_proto_depIdxs = []int32{
 	72, // 65: panoptes.proto.v1.GameEvent.game_chat_sync:type_name -> panoptes.proto.v1.MsgGameChatSync
 	73, // 66: panoptes.proto.v1.GameEvent.command_ack:type_name -> panoptes.proto.v1.MsgCommandAck
 	74, // 67: panoptes.proto.v1.GameEvent.game_sync:type_name -> panoptes.proto.v1.MsgGameSync
-	1,  // 68: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
-	9,  // 69: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
-	10, // 70: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
-	11, // 71: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
-	3,  // 72: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
-	73, // [73:73] is the sub-list for method output_type
-	73, // [73:73] is the sub-list for method input_type
-	73, // [73:73] is the sub-list for extension type_name
-	73, // [73:73] is the sub-list for extension extendee
-	0,  // [0:73] is the sub-list for field type_name
+	75, // 68: panoptes.proto.v1.GameEvent.mandate_result:type_name -> panoptes.proto.v1.MsgMandateResult
+	1,  // 69: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
+	9,  // 70: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
+	10, // 71: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
+	11, // 72: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
+	3,  // 73: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
+	74, // [74:74] is the sub-list for method output_type
+	74, // [74:74] is the sub-list for method input_type
+	74, // [74:74] is the sub-list for extension type_name
+	74, // [74:74] is the sub-list for extension extendee
+	0,  // [0:74] is the sub-list for field type_name
 }
 
 func init() { file_panoptes_proto_v1_transport_proto_init() }
@@ -2256,6 +2275,7 @@ func file_panoptes_proto_v1_transport_proto_init() {
 		(*GameEvent_GameChatSync)(nil),
 		(*GameEvent_CommandAck)(nil),
 		(*GameEvent_GameSync)(nil),
+		(*GameEvent_MandateResult)(nil),
 	}
 	file_panoptes_proto_v1_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),

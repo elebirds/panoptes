@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
@@ -7,6 +8,20 @@ namespace Panoptes.Core.Domain
         public string Key;
         public float Value;
         public string Label;
+    }
+
+    public sealed class MinisterProfileDto
+    {
+        public string Role;
+        public string Name;
+        public int Ability;
+        public string Personality;
+        public int Loyalty;
+        public int Ambition;
+        public int Cautiousness;
+        public int Decisiveness;
+        public int LoyaltyTendency;
+        public int AmbitionStyle;
     }
 
     public sealed class MinisterDraftDto
@@ -25,7 +40,7 @@ namespace Panoptes.Core.Domain
         public bool Available;
         public int Turn;
         public string Source;
-        public string[] PolicyIds;
+        public string[] InstitutionIds;
         public string NodeId;
         public string BuildingTypeId;
         public string CityId;
@@ -35,6 +50,9 @@ namespace Panoptes.Core.Domain
         public string TargetNodeId;
         public string TargetUnitId;
         public string SecondaryNodeId;
+        public string OperationId;
+        public string Objective;
+        public IReadOnlyList<MinisterOperationCommandDto> OperationCommands = Array.Empty<MinisterOperationCommandDto>();
 
         public bool IsDomestic => string.Equals(MinisterRole, "domestic", StringComparison.OrdinalIgnoreCase);
 
@@ -57,5 +75,21 @@ namespace Panoptes.Core.Domain
                 return Status ?? string.Empty;
             }
         }
+    }
+
+    public sealed class MinisterOperationCommandDto
+    {
+        public string Label;
+        public string Kind;
+        public string RawJson;
+        public string NodeId;
+        public string BuildingTypeId;
+        public string CityId;
+        public string RecipeId;
+        public string UnitId;
+        public string Action;
+        public string TargetNodeId;
+        public string TargetUnitId;
+        public string SecondaryNodeId;
     }
 }

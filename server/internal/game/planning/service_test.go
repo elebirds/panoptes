@@ -133,8 +133,8 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	if got := snapshot.GetPlannedNationalPolicyId(); got != "expansion" {
 		t.Fatalf("planned national policy = %q, want expansion", got)
 	}
-	if got := snapshot.GetPlannedInstitutionPolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
-		t.Fatalf("planned institution policy ids = %#v, want [academy_charter]", got)
+	if got := snapshot.GetPlannedInstitutionIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("planned institution ids = %#v, want [academy_charter]", got)
 	}
 	if got := len(snapshot.GetBuildOrders()); got != 1 {
 		t.Fatalf("build order count = %d, want 1", got)

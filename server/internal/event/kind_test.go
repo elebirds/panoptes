@@ -56,6 +56,7 @@ func TestEconomyEventKinds(t *testing.T) {
 		{name: "storage raided", kind: "storage_raided", ev: StorageRaidedEvent{}},
 		{name: "road built", kind: "road_built", ev: RoadBuiltEvent{}},
 		{name: "road repaired", kind: "road_repaired", ev: RoadRepairedEvent{}},
+		{name: "engineer road trail built", kind: "engineer_road_trail_built", ev: EngineerRoadTrailBuiltEvent{}},
 		{name: "unit produced", kind: "unit_produced", ev: UnitProducedEvent{}},
 		{name: "point budget refreshed", kind: "point_budget_refreshed", ev: PointBudgetRefreshedEvent{}},
 		{name: "point spent", kind: "point_spent", ev: PointSpentEvent{}},

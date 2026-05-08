@@ -125,6 +125,32 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class InstitutionCategoryEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public int sort_order;
+            public string[] tags;
+        }
+
+        [Serializable]
+        public sealed class InstitutionEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string category;
+            public string activation_timing;
+            public int sort_order;
+            public string[] tags;
+            public PrerequisiteEntryJson[] prerequisites;
+            public ExplicitEffectEntryJson[] explicit_effects;
+            public ModifierEffectEntryJson[] modifier_effects;
+        }
+
+        [Serializable]
         public sealed class ModifierEffectEntryJson
         {
             public string trigger;
@@ -175,6 +201,7 @@ namespace Panoptes.Core.Application.Cache
             public sealed class UnitFlagsJson
             {
                 public bool can_attack_structures;
+                public bool can_destroy_road;
             }
 
             public string id;
@@ -269,6 +296,10 @@ namespace Panoptes.Core.Application.Cache
             public string personality_desc;
             public int loyalty;
             public int ambition;
+            public int cautiousness;
+            public int decisiveness;
+            public int loyalty_tendency;
+            public int ambition_style;
         }
 
         [Serializable]
@@ -354,6 +385,8 @@ namespace Panoptes.Core.Application.Cache
             public BuildingEntryJson[] buildings;
             public TechnologyEntryJson[] technologies;
             public PolicyEntryJson[] policies;
+            public InstitutionCategoryEntryJson[] institution_categories;
+            public InstitutionEntryJson[] institutions;
             public RecipeEntryJson[] recipes;
             public TerrainEntryJson[] terrains;
             public EmoteSeriesEntryJson[] emote_series;
@@ -401,6 +434,13 @@ namespace Panoptes.Core.Application.Cache
         private sealed class PoliciesSectionJson
         {
             public PolicyEntryJson[] policies;
+        }
+
+        [Serializable]
+        private sealed class InstitutionsSectionJson
+        {
+            public InstitutionCategoryEntryJson[] categories;
+            public InstitutionEntryJson[] institutions;
         }
 
         [Serializable]
@@ -502,6 +542,8 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, MapEntryJson> _mapsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, PointEntryJson> _pointsByKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, PolicyEntryJson> _policiesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, InstitutionCategoryEntryJson> _institutionCategoriesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, InstitutionEntryJson> _institutionsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, RecipeEntryJson> _recipesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ResourceEntryJson> _resourcesByKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, TerrainEntryJson> _terrainsById = new(StringComparer.OrdinalIgnoreCase);
@@ -527,6 +569,8 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyDictionary<string, BuildingEntryJson> Buildings => _buildingsById;
         public IReadOnlyDictionary<string, PointEntryJson> Points => _pointsByKey;
         public IReadOnlyDictionary<string, PolicyEntryJson> Policies => _policiesById;
+        public IReadOnlyDictionary<string, InstitutionCategoryEntryJson> InstitutionCategories => _institutionCategoriesById;
+        public IReadOnlyDictionary<string, InstitutionEntryJson> Institutions => _institutionsById;
         public IReadOnlyDictionary<string, RecipeEntryJson> Recipes => _recipesById;
         public IReadOnlyDictionary<string, ResourceEntryJson> Resources => _resourcesByKey;
         public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
@@ -593,6 +637,8 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_buildingsById, parsed.buildings, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_technologiesById, parsed.technologies, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_policiesById, parsed.policies, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_institutionCategoriesById, parsed.institution_categories, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_institutionsById, parsed.institutions, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_recipesById, parsed.recipes, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_emoteSeriesById, parsed.emote_series, entry => entry != null ? entry.id : string.Empty);
@@ -818,6 +864,7 @@ namespace Panoptes.Core.Application.Cache
             var oldBuildings = new Dictionary<string, BuildingEntryJson>(_buildingsById, StringComparer.OrdinalIgnoreCase);
             var oldTechnologies = new Dictionary<string, TechnologyEntryJson>(_technologiesById, StringComparer.OrdinalIgnoreCase);
             var oldRecipes = new Dictionary<string, RecipeEntryJson>(_recipesById, StringComparer.OrdinalIgnoreCase);
+            var oldInstitutions = new Dictionary<string, InstitutionEntryJson>(_institutionsById, StringComparer.OrdinalIgnoreCase);
 
             RebuildIndex(_resourcesByKey, ConvertResources(snapshot.Resources), entry => entry != null ? entry.key : string.Empty);
             RebuildIndex(_pointsByKey, ConvertPoints(snapshot.Points), entry => entry != null ? entry.key : string.Empty);
@@ -825,6 +872,8 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_buildingsById, ConvertBuildings(snapshot.Buildings, oldBuildings), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_technologiesById, ConvertTechnologies(snapshot.Technologies, oldTechnologies), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_policiesById, ConvertPolicies(snapshot.Policies), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_institutionCategoriesById, ConvertInstitutionCategories(snapshot.InstitutionCategories), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_institutionsById, ConvertInstitutions(snapshot.Institutions, oldInstitutions), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_recipesById, ConvertRecipes(snapshot.Recipes, oldRecipes), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, ConvertTerrains(snapshot.Terrains), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_emoteSeriesById, ConvertEmoteSeries(snapshot.EmoteSeries), entry => entry != null ? entry.id : string.Empty);
@@ -851,6 +900,11 @@ namespace Panoptes.Core.Application.Cache
         public bool TryGetPolicy(string policyId, out PolicyEntryJson entry)
         {
             return _policiesById.TryGetValue(Normalize(policyId), out entry);
+        }
+
+        public bool TryGetInstitution(string institutionId, out InstitutionEntryJson entry)
+        {
+            return _institutionsById.TryGetValue(Normalize(institutionId), out entry);
         }
 
         public bool TryGetRecipe(string recipeId, out RecipeEntryJson entry)
@@ -935,6 +989,8 @@ namespace Panoptes.Core.Application.Cache
             ServerManifest = null;
             _pointsByKey.Clear();
             _policiesById.Clear();
+            _institutionCategoriesById.Clear();
+            _institutionsById.Clear();
             _recipesById.Clear();
             _resourcesByKey.Clear();
             _technologiesById.Clear();
@@ -1026,6 +1082,11 @@ namespace Panoptes.Core.Application.Cache
             yield return ("buildings", JsonUtility.ToJson(new BuildingsSectionJson { buildings = _buildingsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("technologies", JsonUtility.ToJson(new TechnologiesSectionJson { technologies = _technologiesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("policies", JsonUtility.ToJson(new PoliciesSectionJson { policies = _policiesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("institutions", JsonUtility.ToJson(new InstitutionsSectionJson
+            {
+                categories = _institutionCategoriesById.Values.OrderBy(entry => entry != null ? entry.sort_order : 0).ThenBy(entry => Normalize(entry.id)).ToArray(),
+                institutions = _institutionsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray()
+            }));
             yield return ("recipes", JsonUtility.ToJson(new RecipesSectionJson { recipes = _recipesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("terrains", JsonUtility.ToJson(new TerrainsSectionJson { terrains = _terrainsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("emotes", JsonUtility.ToJson(new EmotesSectionJson
@@ -1150,6 +1211,11 @@ namespace Panoptes.Core.Application.Cache
                         return true;
                     case "policies":
                         RebuildIndex(_policiesById, JsonUtility.FromJson<PoliciesSectionJson>(payload)?.policies, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "institutions":
+                        var institutions = JsonUtility.FromJson<InstitutionsSectionJson>(payload);
+                        RebuildIndex(_institutionCategoriesById, institutions?.categories, entry => entry != null ? entry.id : string.Empty);
+                        RebuildIndex(_institutionsById, institutions?.institutions, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "recipes":
                         RebuildIndex(_recipesById, JsonUtility.FromJson<RecipesSectionJson>(NormalizeAmountMapFields(payload, "resource_inputs", "point_inputs", "resources", "point_progress", "state_changes"))?.recipes, entry => entry != null ? entry.id : string.Empty);
@@ -1286,7 +1352,8 @@ namespace Panoptes.Core.Application.Cache
                     prefab_key = item != null ? item.PrefabKey : string.Empty,
                     flags = new UnitEntryJson.UnitFlagsJson
                     {
-                        can_attack_structures = item != null && item.CanAttackStructures
+                        can_attack_structures = item != null && item.CanAttackStructures,
+                        can_destroy_road = false
                     },
                     tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
                 };
@@ -1386,6 +1453,64 @@ namespace Panoptes.Core.Application.Cache
                     layer = item != null ? item.Layer : string.Empty,
                     activation_timing = item != null ? item.ActivationTiming : string.Empty,
                     modifier_effects = Array.Empty<ModifierEffectEntryJson>()
+                };
+            }
+
+            return result;
+        }
+
+        private static InstitutionCategoryEntryJson[] ConvertInstitutionCategories(System.Collections.Generic.IList<InstitutionCategoryCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<InstitutionCategoryEntryJson>();
+            }
+
+            var result = new InstitutionCategoryEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new InstitutionCategoryEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    sort_order = item != null ? item.SortOrder : 0,
+                    tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
+                };
+            }
+
+            return result;
+        }
+
+        private static InstitutionEntryJson[] ConvertInstitutions(
+            System.Collections.Generic.IList<InstitutionCatalogEntry> source,
+            IReadOnlyDictionary<string, InstitutionEntryJson> previous)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<InstitutionEntryJson>();
+            }
+
+            var result = new InstitutionEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                var id = item != null ? item.Id : string.Empty;
+                previous.TryGetValue(Normalize(id), out var old);
+                result[i] = new InstitutionEntryJson
+                {
+                    id = id,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    category = item != null ? item.Category : string.Empty,
+                    activation_timing = item != null ? item.ActivationTiming : string.Empty,
+                    tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
+                    sort_order = old != null ? old.sort_order : 0,
+                    prerequisites = old != null ? old.prerequisites : Array.Empty<PrerequisiteEntryJson>(),
+                    explicit_effects = old != null ? old.explicit_effects : Array.Empty<ExplicitEffectEntryJson>(),
+                    modifier_effects = old != null ? old.modifier_effects : Array.Empty<ModifierEffectEntryJson>()
                 };
             }
 

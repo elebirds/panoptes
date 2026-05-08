@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "ef9a026a0e03fa8b917065684de4e09e75dcf36558651399ef3c1c85f4f727d8",
+    "bundle_hash": "f1070d922d801bd1d7e877c0e6e2fa2bfe1b63d51aba4395b2e8879af55f4fe6",
     "required_sections": [
       "resources",
       "points",
@@ -12,9 +12,9 @@
       "buildings",
       "technologies",
       "policies",
+      "institutions",
       "recipes",
       "terrains",
-      "emotes",
       "rules",
       "ministers",
       "minister_skill_cards",
@@ -26,11 +26,11 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "e13f38a5130d054008529ba2c898d19b2e0e6d6afba46e6fed2c8eb143b2e031"
+        "hash": "bd329cd7c1e456ffdcf966404ce44da4add3da45481b6596aacbe9e0ba3d1624"
       },
       {
-        "section_name": "emotes",
-        "hash": "de7382d296583d691cfeaa7999f996d3c243e0a1dd7fd23f07b77abf0e4008e6"
+        "section_name": "institutions",
+        "hash": "60ca9a668915603245512a10bf0e83f30e98485c272666442554bd9eb5fc6af4"
       },
       {
         "section_name": "maps",
@@ -42,7 +42,7 @@
       },
       {
         "section_name": "ministers",
-        "hash": "0ccc2f985b251511a7ce930619d5eabfa773b482f303fa9cd451efe43a81db26"
+        "hash": "26b9bad655858612f400910f2e5ac214c3b71425abe7b89f31071532165be1db"
       },
       {
         "section_name": "points",
@@ -50,11 +50,11 @@
       },
       {
         "section_name": "policies",
-        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
+        "hash": "f9abe81f71768cf6aa9553ff0920bfb3f85c31575c8cad1564522a41b81cb29e"
       },
       {
         "section_name": "recipes",
-        "hash": "23ca295069d6cbd7255b5ca8e4ac8b63b47fbf6165d7c7ba703617db4432b38e"
+        "hash": "a406deb734de7cecc46b06ed3cf237bcc441d8642f4924de7908b522b52828d8"
       },
       {
         "section_name": "resources",
@@ -66,7 +66,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "ae6d0a0a0b24ecd74f995268592d96486a17a76887610b3bf27d9e84f5637e16"
+        "hash": "ba94f2498b9efea49f4f86e51b3fe0e6b1eb182ead488c2288ee55bc11a34b5d"
       },
       {
         "section_name": "terrains",
@@ -78,7 +78,7 @@
       },
       {
         "section_name": "ui_recipe_layout",
-        "hash": "5aac56fdcb2433c2191822705d53af8aca324b0eb6cb528f88fb3967fde28455"
+        "hash": "318da2806d25e2e828de1bd84ed835e27094b9879c7b68e031509971c9eefafe"
       },
       {
         "section_name": "ui_tech_tree_layout",
@@ -86,7 +86,7 @@
       },
       {
         "section_name": "units",
-        "hash": "b0dc0316d64699d9a5047b44f4b1c08c2e7d57a1e8e3999adac5c44bfdd55714"
+        "hash": "2ae548a83baad2ac5e2a4b91eee4ec63309586b697587dd3bd9eda65976a8386"
       }
     ]
   },
@@ -185,6 +185,38 @@
       ]
     },
     {
+      "id": "engineer",
+      "name": "工程队",
+      "description": "低速移动并在实际行进路径上铺设道路。",
+      "icon_key": "unit_settler",
+      "prefab_key": "Settler",
+      "class": "civilian",
+      "max_hp": 16,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": {
+        "food": 1,
+        "wood": 2
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_attack_structures": false,
+        "can_destroy_road": false,
+        "can_capture": false
+      },
+      "sort_order": 20,
+      "tags": [
+        "civilian",
+        "logistics"
+      ]
+    },
+    {
       "id": "infantry",
       "name": "步兵",
       "description": "基础近战战斗单位",
@@ -210,7 +242,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 20,
+      "sort_order": 30,
       "tags": [
         "frontline"
       ]
@@ -241,7 +273,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "ranged"
       ]
@@ -273,7 +305,7 @@
         "destroy_multiplier": 2,
         "can_capture": false
       },
-      "sort_order": 40,
+      "sort_order": 50,
       "tags": [
         "raider",
         "sabotage"
@@ -306,7 +338,7 @@
         "can_destroy_road": false,
         "can_capture": false
       },
-      "sort_order": 50,
+      "sort_order": 60,
       "tags": [
         "siege"
       ]
@@ -339,7 +371,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 60,
+      "sort_order": 70,
       "tags": [
         "mobile",
         "charge"
@@ -370,7 +402,7 @@
         "can_destroy_road": false,
         "can_capture": false
       },
-      "sort_order": 70,
+      "sort_order": 80,
       "tags": [
         "civilian",
         "visibility"
@@ -402,7 +434,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 80,
+      "sort_order": 90,
       "tags": [
         "frontline",
         "melee"
@@ -792,6 +824,7 @@
       },
       "recipe_ids": [
         "engineer_camp_raider",
+        "engineer_camp_engineer",
         "engineer_camp_siege_engine"
       ],
       "default_recipe_id": "engineer_camp_raider",
@@ -988,6 +1021,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "farm_harvest"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "estate_subjects"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "manor_economy"
         }
       ],
       "modifier_effects": [],
@@ -1026,7 +1067,12 @@
       "tier": 1,
       "research_cost": 2,
       "prerequisites": [],
-      "explicit_effects": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_institution",
+          "target_id": "guild_regulation"
+        }
+      ],
       "modifier_effects": [
         {
           "trigger": "point.output",
@@ -1052,16 +1098,24 @@
       "prerequisites": [],
       "explicit_effects": [
         {
-          "type": "unlock_policy",
-          "target_id": "academy_charter"
+          "type": "unlock_institution",
+          "target_id": "royal_prerogative"
         },
         {
-          "type": "unlock_policy",
-          "target_id": "logistics_corps"
+          "type": "unlock_institution",
+          "target_id": "noble_council"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "civic_citizenship"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "local_autonomy"
         },
         {
           "type": "add_institution_slots",
-          "institution_slots": 1
+          "institution_slots": 2
         }
       ],
       "modifier_effects": [],
@@ -1157,6 +1211,18 @@
         {
           "type": "unlock_recipe",
           "target_id": "barracks_infantry"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "martial_citizenship"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "vassal_levies"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "mass_conscription"
         }
       ],
       "modifier_effects": [],
@@ -1260,6 +1326,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "granary_rations"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "inward_rationing"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [
@@ -1303,8 +1377,8 @@
           "target_id": "smelter_refined_ore"
         },
         {
-          "type": "unlock_policy",
-          "target_id": "foundry_directives"
+          "type": "unlock_institution",
+          "target_id": "state_workshops"
         }
       ],
       "modifier_effects": [],
@@ -1380,11 +1454,19 @@
         },
         {
           "type": "unlock_recipe",
+          "target_id": "engineer_camp_engineer"
+        },
+        {
+          "type": "unlock_recipe",
           "target_id": "engineer_camp_raider"
         },
         {
           "type": "unlock_recipe",
           "target_id": "engineer_camp_siege_engine"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "munitions_committee"
         }
       ],
       "modifier_effects": [
@@ -1423,6 +1505,14 @@
         {
           "type": "unlock_recipe",
           "target_id": "warehouse_reserve_rations"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "free_market"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "secretariat_cabinet"
         }
       ],
       "modifier_effects": [
@@ -1474,8 +1564,20 @@
           "target_id": "market_ore_contracts"
         },
         {
-          "type": "unlock_policy",
-          "target_id": "mercantile_charter"
+          "type": "unlock_institution",
+          "target_id": "chartered_trade"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "protective_tariffs"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "free_trade"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [],
@@ -1505,8 +1607,20 @@
           "target_id": "academy"
         },
         {
-          "type": "unlock_policy",
-          "target_id": "research_mandate"
+          "type": "unlock_institution",
+          "target_id": "bureaucratic_cabinet"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "universal_subjecthood"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "central_bureaucracy"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [],
@@ -1542,6 +1656,10 @@
         {
           "type": "unlock_recipe",
           "target_id": "watchtower_scout"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "inspectorate_system"
         }
       ],
       "modifier_effects": [
@@ -1584,6 +1702,18 @@
         {
           "type": "unlock_recipe",
           "target_id": "training_ground_spearman"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "ministerial_devolution"
+        },
+        {
+          "type": "unlock_institution",
+          "target_id": "professional_army"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
         }
       ],
       "modifier_effects": [
@@ -1739,15 +1869,79 @@
       "tags": [
         "national"
       ]
+    }
+  ],
+  "institution_categories": [
+    {
+      "id": "power",
+      "name": "权力制度",
+      "description": "决定中央、地方与大臣之间的实际权力分配。",
+      "sort_order": 10,
+      "tags": [
+        "governance"
+      ]
     },
     {
-      "id": "academy_charter",
-      "name": "学术特许",
-      "description": "制度层面的学术组织支持，提升科研产出。",
+      "id": "citizenship",
+      "name": "公民制度",
+      "description": "决定国家默认优先保护与动员的人群。",
+      "sort_order": 20,
+      "tags": [
+        "society"
+      ]
+    },
+    {
+      "id": "economy",
+      "name": "经济制度",
+      "description": "决定生产组织和短缺分配的长期规则。",
+      "sort_order": 30,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "trade",
+      "name": "贸易制度",
+      "description": "决定市场、贸易与外部资源的组织方式。",
+      "sort_order": 40,
+      "tags": [
+        "trade"
+      ]
+    },
+    {
+      "id": "military",
+      "name": "军事制度",
+      "description": "决定军队维护、动员与补给的长期结构。",
+      "sort_order": 50,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "administration",
+      "name": "行政制度",
+      "description": "决定信息汇总、报告精度与执行链条。",
+      "sort_order": 60,
+      "tags": [
+        "administration",
+        "information"
+      ]
+    }
+  ],
+  "institutions": [
+    {
+      "id": "royal_prerogative",
+      "name": "王权亲政",
+      "description": "中央亲自裁决，否决力更强，但汇报与拍板更慢。",
       "icon_key": "policy_academy_charter",
-      "layer": "institutional",
+      "category": "power",
       "activation_timing": "next_turn",
-      "prerequisites": [],
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
       "explicit_effects": [],
       "modifier_effects": [
         {
@@ -1760,24 +1954,165 @@
       "logistics_priority": [
         {
           "tag": "research",
-          "priority": 70
+          "priority": 95
+        },
+        {
+          "tag": "defense",
+          "priority": 90
         }
       ],
-      "sort_order": 50,
+      "governance_effects": [
+        {
+          "type": "mandate_tokens",
+          "target": "royal_court",
+          "value": 1
+        },
+        {
+          "type": "minister_autonomy",
+          "target": "all",
+          "value": -20
+        },
+        {
+          "type": "report_latency",
+          "target": "central",
+          "value": 10
+        }
+      ],
+      "sort_order": 10,
       "tags": [
-        "institutional"
+        "power",
+        "veto",
+        "central"
       ]
     },
     {
-      "id": "logistics_corps",
-      "name": "转运署",
-      "description": "制度层面的转运组织，提高道路基础运量。",
-      "icon_key": "policy_logistics_corps",
-      "layer": "institutional",
+      "id": "noble_council",
+      "name": "贵族议会",
+      "description": "地方建设和动员更灵活，但资源容易被地方优先截留。",
+      "icon_key": "policy_reorganization",
+      "category": "power",
       "activation_timing": "next_turn",
-      "prerequisites": [],
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
       "explicit_effects": [],
       "modifier_effects": [
+        {
+          "trigger": "building.point_cost",
+          "point_key": "industry_output",
+          "modifier_type": "percent",
+          "value": -0.1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "expansion",
+          "priority": 105
+        },
+        {
+          "tag": "food",
+          "priority": 95
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "local_autonomy",
+          "target": "cities",
+          "value": 20
+        },
+        {
+          "type": "resource_withholding",
+          "target": "local_elites",
+          "value": 10
+        }
+      ],
+      "sort_order": 20,
+      "tags": [
+        "power",
+        "local",
+        "expansion"
+      ]
+    },
+    {
+      "id": "bureaucratic_cabinet",
+      "name": "官僚内阁",
+      "description": "报告和规划更稳定，但应急响应偏慢。",
+      "icon_key": "policy_academy_charter",
+      "category": "power",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 110
+        },
+        {
+          "tag": "industry",
+          "priority": 95
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "planning",
+          "value": 15
+        },
+        {
+          "type": "emergency_response",
+          "target": "central",
+          "value": -10
+        }
+      ],
+      "sort_order": 30,
+      "tags": [
+        "power",
+        "administration"
+      ]
+    },
+    {
+      "id": "ministerial_devolution",
+      "name": "部长分权",
+      "description": "大臣更主动提案，执行更积极，但玩家控制力下降。",
+      "icon_key": "policy_logistics_corps",
+      "category": "power",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "professional_drill"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        },
         {
           "trigger": "logistics.road_capacity",
           "modifier_type": "flat",
@@ -1787,29 +2122,373 @@
       "logistics_priority": [
         {
           "tag": "industry",
-          "priority": 90
+          "priority": 105
         },
         {
           "tag": "military",
-          "priority": 60
+          "priority": 100
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "minister_autonomy",
+          "target": "all",
+          "value": 25
         },
         {
+          "type": "veto_cost",
+          "target": "minister_action",
+          "value": 10
+        }
+      ],
+      "sort_order": 40,
+      "tags": [
+        "power",
+        "minister",
+        "autonomy"
+      ]
+    },
+    {
+      "id": "estate_subjects",
+      "name": "等级臣民",
+      "description": "优先稳住核心城市和上层建筑，但边疆恢复更慢。",
+      "icon_key": "policy_reorganization",
+      "category": "citizenship",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "agrarian_foundations"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 20
+        },
+        {
+          "trigger": "building.max_hp",
+          "target_id": "wall",
+          "modifier_type": "flat",
+          "value": 10
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "core",
+          "priority": 115
+        },
+        {
+          "tag": "research",
+          "priority": 85
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "stability",
+          "target": "core_cities",
+          "value": 15
+        },
+        {
+          "type": "frontier_recovery",
+          "target": "new_regions",
+          "value": -10
+        }
+      ],
+      "sort_order": 50,
+      "tags": [
+        "citizenship",
+        "stability"
+      ]
+    },
+    {
+      "id": "civic_citizenship",
+      "name": "城邦公民",
+      "description": "主城、道路和公共工程更强，但扩张区整合更慢。",
+      "icon_key": "policy_academy_charter",
+      "category": "citizenship",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "building.point_cost",
+          "point_key": "industry_output",
+          "modifier_type": "percent",
+          "value": -0.05
+        }
+      ],
+      "logistics_priority": [
+        {
           "tag": "expansion",
-          "priority": 60
+          "priority": 95
+        },
+        {
+          "tag": "infrastructure",
+          "priority": 115
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "city_integration",
+          "target": "core_cities",
+          "value": 10
+        },
+        {
+          "type": "frontier_integration",
+          "target": "new_regions",
+          "value": -5
         }
       ],
       "sort_order": 60,
       "tags": [
-        "institutional",
-        "logistics"
+        "citizenship",
+        "infrastructure"
       ]
     },
     {
-      "id": "foundry_directives",
-      "name": "冶造敕令",
-      "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
+      "id": "martial_citizenship",
+      "name": "军役公民",
+      "description": "军队、前线和征召优先，但民生与科研容易被挤压。",
+      "icon_key": "policy_logistics_corps",
+      "category": "citizenship",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "infantry",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 120
+        },
+        {
+          "tag": "food",
+          "priority": 90
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "mobilization",
+          "target": "citizens",
+          "value": 15
+        },
+        {
+          "type": "civilian_priority",
+          "target": "cities",
+          "value": -10
+        }
+      ],
+      "sort_order": 70,
+      "tags": [
+        "citizenship",
+        "military"
+      ]
+    },
+    {
+      "id": "universal_subjecthood",
+      "name": "普遍臣民权",
+      "description": "灾后恢复和城市稳定更好，但短期动员效率较低。",
+      "icon_key": "policy_research_mandate",
+      "category": "citizenship",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 10
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 105
+        },
+        {
+          "tag": "recovery",
+          "priority": 120
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "disaster_recovery",
+          "target": "cities",
+          "value": 15
+        },
+        {
+          "type": "mobilization",
+          "target": "citizens",
+          "value": -5
+        }
+      ],
+      "sort_order": 80,
+      "tags": [
+        "citizenship",
+        "recovery"
+      ]
+    },
+    {
+      "id": "manor_economy",
+      "name": "庄园经济",
+      "description": "粮食和基础资源更稳，但工业链效率较低。",
       "icon_key": "policy_reorganization",
-      "layer": "institutional",
+      "category": "economy",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "agrarian_foundations"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "farm_harvest",
+          "resource_key": "food",
+          "modifier_type": "percent",
+          "value": 0.15
+        },
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "lumber_sawmill",
+          "resource_key": "wood",
+          "modifier_type": "percent",
+          "value": 0.05
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 125
+        },
+        {
+          "tag": "expansion",
+          "priority": 80
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "industrial_efficiency",
+          "target": "heavy_industry",
+          "value": -10
+        },
+        {
+          "type": "rural_resilience",
+          "target": "food_chain",
+          "value": 15
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "economy",
+        "agriculture"
+      ]
+    },
+    {
+      "id": "guild_regulation",
+      "name": "行会管制",
+      "description": "建筑和配方更稳定、浪费更少，但切换生产更慢。",
+      "icon_key": "policy_foundry_directives",
+      "category": "economy",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "workshop_methods"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.resource_input",
+          "modifier_type": "percent",
+          "value": -0.1
+        },
+        {
+          "trigger": "recipe.work_amount",
+          "modifier_type": "percent",
+          "value": 0.05
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 95
+        },
+        {
+          "tag": "craft",
+          "priority": 110
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "production_stability",
+          "target": "recipes",
+          "value": 15
+        },
+        {
+          "type": "switching_friction",
+          "target": "production",
+          "value": 10
+        }
+      ],
+      "sort_order": 100,
+      "tags": [
+        "economy",
+        "production"
+      ]
+    },
+    {
+      "id": "state_workshops",
+      "name": "国家工坊",
+      "description": "军工、基建和重工业更强，但消耗高。",
+      "icon_key": "policy_foundry_directives",
+      "category": "economy",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
@@ -1820,6 +2499,12 @@
       "explicit_effects": [],
       "modifier_effects": [
         {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
           "trigger": "recipe.base_progress",
           "target_id": "smelter_refined_ore",
           "modifier_type": "flat",
@@ -1829,30 +2514,42 @@
       "logistics_priority": [
         {
           "tag": "industry",
-          "priority": 110
+          "priority": 125
         },
         {
-          "target_id": "smelter_refined_ore",
-          "priority": 130
+          "tag": "military",
+          "priority": 95
         }
       ],
-      "sort_order": 70,
+      "governance_effects": [
+        {
+          "type": "civilian_pressure",
+          "target": "living_goods",
+          "value": 10
+        },
+        {
+          "type": "minister_autonomy",
+          "target": "economy",
+          "value": 10
+        }
+      ],
+      "sort_order": 110,
       "tags": [
-        "institutional",
+        "economy",
         "industry"
       ]
     },
     {
-      "id": "mercantile_charter",
-      "name": "商贸特许",
-      "description": "制度层面的市集授权，提高契约调拨效率。",
+      "id": "free_market",
+      "name": "自由市场",
+      "description": "产出弹性和贸易收益更高，但短缺时更不可控。",
       "icon_key": "policy_logistics_corps",
-      "layer": "institutional",
+      "category": "economy",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
           "type": "technology_unlocked",
-          "target_id": "trade_levies"
+          "target_id": "centralized_storage"
         }
       ],
       "explicit_effects": [],
@@ -1883,26 +2580,684 @@
         },
         {
           "tag": "industry",
-          "priority": 80
+          "priority": 85
         }
       ],
-      "sort_order": 80,
+      "governance_effects": [
+        {
+          "type": "shortage_volatility",
+          "target": "market",
+          "value": 15
+        },
+        {
+          "type": "production_elasticity",
+          "target": "recipes",
+          "value": 15
+        }
+      ],
+      "sort_order": 120,
       "tags": [
-        "institutional",
+        "economy",
         "trade"
       ]
     },
     {
-      "id": "research_mandate",
-      "name": "研学敕令",
-      "description": "制度层面的学术优先令，显著提高科研产出。",
+      "id": "inward_rationing",
+      "name": "内向配给",
+      "description": "本土资源优先，抗封锁更强，但贸易收益更低。",
+      "icon_key": "policy_logistics_corps",
+      "category": "trade",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.resource_input",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "percent",
+          "value": 0.1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 130
+        },
+        {
+          "tag": "trade",
+          "priority": 45
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "blockade_resilience",
+          "target": "domestic_stockpile",
+          "value": 20
+        },
+        {
+          "type": "trade_income",
+          "target": "foreign_routes",
+          "value": -10
+        }
+      ],
+      "sort_order": 130,
+      "tags": [
+        "trade",
+        "defense"
+      ]
+    },
+    {
+      "id": "chartered_trade",
+      "name": "特许贸易",
+      "description": "指定资源和城市收益更高，但被袭扰时损失集中。",
+      "icon_key": "policy_mercantile_charter",
+      "category": "trade",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_lumber_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "trade",
+          "priority": 130
+        },
+        {
+          "target_id": "market_grain_contracts",
+          "priority": 135
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "route_clarity",
+          "target": "trade",
+          "value": 15
+        },
+        {
+          "type": "raid_loss_concentration",
+          "target": "chartered_routes",
+          "value": 10
+        }
+      ],
+      "sort_order": 140,
+      "tags": [
+        "trade",
+        "routes"
+      ]
+    },
+    {
+      "id": "protective_tariffs",
+      "name": "保护关税",
+      "description": "本地工业受保护，但进口成本更高。",
+      "icon_key": "policy_mercantile_charter",
+      "category": "trade",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "smelter_refined_ore",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.resource_input",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "percent",
+          "value": 0.1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 115
+        },
+        {
+          "tag": "trade",
+          "priority": 70
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "local_industry_protection",
+          "target": "industry",
+          "value": 15
+        },
+        {
+          "type": "import_cost",
+          "target": "trade",
+          "value": 10
+        }
+      ],
+      "sort_order": 150,
+      "tags": [
+        "trade",
+        "industry"
+      ]
+    },
+    {
+      "id": "free_trade",
+      "name": "自由贸易",
+      "description": "资源调剂与贸易收益都更高，但战争时更脆弱。",
+      "icon_key": "policy_mercantile_charter",
+      "category": "trade",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_lumber_contracts",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "trade",
+          "priority": 145
+        },
+        {
+          "tag": "industry",
+          "priority": 95
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "resource_arbitrage",
+          "target": "trade",
+          "value": 20
+        },
+        {
+          "type": "wartime_fragility",
+          "target": "trade_routes",
+          "value": 10
+        },
+        {
+          "type": "intelligence_leak_risk",
+          "target": "foreign_routes",
+          "value": 10
+        }
+      ],
+      "sort_order": 160,
+      "tags": [
+        "trade",
+        "openness"
+      ]
+    },
+    {
+      "id": "vassal_levies",
+      "name": "封臣兵役",
+      "description": "便宜且地方防御强，但远征和统一指挥较差。",
+      "icon_key": "policy_logistics_corps",
+      "category": "military",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 10
+        },
+        {
+          "trigger": "unit.attack",
+          "target_id": "infantry",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "defense",
+          "priority": 125
+        },
+        {
+          "tag": "military",
+          "priority": 80
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "command_cohesion",
+          "target": "expedition",
+          "value": -10
+        },
+        {
+          "type": "local_defense",
+          "target": "cities",
+          "value": 15
+        }
+      ],
+      "sort_order": 170,
+      "tags": [
+        "military",
+        "local"
+      ]
+    },
+    {
+      "id": "professional_army",
+      "name": "职业军",
+      "description": "单位质量和命令可靠性更高，但维护成本也更高。",
+      "icon_key": "policy_reorganization",
+      "category": "military",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "professional_drill"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "infantry",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 125
+        },
+        {
+          "tag": "food",
+          "priority": 100
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "command_reliability",
+          "target": "army",
+          "value": 15
+        },
+        {
+          "type": "maintenance_pressure",
+          "target": "resources",
+          "value": 15
+        }
+      ],
+      "sort_order": 180,
+      "tags": [
+        "military",
+        "elite"
+      ]
+    },
+    {
+      "id": "mass_conscription",
+      "name": "征召制",
+      "description": "战时扩军很快，但生产和城市稳定会受冲击。",
+      "icon_key": "policy_logistics_corps",
+      "category": "military",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "barracks_infantry",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": -1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 135
+        },
+        {
+          "tag": "food",
+          "priority": 90
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "wartime_manpower",
+          "target": "army",
+          "value": 20
+        },
+        {
+          "type": "city_stability",
+          "target": "civilian",
+          "value": -10
+        }
+      ],
+      "sort_order": 190,
+      "tags": [
+        "military",
+        "mobilization"
+      ]
+    },
+    {
+      "id": "munitions_committee",
+      "name": "军需委员会",
+      "description": "前线物流、修路和弹药优先，国家会向战争需求倾斜。",
+      "icon_key": "policy_logistics_corps",
+      "category": "military",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "siegecraft"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "engineer_camp_siege_engine",
+          "modifier_type": "flat",
+          "value": 2
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "smelter_refined_ore",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 145
+        },
+        {
+          "tag": "industry",
+          "priority": 120
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "frontline_supply",
+          "target": "army",
+          "value": 20
+        },
+        {
+          "type": "civilian_supply_pressure",
+          "target": "economy",
+          "value": 15
+        }
+      ],
+      "sort_order": 200,
+      "tags": [
+        "military",
+        "logistics"
+      ]
+    },
+    {
+      "id": "local_autonomy",
+      "name": "地方自治",
+      "description": "地方自动处理建设和修复更快，但中央报告更慢更偏差。",
       "icon_key": "policy_academy_charter",
-      "layer": "institutional",
+      "category": "administration",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "building.point_cost",
+          "point_key": "industry_output",
+          "modifier_type": "percent",
+          "value": -0.1
+        },
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "expansion",
+          "priority": 110
+        },
+        {
+          "tag": "recovery",
+          "priority": 95
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "local_auto_repair",
+          "target": "cities",
+          "value": 15
+        },
+        {
+          "type": "report_accuracy",
+          "target": "central",
+          "value": -10
+        }
+      ],
+      "sort_order": 210,
+      "tags": [
+        "administration",
+        "local"
+      ]
+    },
+    {
+      "id": "central_bureaucracy",
+      "name": "中央官僚",
+      "description": "报告准确、透明度高，但响应慢、行政消耗高。",
+      "icon_key": "policy_academy_charter",
+      "category": "administration",
       "activation_timing": "next_turn",
       "prerequisites": [
         {
           "type": "technology_unlocked",
           "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 110
+        },
+        {
+          "tag": "administration",
+          "priority": 115
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "report_accuracy",
+          "target": "logistics",
+          "value": 20
+        },
+        {
+          "type": "response_delay",
+          "target": "emergency",
+          "value": 10
+        }
+      ],
+      "sort_order": 220,
+      "tags": [
+        "administration",
+        "central"
+      ]
+    },
+    {
+      "id": "inspectorate_system",
+      "name": "巡察体系",
+      "description": "更容易暴露地图、敌情和短缺，但会额外消耗资源。",
+      "icon_key": "policy_research_mandate",
+      "category": "administration",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "sentry_networks"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "unit.move_range",
+          "target_id": "scout",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "defense",
+          "priority": 95
+        },
+        {
+          "tag": "research",
+          "priority": 95
+        }
+      ],
+      "governance_effects": [
+        {
+          "type": "corruption_detection",
+          "target": "cities",
+          "value": 15
+        },
+        {
+          "type": "enemy_intel",
+          "target": "frontier",
+          "value": 10
+        },
+        {
+          "type": "local_efficiency",
+          "target": "cities",
+          "value": -5
+        }
+      ],
+      "sort_order": 230,
+      "tags": [
+        "administration",
+        "intel"
+      ]
+    },
+    {
+      "id": "secretariat_cabinet",
+      "name": "秘书处内阁",
+      "description": "大臣汇报更结构化、提案更稳定，但玩家会更依赖他们。",
+      "icon_key": "policy_research_mandate",
+      "category": "administration",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "centralized_storage"
         }
       ],
       "explicit_effects": [],
@@ -1917,13 +3272,34 @@
       "logistics_priority": [
         {
           "tag": "research",
-          "priority": 120
+          "priority": 125
+        },
+        {
+          "tag": "administration",
+          "priority": 125
         }
       ],
-      "sort_order": 90,
+      "governance_effects": [
+        {
+          "type": "minister_proposal_quality",
+          "target": "all",
+          "value": 20
+        },
+        {
+          "type": "minister_autonomy",
+          "target": "all",
+          "value": 10
+        },
+        {
+          "type": "report_structure",
+          "target": "cabinet",
+          "value": 20
+        }
+      ],
+      "sort_order": 240,
       "tags": [
-        "institutional",
-        "research"
+        "administration",
+        "minister"
       ]
     }
   ],
@@ -2235,6 +3611,32 @@
       ]
     },
     {
+      "id": "engineer_camp_engineer",
+      "name": "组织工程队",
+      "description": "产出可随行军铺设道路的工程队。",
+      "icon_key": "unit_settler",
+      "building_id": "engineer_camp",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 2
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "engineer"
+        ]
+      },
+      "sort_order": 130,
+      "tags": [
+        "logistics",
+        "road"
+      ]
+    },
+    {
       "id": "engineer_camp_raider",
       "name": "训练掠袭兵",
       "description": "产出擅长破坏道路的掠袭兵。",
@@ -2254,7 +3656,7 @@
           "raider"
         ]
       },
-      "sort_order": 130,
+      "sort_order": 140,
       "tags": [
         "military",
         "sabotage"
@@ -2280,7 +3682,7 @@
           "siege_engine"
         ]
       },
-      "sort_order": 140,
+      "sort_order": 150,
       "tags": [
         "military",
         "siege"
@@ -2305,7 +3707,7 @@
           "food": 3
         }
       },
-      "sort_order": 150,
+      "sort_order": 160,
       "tags": [
         "food",
         "storage"
@@ -2331,7 +3733,7 @@
           "food": 3
         }
       },
-      "sort_order": 160,
+      "sort_order": 170,
       "tags": [
         "trade",
         "food"
@@ -2357,7 +3759,7 @@
           "wood": 3
         }
       },
-      "sort_order": 170,
+      "sort_order": 180,
       "tags": [
         "trade",
         "wood"
@@ -2383,7 +3785,7 @@
           "ore": 2
         }
       },
-      "sort_order": 180,
+      "sort_order": 190,
       "tags": [
         "trade",
         "ore"
@@ -2409,7 +3811,7 @@
           "scout"
         ]
       },
-      "sort_order": 190,
+      "sort_order": 200,
       "tags": [
         "visibility"
       ]
@@ -2434,7 +3836,7 @@
           "spearman"
         ]
       },
-      "sort_order": 200,
+      "sort_order": 210,
       "tags": [
         "military",
         "melee"
@@ -2497,196 +3899,6 @@
       ]
     }
   ],
-  "emote_series": [
-    {
-      "id": "general",
-      "display_name": "General",
-      "icon_key": "Textures/Emotes/General/general_01",
-      "sort_order": 10
-    },
-    {
-      "id": "tactics",
-      "display_name": "Tactics",
-      "icon_key": "",
-      "sort_order": 20
-    },
-    {
-      "id": "mood",
-      "display_name": "Mood",
-      "icon_key": "",
-      "sort_order": 30
-    }
-  ],
-  "emotes": [
-    {
-      "id": "general.thumbs_up",
-      "series_id": "general",
-      "display_name": "Thumbs Up",
-      "asset_key": "Textures/Emotes/General/general_01",
-      "sort_order": 10
-    },
-    {
-      "id": "general.thinking",
-      "series_id": "general",
-      "display_name": "Thinking",
-      "asset_key": "Textures/Emotes/General/general_02",
-      "sort_order": 20
-    },
-    {
-      "id": "general.laugh",
-      "series_id": "general",
-      "display_name": "Laugh",
-      "asset_key": "Textures/Emotes/General/general_03",
-      "sort_order": 30
-    },
-    {
-      "id": "general.angry",
-      "series_id": "general",
-      "display_name": "Angry",
-      "asset_key": "Textures/Emotes/General/general_04",
-      "sort_order": 40
-    },
-    {
-      "id": "general.warning",
-      "series_id": "general",
-      "display_name": "Warning",
-      "asset_key": "Textures/Emotes/General/general_05",
-      "sort_order": 50
-    },
-    {
-      "id": "general.gg",
-      "series_id": "general",
-      "display_name": "GG",
-      "asset_key": "Textures/Emotes/General/general_06",
-      "sort_order": 60
-    },
-    {
-      "id": "general.extra_07",
-      "series_id": "general",
-      "display_name": "Extra 07",
-      "asset_key": "Textures/Emotes/General/general_07",
-      "sort_order": 70
-    },
-    {
-      "id": "general.extra_08",
-      "series_id": "general",
-      "display_name": "Extra 08",
-      "asset_key": "Textures/Emotes/General/general_08",
-      "sort_order": 80
-    },
-    {
-      "id": "general.extra_09",
-      "series_id": "general",
-      "display_name": "Extra 09",
-      "asset_key": "Textures/Emotes/General/general_09",
-      "sort_order": 90
-    },
-    {
-      "id": "general.extra_10",
-      "series_id": "general",
-      "display_name": "Extra 10",
-      "asset_key": "Textures/Emotes/General/general_10",
-      "sort_order": 100
-    },
-    {
-      "id": "general.extra_11",
-      "series_id": "general",
-      "display_name": "Extra 11",
-      "asset_key": "Textures/Emotes/General/general_11",
-      "sort_order": 110
-    },
-    {
-      "id": "general.extra_12",
-      "series_id": "general",
-      "display_name": "Extra 12",
-      "asset_key": "Textures/Emotes/General/general_12",
-      "sort_order": 120
-    },
-    {
-      "id": "tactics.attack",
-      "series_id": "tactics",
-      "display_name": "Attack",
-      "asset_key": "",
-      "sort_order": 10
-    },
-    {
-      "id": "tactics.defend",
-      "series_id": "tactics",
-      "display_name": "Defend",
-      "asset_key": "",
-      "sort_order": 20
-    },
-    {
-      "id": "tactics.expand",
-      "series_id": "tactics",
-      "display_name": "Expand",
-      "asset_key": "",
-      "sort_order": 30
-    },
-    {
-      "id": "tactics.wait",
-      "series_id": "tactics",
-      "display_name": "Wait",
-      "asset_key": "",
-      "sort_order": 40
-    },
-    {
-      "id": "tactics.need_help",
-      "series_id": "tactics",
-      "display_name": "Need Help",
-      "asset_key": "",
-      "sort_order": 50
-    },
-    {
-      "id": "tactics.ready",
-      "series_id": "tactics",
-      "display_name": "Ready",
-      "asset_key": "",
-      "sort_order": 60
-    },
-    {
-      "id": "mood.happy",
-      "series_id": "mood",
-      "display_name": "Happy",
-      "asset_key": "",
-      "sort_order": 10
-    },
-    {
-      "id": "mood.surprised",
-      "series_id": "mood",
-      "display_name": "Surprised",
-      "asset_key": "",
-      "sort_order": 20
-    },
-    {
-      "id": "mood.sad",
-      "series_id": "mood",
-      "display_name": "Sad",
-      "asset_key": "",
-      "sort_order": 30
-    },
-    {
-      "id": "mood.confused",
-      "series_id": "mood",
-      "display_name": "Confused",
-      "asset_key": "",
-      "sort_order": 40
-    },
-    {
-      "id": "mood.proud",
-      "series_id": "mood",
-      "display_name": "Proud",
-      "asset_key": "",
-      "sort_order": 50
-    },
-    {
-      "id": "mood.panic",
-      "series_id": "mood",
-      "display_name": "Panic",
-      "asset_key": "",
-      "sort_order": 60
-    }
-  ],
   "rules": {
     "turn_time_limit_planning": 35,
     "tokens_per_turn": 3,
@@ -2712,7 +3924,11 @@
       "personality": "aggressive",
       "personality_desc": "果敢激进",
       "loyalty": 7,
-      "ambition": 6
+      "ambition": 6,
+      "cautiousness": 35,
+      "decisiveness": 82,
+      "loyalty_tendency": 68,
+      "ambition_style": 65
     },
     {
       "id": "m002",
@@ -2723,7 +3939,11 @@
       "personality": "steady",
       "personality_desc": "稳健审慎",
       "loyalty": 8,
-      "ambition": 4
+      "ambition": 4,
+      "cautiousness": 76,
+      "decisiveness": 58,
+      "loyalty_tendency": 84,
+      "ambition_style": 32
     }
   ],
   "minister_skill_cards": [
@@ -3549,6 +4769,7 @@
       "granary_rations",
       "smelter_refined_ore",
       "stable_cavalry",
+      "engineer_camp_engineer",
       "engineer_camp_raider",
       "engineer_camp_siege_engine",
       "warehouse_reserve_rations",

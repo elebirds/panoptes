@@ -1238,7 +1238,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2552761068511580735, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 80.8
+      value: 124.595
       objectReference: {fileID: 0}
     - target: {fileID: 2552761068511580735, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2049,6 +2049,7 @@ MonoBehaviour:
   elevationNoiseScale: 0.15
   unitPrefab: {fileID: 2543617744029182237, guid: c62de7012de6a204f84af87700818f13, type: 3}
   unitsRoot: {fileID: 0}
+  unitPrefabResourcesRoot: Prefabs/Units
   useDedicatedBaseVehiclePrefab: 1
   baseVehiclePrefabResourcePath: Prefabs/Units/BaseVehicle
   baseVehicleUnitTypes:
@@ -2104,6 +2105,14 @@ MonoBehaviour:
   movePathArrowColor: {r: 0.35, g: 1, b: 0.45, a: 0.92}
   movePathDestinationColor: {r: 0.25, g: 0.95, b: 0.55, a: 0.95}
   attackRangeHighlightColor: {r: 1, g: 0.45, b: 0.25, a: 0.9}
+  enableCombatOrderFeedback: 1
+  rangedAttackTracerColor: {r: 1, g: 0.83, b: 0.28, a: 0.95}
+  chargeTracerColor: {r: 1, g: 0.38, b: 0.18, a: 0.95}
+  combatTracerDuration: 0.22
+  combatTracerWidth: 0.055
+  rangedAttackTracerArcHeight: 0.75
+  chargeTracerArcHeight: 0.12
+  combatFeedbackYOffset: 0.55
   enableMovePreviewGhost: 1
   movePreviewGhostColor: {r: 0.35, g: 1, b: 0.45, a: 0.72}
   movePreviewTravelDuration: 0.22
@@ -2120,6 +2129,7 @@ MonoBehaviour:
   buildInvalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.92}
   buildPendingColor: {r: 1, g: 0.82, b: 0.35, a: 0.92}
   buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
+  buildPlacedEdgeGlowColor: {r: 1, g: 1, b: 1, a: 0.95}
   territoryHighlightColor: {r: 0.28, g: 0.72, b: 1, a: 0.72}
   buildPreviewRequestThrottleSeconds: 0.1
   logInvalidBuildClick: 1
@@ -2395,8 +2405,18 @@ MonoBehaviour:
   damagePulseScale: 1.14
   sectionPauseSeconds: 0.14
   actorFocusPauseSeconds: 0.18
+  initialPlaybackDelaySeconds: 0.25
+  unitMoveDurationSeconds: 0.98
   attackPlaybackSeconds: 0.55
   perUnitPlaybackGapSeconds: 0.14
+  playbackMode: 1
+  fastMoveDurationSeconds: 0.35
+  minimumVisibleMoveDurationSeconds: 0.55
+  fastAttackPlaybackSeconds: 0.32
+  fastFocusPauseSeconds: 0.08
+  ambientMoveProxyScale: 0.96
+  skipPlaybackKey: 32
+  alternateSkipPlaybackKey: 27
   enableDamagePopups: 1
   damagePopupController: {fileID: 0}
 --- !u!1 &1693350154

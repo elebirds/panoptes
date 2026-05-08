@@ -36,9 +36,12 @@ func (c *scriptedMinisterLLMClient) Stream(ctx context.Context, _ llm.Completion
 }
 
 type ministerEngineTestRoom struct {
-	state    *domain.GameState
-	input    ReportPromptInput
-	messages []proto.Message
+	state          *domain.GameState
+	input          ReportPromptInput
+	messages       []proto.Message
+	appliedPlayer  string
+	appliedRole    string
+	appliedActions []MinisterActionItem
 }
 
 func (r *ministerEngineTestRoom) State() *domain.GameState {
@@ -56,6 +59,13 @@ func (r *ministerEngineTestRoom) SendToPlayer(_ context.Context, _ string, msg p
 
 func (r *ministerEngineTestRoom) BuildMinisterReportInput(_ string, _ string) ReportPromptInput {
 	return r.input
+}
+
+func (r *ministerEngineTestRoom) ApplyMinisterActions(playerID string, role string, actions []MinisterActionItem) error {
+	r.appliedPlayer = playerID
+	r.appliedRole = role
+	r.appliedActions = append(r.appliedActions, actions...)
+	return nil
 }
 
 func TestGenerateOneReportDoesNotLeakEnglishChunksToPlayers(t *testing.T) {
@@ -116,89 +126,44 @@ func TestGenerateOneReportDoesNotLeakEnglishChunksToPlayers(t *testing.T) {
 	}
 }
 
-func TestPolishDraftHonorsEnabledRolesForMilitary(t *testing.T) {
-	setMinisterProfilesForTest(t, []staticdata.Minister{
-		{ID: "m001", Name: "李猛", Role: "military", Ability: 8, Personality: "aggressive", PersonalityDesc: "果断激进", Loyalty: 7, Ambition: 6},
-		{ID: "m002", Name: "沈衡", Role: "domestic", Ability: 7, Personality: "steady", PersonalityDesc: "稳健审慎", Loyalty: 8, Ambition: 4},
-	})
-	draft := domain.MinisterDraft{
-		DraftID:      "military:unit_order:u1_move_a2:3",
-		PlayerID:     "player-1",
-		MinisterRole: "military",
-		Kind:         domain.MinisterDraftKindUnitOrder,
-		TargetID:     "u1:move:A2:",
-		TargetLabel:  "u1 move -> A2",
-		UnitID:       "u1",
-		Action:       "move",
-		TargetNodeID: "A2",
-	}
-
+func TestGenerateOneReportForwardsActionsToRoom(t *testing.T) {
 	engine := NewMinisterEngine(&scriptedMinisterLLMClient{
-		chunks: []string{`{"title":"整备边防","summary":"本回合按既定军令推进至目标节点。","rationale":"该建议只润色规则层已选定的单位命令。","risk_note":"若前线情报不足，请保留手动调整空间。"}`},
+		chunks: []string{
+			`{"report":"局势稳定。","metrics":[],"actions":[{"type":"select_candidate","params":{"draft_id":"military:operation:secure_a2:3"}},{"type":"build","params":{"node_id":"A2","building_type":"farm","city_id":"A1"}}],"action_id":"candidate_and_build"}`,
+		},
 	})
-	engine.SetEnabledRoles([]string{"domestic"})
-	if output, ok := engine.PolishDraft(context.Background(), "player-1", draft, DraftPromptInput{Turn: 3}); ok || output != nil {
-		t.Fatalf("PolishDraft enabled with domestic-only roles, got ok=%v output=%#v", ok, output)
+	room := &ministerEngineTestRoom{
+		state: domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"}),
+		input: ReportPromptInput{
+			Turn:               3,
+			Phase:              "planning",
+			PlayerID:           "player-1",
+			ObservationSummary: "局势稳定。",
+		},
 	}
 
-	engine.SetEnabledRoles([]string{"domestic", "military"})
-	output, ok := engine.PolishDraft(context.Background(), "player-1", draft, DraftPromptInput{Turn: 3})
-	if !ok || output == nil {
-		t.Fatalf("PolishDraft disabled for enabled military role, ok=%v output=%#v", ok, output)
-	}
-	if output.Title != "整备边防" || output.Summary == "" {
-		t.Fatalf("PolishDraft output = %#v, want military LLM polish text", output)
-	}
-}
+	engine.generateOneReport(context.Background(), "player-1", MinisterProfile{
+		ID:              "m001",
+		Name:            "沈衡",
+		Role:            "domestic",
+		Ability:         7,
+		Personality:     "steady",
+		PersonalityDesc: "稳健审慎",
+		Loyalty:         8,
+		Ambition:        4,
+	}, room)
 
-func TestPolishDraftSanitizesEnglishMilitaryText(t *testing.T) {
-	setMinisterProfilesForTest(t, []staticdata.Minister{
-		{ID: "m001", Name: "李猛", Role: "military", Ability: 8, Personality: "aggressive", PersonalityDesc: "果断激进", Loyalty: 7, Ambition: 6},
-	})
-	engine := NewMinisterEngine(&scriptedMinisterLLMClient{
-		chunks: []string{`{"title":"Advance border troops","summary":"Move the unit to A2 now.","rationale":"This is a rule-selected order.","risk_note":"Watch for enemies."}`},
-	})
-	engine.SetEnabledRoles([]string{"military"})
-
-	output, ok := engine.PolishDraft(context.Background(), "player-1", domain.MinisterDraft{
-		DraftID:      "military:unit_order:u1_move_a2:3",
-		PlayerID:     "player-1",
-		MinisterRole: "military",
-		Kind:         domain.MinisterDraftKindUnitOrder,
-		TargetID:     "u1:move:A2:",
-		TargetLabel:  "u1 move -> A2",
-		UnitID:       "u1",
-		Action:       "move",
-		TargetNodeID: "A2",
-	}, DraftPromptInput{Turn: 3})
-	if !ok || output == nil {
-		t.Fatalf("PolishDraft rejected parseable English output, ok=%v output=%#v", ok, output)
+	if room.appliedPlayer != "player-1" {
+		t.Fatalf("applied player = %q, want player-1", room.appliedPlayer)
 	}
-	if output.Title != chineseDraftTitleFallback || output.Summary != chineseDraftSummaryFallback || output.Rationale != chineseDraftReasonFallback || output.RiskNote != chineseDraftRiskNoteFallback {
-		t.Fatalf("English draft text was not sanitized: %#v", output)
+	if room.appliedRole != "domestic" {
+		t.Fatalf("applied role = %q, want domestic", room.appliedRole)
 	}
-}
-
-func TestPolishDraftRejectsInvalidMilitaryJSON(t *testing.T) {
-	setMinisterProfilesForTest(t, []staticdata.Minister{
-		{ID: "m001", Name: "李猛", Role: "military", Ability: 8, Personality: "aggressive", PersonalityDesc: "果断激进", Loyalty: 7, Ambition: 6},
-	})
-	engine := NewMinisterEngine(&scriptedMinisterLLMClient{chunks: []string{`{"title":"整备边防"`}})
-	engine.SetEnabledRoles([]string{"military"})
-
-	output, ok := engine.PolishDraft(context.Background(), "player-1", domain.MinisterDraft{
-		DraftID:      "military:unit_order:u1_move_a2:3",
-		PlayerID:     "player-1",
-		MinisterRole: "military",
-		Kind:         domain.MinisterDraftKindUnitOrder,
-		TargetID:     "u1:move:A2:",
-		TargetLabel:  "u1 move -> A2",
-		UnitID:       "u1",
-		Action:       "move",
-		TargetNodeID: "A2",
-	}, DraftPromptInput{Turn: 3})
-	if ok || output != nil {
-		t.Fatalf("PolishDraft accepted invalid JSON, ok=%v output=%#v", ok, output)
+	if len(room.appliedActions) != 2 {
+		t.Fatalf("applied actions = %#v, want 2 parsed actions", room.appliedActions)
+	}
+	if room.appliedActions[0].Type != "select_candidate" || room.appliedActions[1].Type != "build" {
+		t.Fatalf("applied actions = %#v, want candidate selection then build", room.appliedActions)
 	}
 }
 
@@ -226,8 +191,8 @@ func TestGenerateReportsSendsMilitaryWhenRoleEnabled(t *testing.T) {
 			roles[chunk.GetMinisterRole()]++
 		}
 	}
-	if roles["domestic"] != 1 || roles["military"] != 1 {
-		t.Fatalf("final report roles = %#v, want one domestic and one military final chunk", roles)
+	if roles["domestic"] != 1 || roles["command"] != 1 {
+		t.Fatalf("final report roles = %#v, want one domestic and one command final chunk", roles)
 	}
 }
 

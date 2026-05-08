@@ -49,8 +49,8 @@ namespace Panoptes.Core.Application.Cache
         public PlayerView MyPlayer { get; private set; }
         public IReadOnlyList<TurnEventDto> LastPlanningStartEvents => _lastPlanningStartEvents;
 
-        private readonly List<MinisterView> _ministers = new();
-        public IReadOnlyList<MinisterView> Ministers => _ministers;
+        private readonly List<MinisterProfileDto> _ministers = new();
+        public IReadOnlyList<MinisterProfileDto> Ministers => _ministers;
 
         public int TokensLeft { get; private set; }
         public int EnemyCityCoreHP { get; private set; }
@@ -71,6 +71,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<MinisterChunkEvent> OnMinisterChunk;
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
         public event Action<TokenResultEvent> OnTokenResult;
+        public event Action<MandateResultEvent> OnMandateResult;
         public event Action<RevealResultEvent> OnRevealResult;
         public event Action<PlanningCommandResultEvent> OnPlanningCommandResult;
         public event Action<GameOverEvent> OnGameOver;
@@ -139,7 +140,11 @@ namespace Panoptes.Core.Application.Cache
                 {
                     if (msg.Ministers[i] != null)
                     {
-                        _ministers.Add(msg.Ministers[i].Clone());
+                        var minister = MinisterMapper.ToProfileDto(msg.Ministers[i]);
+                        if (minister != null)
+                        {
+                            _ministers.Add(minister);
+                        }
                     }
                 }
             }
@@ -532,6 +537,7 @@ namespace Panoptes.Core.Application.Cache
         public void PublishMinisterChunk(MinisterChunkEvent evtArgs) => Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
         public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs) => Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
         public void PublishTokenResult(TokenResultEvent evtArgs) => Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
+        public void PublishMandateResult(MandateResultEvent evtArgs) => Fire(OnMandateResult, evtArgs, nameof(OnMandateResult));
         public void PublishRevealResult(RevealResultEvent evtArgs) => Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
         public void PublishPlanningCommandResult(PlanningCommandResultEvent evtArgs) => Fire(OnPlanningCommandResult, evtArgs, nameof(OnPlanningCommandResult));
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
@@ -952,8 +958,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             projected.SlotCount = institution.SlotCount;
-            projected.CandidatePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidatePolicyIds);
-            projected.ActivePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActivePolicyIds);
+            projected.CandidateInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidateInstitutionIds);
+            projected.ActiveInstitutionIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActiveInstitutionIds);
             return projected;
         }
 
@@ -1099,6 +1105,10 @@ namespace Panoptes.Core.Application.Cache
                 IsMemory = source.IsMemory,
                 LastObservedTurn = source.LastObservedTurn,
                 HasRoad = source.HasRoad,
+                RoadStatus = source.RoadStatus,
+                NetworkStatus = source.NetworkStatus,
+                NetworkCityId = source.NetworkCityId,
+                IsNetworkConnected = source.IsNetworkConnected,
                 Terrain = source.Terrain,
                 IsResourcePoint = source.IsResourcePoint,
                 ResourceType = source.ResourceType,
@@ -1143,6 +1153,10 @@ namespace Panoptes.Core.Application.Cache
                    left.IsMemory == right.IsMemory &&
                    (ignoreLastObservedTurn || left.LastObservedTurn == right.LastObservedTurn) &&
                    left.HasRoad == right.HasRoad &&
+                   string.Equals(left.RoadStatus, right.RoadStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkStatus, right.NetworkStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.NetworkCityId, right.NetworkCityId, StringComparison.Ordinal) &&
+                   left.IsNetworkConnected == right.IsNetworkConnected &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&
                    string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&
@@ -1224,8 +1238,8 @@ namespace Panoptes.Core.Application.Cache
                 : new InstitutionStateDto
                 {
                     SlotCount = source.SlotCount,
-                    CandidatePolicyIds = source.CandidatePolicyIds != null ? new List<string>(source.CandidatePolicyIds) : new List<string>(),
-                    ActivePolicyIds = source.ActivePolicyIds != null ? new List<string>(source.ActivePolicyIds) : new List<string>()
+                    CandidateInstitutionIds = source.CandidateInstitutionIds != null ? new List<string>(source.CandidateInstitutionIds) : new List<string>(),
+                    ActiveInstitutionIds = source.ActiveInstitutionIds != null ? new List<string>(source.ActiveInstitutionIds) : new List<string>()
                 };
         }
 

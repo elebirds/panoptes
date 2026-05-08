@@ -863,6 +863,13 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	if !gameSyncHasEvent(syncMsg, "planning", "national_policy_changed") || !gameSyncHasEvent(syncMsg, "planning", "research_target_changed") {
 		t.Fatalf("fatal turn should keep planning lock-in events")
 	}
+	gameOver := firstMessage[*pb.MsgGameOver](tp.sent["player-1"])
+	if gameOver == nil {
+		t.Fatalf("fatal turn did not broadcast MsgGameOver: %#v", tp.sent["player-1"])
+	}
+	if gameOver.GetWinnerId() != "player-2" || gameOver.GetReason() != "city_core_destroyed" {
+		t.Fatalf("game over = winner %q reason %q, want player-2 city_core_destroyed", gameOver.GetWinnerId(), gameOver.GetReason())
+	}
 	if _, ok := room.State().GetNode("B2"); !ok {
 		t.Fatalf("missing node B2")
 	}
@@ -872,6 +879,34 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	}
 	if _, ok := findUnitEntryByIDForGameTest(room.State().World, "settler-1"); !ok {
 		t.Fatalf("settler-1 should remain when map actions are skipped")
+	}
+}
+
+func TestHandleDrawBroadcastsTimeoutGameOver(t *testing.T) {
+	tp := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewHumanParticipantSpec("player-2", "bob"),
+	}, tp, &config.Config{})
+	room.runtime.SetState(domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{}))
+	room.State().Turn = 100
+
+	room.HandleDraw()
+
+	if !room.State().IsOver {
+		t.Fatalf("state.IsOver = false, want true")
+	}
+	if room.State().OverReason != "timeout_draw" {
+		t.Fatalf("over reason = %q, want timeout_draw", room.State().OverReason)
+	}
+	for _, playerID := range []string{"player-1", "player-2"} {
+		gameOver := firstMessage[*pb.MsgGameOver](tp.sent[playerID])
+		if gameOver == nil {
+			t.Fatalf("%s did not receive MsgGameOver: %#v", playerID, tp.sent[playerID])
+		}
+		if gameOver.GetWinnerId() != "" || gameOver.GetReason() != "timeout_draw" {
+			t.Fatalf("%s game over = winner %q reason %q, want empty timeout_draw", playerID, gameOver.GetWinnerId(), gameOver.GetReason())
+		}
 	}
 }
 
@@ -930,10 +965,13 @@ func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 			BaseResearchOutputPerTurn: 1,
 			BaseIndustryOutputPerTurn: 2,
 		},
-		Policies: []staticdata.PolicyDefinition{
+		InstitutionCategories: []staticdata.InstitutionCategoryDefinition{
+			{ID: "administration", Name: "Administration"},
+		},
+		Institutions: []staticdata.InstitutionDefinition{
 			{
 				ID:               "academy_charter",
-				Layer:            "institutional",
+				Category:         "administration",
 				ActivationTiming: "next_turn",
 				ModifierEffects: []staticdata.ModifierEffect{
 					{Trigger: "point.output", PointKey: "research_output", ModifierType: "flat", Value: 1},
@@ -953,17 +991,17 @@ func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 
 	room.RunTurnResolution()
 
-	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 0 {
+	if got := room.State().Players["player-1"].Institutions.ActiveInstitutionIDs; len(got) != 0 {
 		t.Fatalf("active institutions after settlement = %#v, want empty", got)
 	}
-	if got := room.State().Players["player-1"].Institutions.PendingPolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+	if got := room.State().Players["player-1"].Institutions.PendingInstitutionIDs; len(got) != 1 || got[0] != "academy_charter" {
 		t.Fatalf("pending institutions after settlement = %#v, want [academy_charter]", got)
 	}
 
 	room.State().Turn++
 	gamesession.PreparePlanningStartState(room.State())
 
-	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+	if got := room.State().Players["player-1"].Institutions.ActiveInstitutionIDs; len(got) != 1 || got[0] != "academy_charter" {
 		t.Fatalf("active institutions after planning start = %#v, want [academy_charter]", got)
 	}
 	if got := room.State().EffectiveResearchOutput("player-1"); got != 2 {

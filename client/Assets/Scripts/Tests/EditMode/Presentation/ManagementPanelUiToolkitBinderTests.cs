@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UguiButton = UnityEngine.UI.Button;
 using UguiImage = UnityEngine.UI.Image;
+using UguiLayoutElement = UnityEngine.UI.LayoutElement;
 
 namespace Panoptes.Tests.EditMode.Presentation
 {
@@ -109,7 +110,7 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
-        public void PolicyFocusBinder_ShouldRouteNationalAndInstitutionCommands()
+        public void PolicyFocusBinder_ShouldRouteNationalPolicyCommand()
         {
             ActionLock.Release();
             _root = new GameObject("PolicyFocusCommandTest");
@@ -122,8 +123,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             staticCatalogStore.Replace(new StaticCatalogState(policies: new System.Collections.Generic.Dictionary<string, CatalogPolicyDto>
             {
-                ["recovery"] = new CatalogPolicyDto { Id = "recovery", Name = "Recovery", Layer = "national" },
-                ["academy_charter"] = new CatalogPolicyDto { Id = "academy_charter", Name = "Academy", Layer = "institution" }
+                ["recovery"] = new CatalogPolicyDto { Id = "recovery", Name = "Recovery", Layer = "national" }
             }));
             InjectPolicyFlow(binder, new GameIntentService(sender), viewModel, visibilityStore);
 
@@ -131,12 +131,46 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(sender.LastMessage, Is.TypeOf<MsgSetPolicy>());
             Assert.That(((MsgSetPolicy)sender.LastMessage).NationalPolicyId, Is.EqualTo("recovery"));
 
-            ActionLock.Release();
-            RequestManagementRowAction(binder, "academy_charter");
-            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetInstitutionLoadout>());
-            Assert.That(((MsgSetInstitutionLoadout)sender.LastMessage).PolicyIds, Is.EquivalentTo(new[] { "academy_charter" }));
-
             visibilityStore.Show(ManagementPanelId.PolicyFocus);
+            Assert.That(_root.GetComponent<UIDocument>().rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+        }
+
+        [Test]
+        public void InstitutionBinder_ShouldSubmitFullCategoryPreservingLoadout()
+        {
+            ActionLock.Release();
+            _root = new GameObject("InstitutionCommandTest");
+            var binder = _root.AddComponent<InstitutionUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var planningDraftStore = new PlanningDraftStore();
+            var viewModel = new InstitutionViewModel(staticCatalogStore, planningDraftStore);
+
+            staticCatalogStore.Replace(new StaticCatalogState(
+                institutionCategories: new Dictionary<string, CatalogInstitutionCategoryDto>
+                {
+                    ["power"] = new CatalogInstitutionCategoryDto { Id = "power", Name = "Power", SortOrder = 10 },
+                    ["economy"] = new CatalogInstitutionCategoryDto { Id = "economy", Name = "Economy", SortOrder = 20 }
+                },
+                institutions: new Dictionary<string, CatalogInstitutionDto>
+                {
+                    ["royal_prerogative"] = new CatalogInstitutionDto { Id = "royal_prerogative", Name = "Royal Prerogative", Category = "power" },
+                    ["estate_economy"] = new CatalogInstitutionDto { Id = "estate_economy", Name = "Estate Economy", Category = "economy" },
+                    ["free_market"] = new CatalogInstitutionDto { Id = "free_market", Name = "Free Market", Category = "economy" }
+                }));
+            planningDraftStore.Replace(new PlanningDraftState(
+                plannedInstitutionIds: new[] { "royal_prerogative", "estate_economy" }));
+            InjectInstitutionFlow(binder, new GameIntentService(sender), viewModel, visibilityStore);
+
+            RequestManagementRowAction(binder, "free_market");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetInstitutionLoadout>());
+            Assert.That(((MsgSetInstitutionLoadout)sender.LastMessage).InstitutionIds, Is.EquivalentTo(new[] { "royal_prerogative", "free_market" }));
+
+            visibilityStore.Show(ManagementPanelId.Institutions);
             Assert.That(_root.GetComponent<UIDocument>().rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             visibilityStore.Dispose();
             viewModel.Dispose();
@@ -181,8 +215,31 @@ namespace Panoptes.Tests.EditMode.Presentation
                 "domestic",
                 new[]
                 {
-                    new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12),
-                    new MinisterTabState("military", "军事大臣", "军事大臣", string.Empty, "军", false, 8)
+                    new MinisterTabState(
+                        "domestic",
+                        "内政大臣",
+                        "内政大臣",
+                        string.Empty,
+                        "内",
+                        true,
+                        attributes: new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", 7),
+                            new MinisterAttributeState("loyalty", "忠诚", 8),
+                            new MinisterAttributeState("ambition", "野心", 4)
+                        }),
+                    new MinisterTabState(
+                        "military",
+                        "军事大臣",
+                        "军事大臣",
+                        string.Empty,
+                        "军",
+                        false,
+                        attributes: new[]
+                        {
+                            new MinisterAttributeState("ability", "能力", 8),
+                            new MinisterAttributeState("loyalty", "忠诚", 7)
+                        })
                 },
                 new[]
                 {
@@ -216,7 +273,10 @@ namespace Panoptes.Tests.EditMode.Presentation
             var texts = _root.GetComponentsInChildren<TextMeshProUGUI>(true);
             Assert.That(ContainsText(texts, "内政大臣"), Is.True);
             Assert.That(ContainsText(texts, "军事大臣"), Is.True);
-            Assert.That(ContainsText(texts, "好感 12"), Is.True);
+            Assert.That(ContainsText(texts, "能力 7"), Is.True);
+            Assert.That(ContainsText(texts, "忠诚 8"), Is.True);
+            Assert.That(ContainsText(texts, "野心 4"), Is.True);
+            Assert.That(ContainsText(texts, "好感 12"), Is.False);
             Assert.That(ContainsText(texts, "建议扩张粮食产出。"), Is.True);
             Assert.That(ContainsText(texts, "采纳全部"), Is.True);
             Assert.That(ContainsText(texts, "暂不采纳"), Is.True);
@@ -246,7 +306,41 @@ namespace Panoptes.Tests.EditMode.Presentation
                 image.color.r < 0.1f &&
                 image.color.g < 0.1f &&
                 image.color.b < 0.1f));
-            Assert.That(_root.GetComponentsInChildren<UguiButton>(true).Length, Is.GreaterThanOrEqualTo(5));
+
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+            draftStore.Dispose();
+        }
+
+        [Test]
+        public void MinisterReportBinder_ShouldSizeChatBubblesToMessageContent()
+        {
+            _root = new GameObject("MinisterReportBubbleSizingTest");
+            var binder = _root.AddComponent<MinisterReportUiToolkitBinder>();
+            var draftStore = new PlanningDraftStore();
+            var viewModel = new MinisterReportViewModel(draftStore);
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectMinisterReport(binder, viewModel, visibilityStore);
+            binder.Render(new MinisterReportState(
+                "大臣汇报",
+                "domestic",
+                new[] { new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12) },
+                new[]
+                {
+                    new MinisterChatMessageState("m1", "domestic", "内政大臣", "内政大臣", string.Empty, "内", "好。", false, false),
+                    new MinisterChatMessageState("m2", "domestic", string.Empty, string.Empty, string.Empty, string.Empty, "收到。", true, false)
+                },
+                null));
+
+            visibilityStore.Show(ManagementPanelId.MinisterReport);
+
+            var bubbleLayouts = FindBubbleLayoutElements();
+            Assert.That(bubbleLayouts, Has.Count.EqualTo(2));
+            foreach (var bubble in bubbleLayouts)
+            {
+                Assert.That(bubble.preferredWidth, Is.GreaterThanOrEqualTo(96f));
+                Assert.That(bubble.preferredWidth, Is.LessThan(360f));
+            }
 
             visibilityStore.Dispose();
             viewModel.Dispose();
@@ -405,6 +499,19 @@ namespace Panoptes.Tests.EditMode.Presentation
             method!.Invoke(binder, new object[] { gameIntentService, viewModel, visibilityStore });
         }
 
+        private static void InjectInstitutionFlow(
+            InstitutionUiToolkitBinder binder,
+            GameIntentService gameIntentService,
+            InstitutionViewModel viewModel,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(InstitutionUiToolkitBinder).GetMethod(
+                "ConstructInstitutionFlow",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { gameIntentService, viewModel, visibilityStore });
+        }
+
         private static void InjectNationalLedgerVisibility(
             NationalLedgerUiToolkitBinder binder,
             ManagementPanelVisibilityStore visibilityStore)
@@ -453,6 +560,21 @@ namespace Panoptes.Tests.EditMode.Presentation
             }
 
             return null;
+        }
+
+        private List<UguiLayoutElement> FindBubbleLayoutElements()
+        {
+            var result = new List<UguiLayoutElement>();
+            var layouts = _root.GetComponentsInChildren<UguiLayoutElement>(true);
+            for (var i = 0; i < layouts.Length; i++)
+            {
+                if (layouts[i] != null && layouts[i].gameObject.name == "Bubble")
+                {
+                    result.Add(layouts[i]);
+                }
+            }
+
+            return result;
         }
 
         private static void InjectManagementHost(

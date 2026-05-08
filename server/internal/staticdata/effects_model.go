@@ -72,6 +72,12 @@ type LogisticsPriorityDefinition struct {
 	Priority int    `json:"priority"`
 }
 
+type GovernanceEffectDefinition struct {
+	Type   string `json:"type"`
+	Target string `json:"target,omitempty"`
+	Value  int    `json:"value"`
+}
+
 type TechnologyDefinition struct {
 	ID              string           `json:"id"`
 	Name            string           `json:"name"`
@@ -98,6 +104,30 @@ type PolicyDefinition struct {
 	ExplicitEffects   []ExplicitEffect              `json:"explicit_effects"`
 	ModifierEffects   []ModifierEffect              `json:"modifier_effects"`
 	LogisticsPriority []LogisticsPriorityDefinition `json:"logistics_priority,omitempty"`
+	SortOrder         int                           `json:"sort_order"`
+	Tags              []string                      `json:"tags,omitempty"`
+}
+
+type InstitutionCategoryDefinition struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	SortOrder   int      `json:"sort_order"`
+	Tags        []string `json:"tags,omitempty"`
+}
+
+type InstitutionDefinition struct {
+	ID                string                        `json:"id"`
+	Name              string                        `json:"name"`
+	Description       string                        `json:"description"`
+	IconKey           string                        `json:"icon_key"`
+	Category          string                        `json:"category"`
+	ActivationTiming  string                        `json:"activation_timing"`
+	Prerequisites     []Prerequisite                `json:"prerequisites"`
+	ExplicitEffects   []ExplicitEffect              `json:"explicit_effects"`
+	ModifierEffects   []ModifierEffect              `json:"modifier_effects"`
+	LogisticsPriority []LogisticsPriorityDefinition `json:"logistics_priority,omitempty"`
+	GovernanceEffects []GovernanceEffectDefinition  `json:"governance_effects,omitempty"`
 	SortOrder         int                           `json:"sort_order"`
 	Tags              []string                      `json:"tags,omitempty"`
 }

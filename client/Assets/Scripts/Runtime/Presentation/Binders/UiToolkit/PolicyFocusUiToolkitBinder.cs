@@ -43,30 +43,17 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            if (IsInstitutionPolicy(policyId))
-            {
-                if (_gameIntentService?.SetInstitutionLoadout(policyId) != true)
-                {
-                    return;
-                }
-
-                MarkPolicySelected(policyId, institutionPolicy: true);
-                _closeAllowedAfterSelection = true;
-                ApplyCloseButtonVisibility();
-                return;
-            }
-
             if (_gameIntentService?.SetPolicy(policyId) != true)
             {
                 return;
             }
 
-            MarkPolicySelected(policyId, institutionPolicy: false);
+            MarkPolicySelected(policyId);
             _closeAllowedAfterSelection = true;
             ApplyCloseButtonVisibility();
         }
 
-        private void MarkPolicySelected(string policyId, bool institutionPolicy)
+        private void MarkPolicySelected(string policyId)
         {
             var root = GetComponent<UIDocument>()?.rootVisualElement;
             if (root == null)
@@ -74,7 +61,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            var rows = institutionPolicy ? GetInstitutionPolicyRows() : GetNationalPolicyRows();
+            var rows = GetNationalPolicyRows();
             for (var i = 0; i < rows.Count; i++)
             {
                 var row = root.Q<VisualElement>("management-panel-row-" + SafeName(rows[i]?.Id));
@@ -159,43 +146,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             return false;
         }
 
-        private bool IsInstitutionPolicy(string policyId)
-        {
-            var groups = _viewModel?.Current?.Groups;
-            if (groups == null)
-            {
-                return false;
-            }
-
-            for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
-            {
-                var group = groups[groupIndex];
-                if (group?.Rows == null ||
-                    !string.Equals(group.Id, "institution", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                for (var rowIndex = 0; rowIndex < group.Rows.Count; rowIndex++)
-                {
-                    if (string.Equals(group.Rows[rowIndex]?.Id, policyId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         private System.Collections.Generic.IReadOnlyList<ManagementPanelRowState> GetNationalPolicyRows()
         {
             return GetPolicyRows("national");
-        }
-
-        private System.Collections.Generic.IReadOnlyList<ManagementPanelRowState> GetInstitutionPolicyRows()
-        {
-            return GetPolicyRows("institution");
         }
 
         private System.Collections.Generic.IReadOnlyList<ManagementPanelRowState> GetPolicyRows(string groupId)

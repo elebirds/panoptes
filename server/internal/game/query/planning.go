@@ -30,7 +30,7 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	// 不负责回放 settlement 或 planning-start 事件。
 	msg.PlannedResearchTargetTechnologyId = state.TurnRuntime.Planning.PendingResearchTarget(playerID)
 	msg.PlannedNationalPolicyId = string(state.TurnRuntime.Planning.PendingPolicy(playerID))
-	msg.PlannedInstitutionPolicyIds = state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
+	msg.PlannedInstitutionIds = state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
 	msg.MinisterDrafts = BuildMinisterDraftViews(state, playerID)
 
 	ordersByUnit := make(map[string]*pb.QueuedUnitOrder)
