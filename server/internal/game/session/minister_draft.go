@@ -7,7 +7,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
-	"github.com/elebirds/panoptes/internal/game/ai"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -35,13 +34,7 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 			continue
 		}
 		observation := r.BuildObservation(playerID)
-		req := ai.Request{
-			Participant: binding.Participant,
-			State:       r.state,
-			Observation: observation,
-		}
-		intents, _ := (ai.RuleBotProvider{}).BuildPlanningIntents(context.Background(), req)
-		drafts := buildMinisterDraftsFromIntents(turn, playerID, intents)
+		drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
 		draftsByPlayer[playerID] = drafts
 		for _, draft := range drafts {
 			r.RecordMinisterMemory(playerID, draft.MinisterRole, ministerengine.MemoryEntry{
@@ -153,10 +146,14 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 			return domain.MinisterDraft{}, false
 		}
 		targetID := nodeID + ":" + buildingTypeID
+		cityID := strings.TrimSpace(typed.CityID)
+		if cityID != "" {
+			targetID += ":" + cityID
+		}
 		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindBuild, targetID, buildingLabel(buildingTypeID)+" @ "+nodeID)
 		draft.NodeID = nodeID
 		draft.BuildingTypeID = buildingTypeID
-		draft.CityID = strings.TrimSpace(typed.CityID)
+		draft.CityID = cityID
 		return draft, true
 	case planning.SetBuildingRecipeIntent:
 		nodeID := strings.TrimSpace(typed.NodeID)
@@ -179,7 +176,10 @@ func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) 
 		if gameorders.UnitAction(action) == gameorders.ActionSettleCity {
 			role = domesticMinisterRole
 		}
-		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID)
+		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID) + ":" + strings.TrimSpace(typed.SecondaryNodeID)
+		if pairs := sortedParamPairs(typed.Params); len(pairs) > 0 {
+			targetID += ":" + strings.Join(pairs, ",")
+		}
 		draft := baseMinisterDraft(turn, playerID, role, domain.MinisterDraftKindUnitOrder, targetID, unitOrderLabel(typed))
 		draft.UnitID = unitID
 		draft.Action = action

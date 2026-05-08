@@ -241,7 +241,7 @@ if ok {
 - Valid action -> create a pending minister draft/proposal; the eventual accept path still uses the normal planning surfaces.
 
 #### 5. Good/Base/Bad Cases
-- Good: rules generate research/policy/unit candidates, the report prompt lists them, and the LLM returns `select_candidate` for the candidate it wants to formally recommend.
+- Good: the legal candidate pool generates research/policy/unit candidates from the current observed snapshot, the report prompt lists them, and the LLM returns `select_candidate` for the candidate it wants to formally recommend.
 - Good: LLM returns `set_research`, `set_policy`, `set_institution_loadout`, `set_building_recipe`, or a valid `unit_order` when no suitable candidate exists, and the session creates pending minister proposals that the player can approve.
 - Base: LLM returns legacy `build` or `move_units`, and the session creates proposals that later flow through the same approve/reject path as other minister drafts.
 - Bad: minister action writes to `state.TurnRuntime.Planning` by hand or skips validation because the LLM already emitted JSON.
@@ -267,6 +267,63 @@ if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, 
     draft := domain.MinisterDraft{Kind: domain.MinisterDraftKindBuild, Status: domain.MinisterDraftStatusPending}
     state.TurnRuntime.Planning.SetMinisterDrafts(playerID, append(existingDrafts, draft))
 }
+```
+
+### Scenario: Minister Legal Candidate Pool
+
+#### 1. Scope / Trigger
+- Trigger: backend changes that prepare default minister drafts, action candidates, or LLM-selectable gameplay options at planning start.
+- Candidate generation is the rules-owned action-space layer. It enumerates legal options; it does not choose the final recommendation and does not mutate planning state.
+
+#### 2. Signatures
+- Candidate entrypoint: `buildMinisterDraftsFromLegalCandidates(turn int, playerID string, state *domain.GameState, observation *query.ObservationSnapshot) []domain.MinisterDraft`
+- Intent entrypoint: `enumerateLegalMinisterCandidateIntents(playerID string, state *domain.GameState, observation *query.ObservationSnapshot) []planning.Intent`
+- Runtime caller: `Runtime.PrepareMinisterDraftCacheForTurn(turn int)`
+
+#### 3. Contracts
+- Candidate generation must read from the player observation snapshot for map, building, and unit surfaces; hidden truth and memory-only nodes must not produce build, recipe, or unit-order candidates.
+- Enumerated candidates must still pass the owning validators before draft creation:
+  - research -> `economy.ValidateResearchTarget`
+  - build -> `economy.ValidateBuildOrder`
+  - recipe -> `economy.ValidateRecipeSelection`
+  - national policy -> `planning.ValidatePolicySelection(..., "national")`
+  - institutional loadout -> `planning.ValidateInstitutionLoadout`
+  - unit orders/map actions -> `orders.ValidatePlanningUnitOrder`
+- Candidate generation may enumerate many valid options for a surface. Ranking, selection, and narrative explanation belong to the minister report LLM via `select_candidate`.
+- Generated candidates must be `MinisterDraftSourceRuleOnly`, `pending`, and `available` until selected, accepted, rejected, or staled.
+- Candidate generation must not write `BuildOrders`, `RecipeSelections`, `UnitOrders`, pending research/policy/institution maps, or resolving caches.
+- Draft IDs must include every command dimension that changes execution semantics, including `city_id`, `secondary_node_id`, and deterministic params when present.
+
+#### 4. Validation & Error Matrix
+- Missing state or player id -> return no candidates.
+- Missing observation -> build a normal observation for the player, then enumerate from that observed view.
+- Hidden or memory-only node/unit -> no candidate for that target.
+- Validator rejects a candidate -> skip it; do not log as an LLM failure.
+- Duplicate intent key -> keep the first deterministic candidate.
+- City-core building definition -> skip as a normal build candidate.
+
+#### 5. Good/Base/Bad Cases
+- Good: two visible legal technologies, policies, buildings, recipes, or unit orders produce multiple rule-only candidate drafts for the LLM to choose from.
+- Base: no legal candidates for a surface produces no draft for that surface, while other surfaces still enumerate.
+- Bad: a hidden node exists in `state.NodeIndex` but not in `observation.VisibleNodes`, yet a build or move draft targets it.
+- Bad: candidate preparation writes directly to `state.TurnRuntime.Planning.BuildOrders` before player approval.
+
+#### 6. Tests Required
+- Session test proves multiple legal candidates can be generated for research, policy, institution, build, recipe, and unit-order surfaces.
+- Session test proves hidden nodes do not produce build or unit-order candidate drafts.
+- Session test proves candidate generation does not mutate pending planning orders before approval.
+- Draft test proves semantically different command dimensions produce distinct draft IDs.
+
+#### 7. Wrong vs Correct
+#### Wrong
+```go
+// Do not use the old RuleBot shortlist as the LLM candidate universe.
+intents, _ := (ai.RuleBotProvider{}).BuildPlanningIntents(ctx, req)
+```
+#### Correct
+```go
+observation := r.BuildObservation(playerID)
+drafts := buildMinisterDraftsFromLegalCandidates(turn, playerID, r.state, observation)
 ```
 
 ### Scenario: Minister Participation Mode Gates Direct Planning
