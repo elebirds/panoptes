@@ -269,6 +269,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.MinisterMetrics => evt.MinisterMetrics,
                 GameEvent.BodyOneofCase.GameChatPosted => evt.GameChatPosted,
                 GameEvent.BodyOneofCase.GameChatSync => evt.GameChatSync,
+                GameEvent.BodyOneofCase.MandateResult => evt.MandateResult,
                 _ => null
             };
         }

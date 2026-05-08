@@ -59,6 +59,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
+            dispatcher.Register<MsgMandateResult>("MsgMandateResult", OnMandateResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
             dispatcher.Register<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -89,6 +90,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Unregister<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
+            dispatcher.Unregister<MsgMandateResult>("MsgMandateResult", OnMandateResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
             dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -233,6 +235,34 @@ namespace Panoptes.Core.Application.Handler
                 Action = msg.Action,
                 TokensLeft = msg.TokensLeft,
                 ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
+        }
+
+        private void OnMandateResult(MsgMandateResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            var cache = _gameStateCache;
+            if (msg.Success)
+            {
+                cache?.UpdateTokens(msg.TokensLeft);
+                PanoptesLog.Log($"[Game] 亲政成功 action={msg.Action} tokens_left={msg.TokensLeft} message={msg.Message}");
+            }
+            else
+            {
+                PanoptesLog.Warning($"[Game] 亲政失败 error={msg.ErrorCode} message={msg.Message}");
+            }
+
+            cache?.PublishMandateResult(new MandateResultEvent
+            {
+                Success = msg.Success,
+                Action = msg.Action,
+                TokensLeft = msg.TokensLeft,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = msg.Message ?? string.Empty
             });
         }
 

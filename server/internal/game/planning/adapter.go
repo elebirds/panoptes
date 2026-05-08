@@ -174,7 +174,7 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
 	switch payload.DirectiveType {
-	case "accept", "reject", "accept_role", "reject_role":
+	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}

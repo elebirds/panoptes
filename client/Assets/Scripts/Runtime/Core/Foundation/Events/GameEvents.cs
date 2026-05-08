@@ -81,6 +81,15 @@ namespace Panoptes.Core.Events
         public string ErrorCode;
     }
 
+    public class MandateResultEvent
+    {
+        public bool Success;
+        public string Action;
+        public int TokensLeft;
+        public string ErrorCode;
+        public string Message;
+    }
+
     public class RevealResultEvent
     {
         public string NodeID;

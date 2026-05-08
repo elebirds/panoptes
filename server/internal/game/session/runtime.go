@@ -50,6 +50,10 @@ type Runtime struct {
 	preparedMinisterDrafts    map[int]map[string][]domain.MinisterDraft
 	preparedMinisterDraftsMu  sync.RWMutex
 	ministerEngine            *ministerengine.MinisterEngine
+
+	// 亲政模式
+	mandateModeByPlayer map[string]bool // 玩家是否处于亲政模式
+	mandateModeMu       sync.RWMutex
 }
 
 func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -62,6 +66,7 @@ func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTr
 		submitCh:               make(chan string, len(participants)*4+16),
 		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
 		preparedMinisterDrafts: make(map[int]map[string][]domain.MinisterDraft),
+		mandateModeByPlayer:    make(map[string]bool),
 	}
 }
 
@@ -207,6 +212,28 @@ func (r *Runtime) RecordMinisterMemory(playerID string, role string, entry minis
 		return
 	}
 	r.ministerEngine.RecordMemory(playerID, role, entry)
+}
+
+// 亲政模式相关方法
+
+// SetPlayerMandateMode 设置玩家的亲政模式
+func (r *Runtime) SetPlayerMandateMode(playerID string, enabled bool) {
+	if r == nil {
+		return
+	}
+	r.mandateModeMu.Lock()
+	defer r.mandateModeMu.Unlock()
+	r.mandateModeByPlayer[playerID] = enabled
+}
+
+// IsPlayerInMandateMode 检查玩家是否处于亲政模式
+func (r *Runtime) IsPlayerInMandateMode(playerID string) bool {
+	if r == nil {
+		return false
+	}
+	r.mandateModeMu.RLock()
+	defer r.mandateModeMu.RUnlock()
+	return r.mandateModeByPlayer[playerID]
 }
 
 func (r *Runtime) PreparePlanningStartStateIfNeeded() {

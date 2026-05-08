@@ -41,6 +41,16 @@ namespace Panoptes.Core.Application.Services
             return SendDirective("reject_role", string.Empty, ministerRole);
         }
 
+        public bool MandateOverride(string ministerRole)
+        {
+            return SendDirective("mandate_override", string.Empty, ministerRole);
+        }
+
+        public bool EnterDirectCommand(string ministerRole)
+        {
+            return SendDirective("direct_command", string.Empty, ministerRole);
+        }
+
         private bool SendDirective(string directiveType, string draftId, string ministerRole)
         {
             if (ActionLock.IsLocked)

@@ -1233,6 +1233,82 @@ func (x *MsgTokenResult) GetErrorCode() string {
 	return ""
 }
 
+type MsgMandateResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	TokensLeft    int32                  `protobuf:"varint,3,opt,name=tokens_left,json=tokensLeft,proto3" json:"tokens_left,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,4,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgMandateResult) Reset() {
+	*x = MsgMandateResult{}
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgMandateResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgMandateResult) ProtoMessage() {}
+
+func (x *MsgMandateResult) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgMandateResult.ProtoReflect.Descriptor instead.
+func (*MsgMandateResult) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MsgMandateResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgMandateResult) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *MsgMandateResult) GetTokensLeft() int32 {
+	if x != nil {
+		return x.TokensLeft
+	}
+	return 0
+}
+
+func (x *MsgMandateResult) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *MsgMandateResult) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type MsgRevealResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -1244,7 +1320,7 @@ type MsgRevealResult struct {
 
 func (x *MsgRevealResult) Reset() {
 	*x = MsgRevealResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1256,7 +1332,7 @@ func (x *MsgRevealResult) String() string {
 func (*MsgRevealResult) ProtoMessage() {}
 
 func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1269,7 +1345,7 @@ func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRevealResult.ProtoReflect.Descriptor instead.
 func (*MsgRevealResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{15}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MsgRevealResult) GetNodeId() string {
@@ -1304,7 +1380,7 @@ type MsgResearchResult struct {
 
 func (x *MsgResearchResult) Reset() {
 	*x = MsgResearchResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1316,7 +1392,7 @@ func (x *MsgResearchResult) String() string {
 func (*MsgResearchResult) ProtoMessage() {}
 
 func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1329,7 +1405,7 @@ func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgResearchResult.ProtoReflect.Descriptor instead.
 func (*MsgResearchResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{16}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MsgResearchResult) GetSuccess() bool {
@@ -1364,7 +1440,7 @@ type MsgSetPolicyResult struct {
 
 func (x *MsgSetPolicyResult) Reset() {
 	*x = MsgSetPolicyResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1376,7 +1452,7 @@ func (x *MsgSetPolicyResult) String() string {
 func (*MsgSetPolicyResult) ProtoMessage() {}
 
 func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,7 +1465,7 @@ func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetPolicyResult.ProtoReflect.Descriptor instead.
 func (*MsgSetPolicyResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{17}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgSetPolicyResult) GetSuccess() bool {
@@ -1424,7 +1500,7 @@ type MsgSetInstitutionLoadoutResult struct {
 
 func (x *MsgSetInstitutionLoadoutResult) Reset() {
 	*x = MsgSetInstitutionLoadoutResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1436,7 +1512,7 @@ func (x *MsgSetInstitutionLoadoutResult) String() string {
 func (*MsgSetInstitutionLoadoutResult) ProtoMessage() {}
 
 func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1525,7 @@ func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetInstitutionLoadoutResult.ProtoReflect.Descriptor instead.
 func (*MsgSetInstitutionLoadoutResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{18}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MsgSetInstitutionLoadoutResult) GetSuccess() bool {
@@ -1487,7 +1563,7 @@ type MsgSetBuildingRecipeResult struct {
 
 func (x *MsgSetBuildingRecipeResult) Reset() {
 	*x = MsgSetBuildingRecipeResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1499,7 +1575,7 @@ func (x *MsgSetBuildingRecipeResult) String() string {
 func (*MsgSetBuildingRecipeResult) ProtoMessage() {}
 
 func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1512,7 +1588,7 @@ func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetBuildingRecipeResult.ProtoReflect.Descriptor instead.
 func (*MsgSetBuildingRecipeResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{19}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MsgSetBuildingRecipeResult) GetSuccess() bool {
@@ -1572,7 +1648,7 @@ type MsgBuildStructureResult struct {
 
 func (x *MsgBuildStructureResult) Reset() {
 	*x = MsgBuildStructureResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1584,7 +1660,7 @@ func (x *MsgBuildStructureResult) String() string {
 func (*MsgBuildStructureResult) ProtoMessage() {}
 
 func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1597,7 +1673,7 @@ func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildStructureResult.ProtoReflect.Descriptor instead.
 func (*MsgBuildStructureResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{20}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *MsgBuildStructureResult) GetSuccess() bool {
@@ -1663,7 +1739,7 @@ type MsgIssueUnitOrderResult struct {
 
 func (x *MsgIssueUnitOrderResult) Reset() {
 	*x = MsgIssueUnitOrderResult{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1675,7 +1751,7 @@ func (x *MsgIssueUnitOrderResult) String() string {
 func (*MsgIssueUnitOrderResult) ProtoMessage() {}
 
 func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1688,7 +1764,7 @@ func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgIssueUnitOrderResult.ProtoReflect.Descriptor instead.
 func (*MsgIssueUnitOrderResult) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{21}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *MsgIssueUnitOrderResult) GetSuccess() bool {
@@ -1743,7 +1819,7 @@ type MsgTurnReport struct {
 
 func (x *MsgTurnReport) Reset() {
 	*x = MsgTurnReport{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1755,7 +1831,7 @@ func (x *MsgTurnReport) String() string {
 func (*MsgTurnReport) ProtoMessage() {}
 
 func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1768,7 +1844,7 @@ func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTurnReport.ProtoReflect.Descriptor instead.
 func (*MsgTurnReport) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{22}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *MsgTurnReport) GetTurn() int32 {
@@ -1802,7 +1878,7 @@ type MinisterProposalView struct {
 
 func (x *MinisterProposalView) Reset() {
 	*x = MinisterProposalView{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1814,7 +1890,7 @@ func (x *MinisterProposalView) String() string {
 func (*MinisterProposalView) ProtoMessage() {}
 
 func (x *MinisterProposalView) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[23]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1827,7 +1903,7 @@ func (x *MinisterProposalView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MinisterProposalView.ProtoReflect.Descriptor instead.
 func (*MinisterProposalView) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{23}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *MinisterProposalView) GetProposalId() string {
@@ -1912,7 +1988,7 @@ type MsgGameSync struct {
 
 func (x *MsgGameSync) Reset() {
 	*x = MsgGameSync{}
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1924,7 +2000,7 @@ func (x *MsgGameSync) String() string {
 func (*MsgGameSync) ProtoMessage() {}
 
 func (x *MsgGameSync) ProtoReflect() protoreflect.Message {
-	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[24]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1937,7 +2013,7 @@ func (x *MsgGameSync) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgGameSync.ProtoReflect.Descriptor instead.
 func (*MsgGameSync) Descriptor() ([]byte, []int) {
-	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{24}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *MsgGameSync) GetTurn() int32 {
@@ -2144,7 +2220,15 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\vtokens_left\x18\x03 \x01(\x05R\n" +
 	"tokensLeft\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\x04 \x01(\tR\terrorCode\"\x87\x01\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\"\x9e\x01\n" +
+	"\x10MsgMandateResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1f\n" +
+	"\vtokens_left\x18\x03 \x01(\x05R\n" +
+	"tokensLeft\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\"\x87\x01\n" +
 	"\x0fMsgRevealResult\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12:\n" +
 	"\n" +
@@ -2233,7 +2317,7 @@ func file_panoptes_proto_v1_turn_proto_rawDescGZIP() []byte {
 	return file_panoptes_proto_v1_turn_proto_rawDescData
 }
 
-var file_panoptes_proto_v1_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_panoptes_proto_v1_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*MsgPlanningStart)(nil),                    // 0: panoptes.proto.v1.MsgPlanningStart
 	(*MinisterDraftView)(nil),                   // 1: panoptes.proto.v1.MinisterDraftView
@@ -2250,38 +2334,39 @@ var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*MsgSetBuildingRecipePreviewRequest)(nil),  // 12: panoptes.proto.v1.MsgSetBuildingRecipePreviewRequest
 	(*MsgSetBuildingRecipePreviewResponse)(nil), // 13: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
 	(*MsgTokenResult)(nil),                      // 14: panoptes.proto.v1.MsgTokenResult
-	(*MsgRevealResult)(nil),                     // 15: panoptes.proto.v1.MsgRevealResult
-	(*MsgResearchResult)(nil),                   // 16: panoptes.proto.v1.MsgResearchResult
-	(*MsgSetPolicyResult)(nil),                  // 17: panoptes.proto.v1.MsgSetPolicyResult
-	(*MsgSetInstitutionLoadoutResult)(nil),      // 18: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
-	(*MsgSetBuildingRecipeResult)(nil),          // 19: panoptes.proto.v1.MsgSetBuildingRecipeResult
-	(*MsgBuildStructureResult)(nil),             // 20: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgIssueUnitOrderResult)(nil),             // 21: panoptes.proto.v1.MsgIssueUnitOrderResult
-	(*MsgTurnReport)(nil),                       // 22: panoptes.proto.v1.MsgTurnReport
-	(*MinisterProposalView)(nil),                // 23: panoptes.proto.v1.MinisterProposalView
-	(*MsgGameSync)(nil),                         // 24: panoptes.proto.v1.MsgGameSync
-	nil,                                         // 25: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
-	(*PlayerView)(nil),                          // 26: panoptes.proto.v1.PlayerView
-	(*NodeView)(nil),                            // 27: panoptes.proto.v1.NodeView
-	(*UnitView)(nil),                            // 28: panoptes.proto.v1.UnitView
-	(*DomainEventEnvelope)(nil),                 // 29: panoptes.proto.v1.DomainEventEnvelope
-	(*InformationReportView)(nil),               // 30: panoptes.proto.v1.InformationReportView
-	(*WarZone)(nil),                             // 31: panoptes.proto.v1.WarZone
-	(*CommandEnvelope)(nil),                     // 32: panoptes.proto.v1.CommandEnvelope
-	(*MsgCommandAck)(nil),                       // 33: panoptes.proto.v1.MsgCommandAck
+	(*MsgMandateResult)(nil),                    // 15: panoptes.proto.v1.MsgMandateResult
+	(*MsgRevealResult)(nil),                     // 16: panoptes.proto.v1.MsgRevealResult
+	(*MsgResearchResult)(nil),                   // 17: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetPolicyResult)(nil),                  // 18: panoptes.proto.v1.MsgSetPolicyResult
+	(*MsgSetInstitutionLoadoutResult)(nil),      // 19: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgSetBuildingRecipeResult)(nil),          // 20: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MsgBuildStructureResult)(nil),             // 21: panoptes.proto.v1.MsgBuildStructureResult
+	(*MsgIssueUnitOrderResult)(nil),             // 22: panoptes.proto.v1.MsgIssueUnitOrderResult
+	(*MsgTurnReport)(nil),                       // 23: panoptes.proto.v1.MsgTurnReport
+	(*MinisterProposalView)(nil),                // 24: panoptes.proto.v1.MinisterProposalView
+	(*MsgGameSync)(nil),                         // 25: panoptes.proto.v1.MsgGameSync
+	nil,                                         // 26: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	(*PlayerView)(nil),                          // 27: panoptes.proto.v1.PlayerView
+	(*NodeView)(nil),                            // 28: panoptes.proto.v1.NodeView
+	(*UnitView)(nil),                            // 29: panoptes.proto.v1.UnitView
+	(*DomainEventEnvelope)(nil),                 // 30: panoptes.proto.v1.DomainEventEnvelope
+	(*InformationReportView)(nil),               // 31: panoptes.proto.v1.InformationReportView
+	(*WarZone)(nil),                             // 32: panoptes.proto.v1.WarZone
+	(*CommandEnvelope)(nil),                     // 33: panoptes.proto.v1.CommandEnvelope
+	(*MsgCommandAck)(nil),                       // 34: panoptes.proto.v1.MsgCommandAck
 }
 var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	7,  // 0: panoptes.proto.v1.MsgPlanningStart.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
 	1,  // 1: panoptes.proto.v1.MsgPlanningStart.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
-	26, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
-	27, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
-	28, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
-	29, // 5: panoptes.proto.v1.MsgPlanningStart.planning_start_events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	30, // 6: panoptes.proto.v1.MsgPlanningStart.information_report:type_name -> panoptes.proto.v1.InformationReportView
-	25, // 7: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	27, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
+	28, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
+	29, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
+	30, // 5: panoptes.proto.v1.MsgPlanningStart.planning_start_events:type_name -> panoptes.proto.v1.DomainEventEnvelope
+	31, // 6: panoptes.proto.v1.MsgPlanningStart.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	26, // 7: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
 	2,  // 8: panoptes.proto.v1.QueuedUnitOrder.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
 	3,  // 9: panoptes.proto.v1.MsgPlanningSnapshot.unit_orders:type_name -> panoptes.proto.v1.QueuedUnitOrder
-	31, // 10: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
+	32, // 10: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
 	1,  // 11: panoptes.proto.v1.MsgPlanningSnapshot.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
 	4,  // 12: panoptes.proto.v1.MsgPlanningSnapshot.build_orders:type_name -> panoptes.proto.v1.QueuedBuildOrder
 	5,  // 13: panoptes.proto.v1.MsgPlanningSnapshot.recipe_selections:type_name -> panoptes.proto.v1.QueuedRecipeSelection
@@ -2289,18 +2374,18 @@ var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	2,  // 15: panoptes.proto.v1.MsgPlanningPathPreviewResponse.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
 	9,  // 16: panoptes.proto.v1.MsgBuildStructurePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
 	9,  // 17: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	27, // 18: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
+	28, // 18: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
 	9,  // 19: panoptes.proto.v1.MsgSetBuildingRecipeResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
 	9,  // 20: panoptes.proto.v1.MsgBuildStructureResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	32, // 21: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
+	33, // 21: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
 	7,  // 22: panoptes.proto.v1.MsgGameSync.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
-	26, // 23: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
-	27, // 24: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
-	28, // 25: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
-	29, // 26: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	33, // 27: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
-	23, // 28: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
-	30, // 29: panoptes.proto.v1.MsgGameSync.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	27, // 23: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
+	28, // 24: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
+	29, // 25: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
+	30, // 26: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
+	34, // 27: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
+	24, // 28: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
+	31, // 29: panoptes.proto.v1.MsgGameSync.information_report:type_name -> panoptes.proto.v1.InformationReportView
 	30, // [30:30] is the sub-list for method output_type
 	30, // [30:30] is the sub-list for method input_type
 	30, // [30:30] is the sub-list for extension type_name
@@ -2322,7 +2407,7 @@ func file_panoptes_proto_v1_turn_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_turn_proto_rawDesc), len(file_panoptes_proto_v1_turn_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

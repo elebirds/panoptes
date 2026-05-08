@@ -71,6 +71,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<MinisterChunkEvent> OnMinisterChunk;
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
         public event Action<TokenResultEvent> OnTokenResult;
+        public event Action<MandateResultEvent> OnMandateResult;
         public event Action<RevealResultEvent> OnRevealResult;
         public event Action<PlanningCommandResultEvent> OnPlanningCommandResult;
         public event Action<GameOverEvent> OnGameOver;
@@ -532,6 +533,7 @@ namespace Panoptes.Core.Application.Cache
         public void PublishMinisterChunk(MinisterChunkEvent evtArgs) => Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
         public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs) => Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
         public void PublishTokenResult(TokenResultEvent evtArgs) => Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
+        public void PublishMandateResult(MandateResultEvent evtArgs) => Fire(OnMandateResult, evtArgs, nameof(OnMandateResult));
         public void PublishRevealResult(RevealResultEvent evtArgs) => Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
         public void PublishPlanningCommandResult(PlanningCommandResultEvent evtArgs) => Fire(OnPlanningCommandResult, evtArgs, nameof(OnPlanningCommandResult));
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));

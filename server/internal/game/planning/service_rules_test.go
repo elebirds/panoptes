@@ -732,6 +732,121 @@ func TestSetMinisterDirectiveIntentAcceptsPolicyDraft(t *testing.T) {
 	}
 }
 
+func TestSetMinisterDirectiveMandateOverrideRejectsDraftsAndConsumesToken(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+		{
+			DraftID:      "draft-research-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "agrarian_foundations",
+			TargetLabel:  "Agrarian Foundations",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"mandate_override"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 1 {
+		t.Fatalf("tokens left = %d, want 1", got)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetAction() != "override" || result.GetTokensLeft() != 1 {
+		t.Fatalf("mandate result = %#v, want successful override", result)
+	}
+	for _, draft := range state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1") {
+		if draft.Status != domain.MinisterDraftStatusRejected || draft.Available {
+			t.Fatalf("draft = %#v, want rejected unavailable", draft)
+		}
+	}
+	if got := len(session.memoryEntries); got != 2 {
+		t.Fatalf("memory entries = %d, want 2 rejected transitions", got)
+	}
+}
+
+func TestSetMinisterDirectiveMandateOverrideWithoutDraftDoesNotConsumeToken(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"mandate_override"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 2 {
+		t.Fatalf("tokens left = %d, want unchanged 2", got)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "no_minister_actions" {
+		t.Fatalf("mandate result = %#v, want no_minister_actions", result)
+	}
+}
+
+func TestSetMinisterDirectiveDirectCommandConsumesTokenAndSetsMode(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	state.Players["player-1"].TokensLeft = 2
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"direct_command"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 1 {
+		t.Fatalf("tokens left = %d, want 1", got)
+	}
+	if !session.mandateModeByPlayer["player-1"] {
+		t.Fatalf("mandate mode not enabled")
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetAction() != "direct_command" || result.GetTokensLeft() != 1 {
+		t.Fatalf("mandate result = %#v, want direct command success", result)
+	}
+}
+
 func TestManualPolicyChangeMarksAcceptedDraftStale(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
@@ -1272,11 +1387,12 @@ func TestHandleIntentSubmitTurnCallsSessionSubmit(t *testing.T) {
 }
 
 type planningSessionStub struct {
-	state         *domain.GameState
-	sent          map[string][]proto.Message
-	devMode       bool
-	submitted     []string
-	memoryEntries []planningSessionMemoryRecord
+	state               *domain.GameState
+	sent                map[string][]proto.Message
+	devMode             bool
+	submitted           []string
+	memoryEntries       []planningSessionMemoryRecord
+	mandateModeByPlayer map[string]bool
 }
 
 type planningSessionMemoryRecord struct {
@@ -1287,9 +1403,10 @@ type planningSessionMemoryRecord struct {
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
 	return &planningSessionStub{
-		state:   state,
-		sent:    make(map[string][]proto.Message),
-		devMode: true,
+		state:               state,
+		sent:                make(map[string][]proto.Message),
+		devMode:             true,
+		mandateModeByPlayer: make(map[string]bool),
 	}
 }
 
@@ -1445,6 +1562,10 @@ func (s *planningSessionStub) RecordMinisterMemory(playerID string, role string,
 		Role:     role,
 		Entry:    entry,
 	})
+}
+
+func (s *planningSessionStub) SetPlayerMandateMode(playerID string, enabled bool) {
+	s.mandateModeByPlayer[playerID] = enabled
 }
 
 func lastMessage[T proto.Message](msgs []proto.Message) T {

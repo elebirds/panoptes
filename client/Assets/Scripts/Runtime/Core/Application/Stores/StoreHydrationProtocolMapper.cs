@@ -123,6 +123,17 @@ namespace Panoptes.Core.Application.Stores
             return WithTokens(previous, msg.TokensLeft);
         }
 
+        public static GameStateStoreState MergeMandateResult(GameStateStoreState current, MsgMandateResult msg)
+        {
+            var previous = current ?? new GameStateStoreState();
+            if (msg == null || !msg.Success)
+            {
+                return previous.Clone();
+            }
+
+            return WithTokens(previous, msg.TokensLeft);
+        }
+
         public static GameStateStoreState MergeRevealResult(GameStateStoreState current, MsgRevealResult msg)
         {
             var previous = current ?? new GameStateStoreState();
@@ -368,6 +379,22 @@ namespace Panoptes.Core.Application.Stores
         }
 
         public static TurnState MergeTurn(TurnState current, MsgTokenResult msg)
+        {
+            var previous = current ?? new TurnState();
+            return msg != null && msg.Success
+                ? new TurnState(
+                    previous.Turn,
+                    previous.Phase,
+                    msg.TokensLeft,
+                    previous.PlanningStartEvents,
+                    previous.IsGameOver,
+                    previous.TimeoutSeconds,
+                    previous.NextPhase,
+                    previous.IsInteractive)
+                : previous.Clone();
+        }
+
+        public static TurnState MergeTurn(TurnState current, MsgMandateResult msg)
         {
             var previous = current ?? new TurnState();
             return msg != null && msg.Success

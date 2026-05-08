@@ -225,6 +225,22 @@ func (r *GameRoom) RecordMinisterMemory(playerID string, role string, entry mini
 	r.runtime.RecordMinisterMemory(playerID, role, entry)
 }
 
+// 亲政模式相关方法
+
+func (r *GameRoom) SetPlayerMandateMode(playerID string, enabled bool) {
+	if r == nil || r.runtime == nil {
+		return
+	}
+	r.runtime.SetPlayerMandateMode(playerID, enabled)
+}
+
+func (r *GameRoom) IsPlayerInMandateMode(playerID string) bool {
+	if r == nil || r.runtime == nil {
+		return false
+	}
+	return r.runtime.IsPlayerInMandateMode(playerID)
+}
+
 func (r *GameRoom) HasParticipant(participantID string) bool {
 	if strings.TrimSpace(participantID) == "" {
 		return false

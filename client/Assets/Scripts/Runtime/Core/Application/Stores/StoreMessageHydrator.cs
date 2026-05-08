@@ -57,6 +57,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Register<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Register<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
+            _dispatcher.Register<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Register<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
             _dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
             _dispatcher.Register<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -91,6 +92,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Unregister<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
+            _dispatcher.Unregister<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
             _dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
             _dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
@@ -207,6 +209,21 @@ namespace Panoptes.Core.Application.Stores
             if (!msg.Success)
             {
                 _feedbackStore.PublishFeedback("token", msg.ErrorCode, string.Empty, false, BuildDetails(("action", msg.Action)));
+            }
+        }
+
+        public void HandleMandateResult(MsgMandateResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeMandateResult(_gameStateStore.Snapshot, msg));
+            _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
+            if (!msg.Success)
+            {
+                _feedbackStore.PublishFeedback("mandate", msg.ErrorCode, msg.Message ?? string.Empty, false, BuildDetails(("action", msg.Action)));
             }
         }
 

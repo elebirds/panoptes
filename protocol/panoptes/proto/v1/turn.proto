@@ -138,6 +138,14 @@ message MsgTokenResult {
   string error_code = 4;
 }
 
+message MsgMandateResult {
+  bool success = 1;
+  string action = 2;
+  int32 tokens_left = 3;
+  string error_code = 4;
+  string message = 5;
+}
+
 message MsgRevealResult {
   string node_id = 1;
   NodeView true_state = 2;

@@ -248,6 +248,8 @@ namespace Panoptes.DebugTools
                     return $"request={preview.RequestId} valid={preview.Valid} path_nodes={preview.PathNodeIds.Count}";
                 case MsgTokenResult tokenResult:
                     return $"success={tokenResult.Success} tokens_left={tokenResult.TokensLeft} error={tokenResult.ErrorCode}";
+                case MsgMandateResult mandateResult:
+                    return $"success={mandateResult.Success} action={mandateResult.Action} tokens_left={mandateResult.TokensLeft} error={mandateResult.ErrorCode} message={mandateResult.Message}";
                 case MsgRevealResult reveal:
                     var owner = reveal.TrueState != null ? reveal.TrueState.ControllerPlayerId : string.Empty;
                     var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingTypeId : string.Empty;

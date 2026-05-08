@@ -146,6 +146,7 @@ message GameEvent {
     MsgGameChatSync game_chat_sync = 26;
     MsgCommandAck command_ack = 27;
     MsgGameSync game_sync = 28;
+    MsgMandateResult mandate_result = 29;
   }
 }
 

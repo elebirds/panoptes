@@ -34,6 +34,12 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
 	}
 	switch intent.DirectiveType {
+	case "mandate_override":
+		playerState := state.Players[playerID]
+		return s.handleMandateAction(delivery, room, playerID, playerState, MandateActionOverride)
+	case "direct_command":
+		playerState := state.Players[playerID]
+		return s.handleMandateAction(delivery, room, playerID, playerState, MandateActionDirectCommand)
 	case "accept_role":
 		return s.acceptMinisterRoleDrafts(delivery, room, playerID, intent.MinisterRole)
 	case "reject_role":

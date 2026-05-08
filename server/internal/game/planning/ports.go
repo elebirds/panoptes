@@ -43,6 +43,7 @@ type planningViewPort interface {
 
 type planningModePort interface {
 	IsDevMode() bool
+	SetPlayerMandateMode(playerID string, enabled bool)
 }
 
 type planningSubmitPort interface {
