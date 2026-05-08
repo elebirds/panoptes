@@ -21,6 +21,7 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
 			InitialCityTerritoryRadius: 2,
 			CityCoreMaxHP:              100,
 		},
@@ -107,6 +108,9 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		if got := countByKind[kind]; got < wantAtLeast {
 			t.Fatalf("draft kind %q count = %d, want at least %d; all drafts = %#v", kind, got, wantAtLeast, drafts)
 		}
+	}
+	if got := countByKind[domain.MinisterDraftKindBuild]; got > 2 {
+		t.Fatalf("build candidates = %d, want at most 2 after budget filtering", got)
 	}
 	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
 		t.Fatalf("build orders = %d, want 0 before approval", got)

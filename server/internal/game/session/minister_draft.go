@@ -45,27 +45,19 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 	r.preparedMinisterDraftsMu.Unlock()
 }
 
-func (r *Runtime) ApplyPreparedMinisterDrafts(turn int) {
-	if r == nil || r.state == nil || turn <= 0 || r.state.Turn != turn {
-		return
-	}
-	if len(r.state.TurnRuntime.Planning.MinisterDrafts) > 0 {
-		return
+func (r *Runtime) preparedMinisterDraftsForPlayer(turn int, playerID string) []domain.MinisterDraft {
+	if r == nil || turn <= 0 || strings.TrimSpace(playerID) == "" {
+		return nil
 	}
 	r.preparedMinisterDraftsMu.RLock()
-	_, ok := r.preparedMinisterDrafts[turn]
-	r.preparedMinisterDraftsMu.RUnlock()
-	if !ok {
-		r.PrepareMinisterDraftCacheForTurn(turn)
+	defer r.preparedMinisterDraftsMu.RUnlock()
+	playerDrafts := r.preparedMinisterDrafts[turn][strings.TrimSpace(playerID)]
+	if len(playerDrafts) == 0 {
+		return nil
 	}
-
-	r.state.TurnRuntime.Planning.EnsureDraftMaps()
-	clear(r.state.TurnRuntime.Planning.MinisterDrafts)
-	r.preparedMinisterDraftsMu.RLock()
-	for playerID, drafts := range r.preparedMinisterDrafts[turn] {
-		r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
-	}
-	r.preparedMinisterDraftsMu.RUnlock()
+	out := make([]domain.MinisterDraft, len(playerDrafts))
+	copy(out, playerDrafts)
+	return out
 }
 
 func buildMinisterDraftsFromIntents(turn int, playerID string, intents []planning.Intent) []domain.MinisterDraft {

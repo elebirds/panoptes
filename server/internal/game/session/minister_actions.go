@@ -177,57 +177,30 @@ func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string,
 	if r == nil || r.state == nil || len(selectedDraftIDs) == 0 {
 		return false
 	}
+	turn := r.state.Turn
 	role = strings.TrimSpace(role)
-	drafts := r.state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
-	if len(drafts) == 0 {
-		return false
-	}
-	found := false
-	for _, draft := range drafts {
-		if !ministerDraftSelectableForRole(draft, r.state.Turn, role) {
-			continue
-		}
-		if _, ok := selectedDraftIDs[strings.TrimSpace(draft.DraftID)]; ok {
-			found = true
-			break
-		}
-	}
-	if !found {
+	r.PrepareMinisterDraftCacheForTurn(turn)
+	candidates := r.preparedMinisterDraftsForPlayer(turn, playerID)
+	if len(candidates) == 0 {
 		return false
 	}
 	changed := false
-	for idx := range drafts {
-		if !ministerDraftSelectableForRole(drafts[idx], r.state.Turn, role) {
+	for _, draft := range candidates {
+		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
 			continue
 		}
-		draftID := strings.TrimSpace(drafts[idx].DraftID)
-		if _, selected := selectedDraftIDs[draftID]; selected {
-			if drafts[idx].Source != domain.MinisterDraftSourceLLMAction {
-				drafts[idx].Source = domain.MinisterDraftSourceLLMAction
-				changed = true
-			}
+		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
 			continue
 		}
-		if drafts[idx].Source == domain.MinisterDraftSourceRuleOnly {
-			drafts[idx].Status = domain.MinisterDraftStatusStale
-			drafts[idx].Available = false
+		if _, selected := selectedDraftIDs[strings.TrimSpace(draft.DraftID)]; !selected {
+			continue
+		}
+		draft.Source = domain.MinisterDraftSourceLLMAction
+		if r.upsertMinisterActionDraft(playerID, draft) {
 			changed = true
 		}
 	}
-	if changed {
-		r.state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
-	}
 	return changed
-}
-
-func ministerDraftSelectableForRole(draft domain.MinisterDraft, turn int, role string) bool {
-	if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
-		return false
-	}
-	if role == "" {
-		return true
-	}
-	return strings.TrimSpace(draft.MinisterRole) == role
 }
 
 func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, intent planning.Intent) bool {

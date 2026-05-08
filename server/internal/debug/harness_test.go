@@ -582,8 +582,8 @@ func assertM9PreflightPlanningStart(t *testing.T, start *pb.MsgPlanningStart) {
 	if report.GetVisibleNodeCount() == 0 {
 		t.Fatalf("information report visible_node_count = 0, want visible map context")
 	}
-	if len(start.GetMinisterDrafts()) == 0 {
-		t.Fatalf("planning start should include minister default drafts")
+	if len(start.GetMinisterDrafts()) != 0 {
+		t.Fatalf("planning start minister drafts = %d, want 0 before LLM selection", len(start.GetMinisterDrafts()))
 	}
 	snapshot := start.GetSnapshot()
 	if snapshot == nil {

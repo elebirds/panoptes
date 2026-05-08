@@ -133,7 +133,12 @@ func enumerateBuildCandidateIntents(playerID string, state *domain.GameState, ob
 		return nil
 	}
 	cityIDs := candidateCityIDs(playerState)
-	intents := make([]planning.Intent, 0)
+	type buildCandidate struct {
+		intent       planning.BuildStructureIntent
+		resourceCost domain.ResourceBag
+		pointCost    domain.PointBag
+	}
+	candidates := make([]buildCandidate, 0)
 	for _, node := range observation.VisibleNodes {
 		if node == nil || strings.TrimSpace(node.GetBuildingTypeId()) != "" || strings.TrimSpace(node.GetTerritoryOwnerPlayerId()) != playerID {
 			continue
@@ -148,11 +153,63 @@ func enumerateBuildCandidateIntents(playerID string, state *domain.GameState, ob
 				if validation := economy.ValidateBuildOrder(state, playerID, nodeID, buildingID, cityID); !validation.OK {
 					continue
 				}
-				intents = append(intents, planning.BuildStructureIntent{NodeID: nodeID, BuildingTypeID: buildingID, CityID: cityID})
+				resourceCost, pointCost := buildCandidateCosts(state, playerID, building)
+				candidates = append(candidates, buildCandidate{
+					intent: planning.BuildStructureIntent{
+						NodeID:         nodeID,
+						BuildingTypeID: buildingID,
+						CityID:         cityID,
+					},
+					resourceCost: resourceCost,
+					pointCost:    pointCost,
+				})
 			}
 		}
 	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	availableResources := state.PlayerResourceView(playerID)
+	availablePoints := domain.NewPointBag()
+	availablePoints.Set(domain.PointIndustryOutput, state.EffectiveIndustryOutput(playerID))
+	intents := make([]planning.Intent, 0, len(candidates))
+	for _, candidate := range candidates {
+		if !availableResources.CanAfford(candidate.resourceCost) || !availablePoints.CanAfford(candidate.pointCost) {
+			continue
+		}
+		availableResources = availableResources.Sub(candidate.resourceCost)
+		subtractPointBag(availablePoints, candidate.pointCost)
+		intents = append(intents, candidate.intent)
+	}
 	return intents
+}
+
+func buildCandidateCosts(state *domain.GameState, playerID string, building staticdata.BuildingDefinition) (domain.ResourceBag, domain.PointBag) {
+	resourceCost := state.ApplyResourceModifiers(playerID, string(staticdata.ModifierTriggerBuildingResourceCost), building.ID, candidateResourceBag(building.ResourceCosts))
+	pointCost := state.ApplyPointModifiers(playerID, string(staticdata.ModifierTriggerBuildingPointCost), building.ID, candidatePointBag(building.PointCosts))
+	return resourceCost, pointCost
+}
+
+func candidateResourceBag(amounts staticdata.ResourceAmounts) domain.ResourceBag {
+	bag := domain.NewResourceBag()
+	for key, amount := range amounts {
+		bag.Set(domain.ResourceKey(key), amount)
+	}
+	return bag
+}
+
+func candidatePointBag(amounts staticdata.PointAmounts) domain.PointBag {
+	bag := domain.NewPointBag()
+	for key, amount := range amounts {
+		bag.Set(domain.PointKey(key), amount)
+	}
+	return bag
+}
+
+func subtractPointBag(bag domain.PointBag, cost domain.PointBag) {
+	for _, key := range cost.Keys() {
+		bag.AddAmount(key, -cost.Get(key))
+	}
 }
 
 func enumerateRecipeCandidateIntents(playerID string, state *domain.GameState, observation *gamequery.ObservationSnapshot) []planning.Intent {

@@ -317,7 +317,7 @@ input.ActionCandidates = buildMinisterActionCandidateSummary(drafts)
 - Session test confirms valid minister build actions stage pending minister drafts.
 - Session test confirms deprecated map/unit action compatibility types are ignored rather than staged.
 - Session test confirms expanded research, policy, institution, and recipe actions stage pending minister drafts without mutating planning state before approval.
-- Session test confirms `select_candidate` marks selected same-role candidates as `llm_action` and stales unselected same-role rule candidates.
+- Session test confirms `select_candidate` marks the selected same-role candidate as `llm_action` while unselected rule candidates stay hidden in the runtime cache.
 - Prompt test confirms Action Candidates are injected into report prompts and the selection contract is visible.
 - Projection/query test confirms minister proposals carry typed commands, operation command batches, and raw JSON.
 - Planning test confirms accepting an operation applies every step, and invalid operations reject without partial application.
@@ -357,7 +357,8 @@ if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, 
   - institutional loadout -> `planning.ValidateInstitutionLoadout`
   - unit orders/map actions -> `orders.ValidatePlanningUnitOrder`
 - Candidate generation may enumerate many valid options for a surface. Ranking, selection, and narrative explanation belong to the minister report LLM via `select_candidate`.
-- Generated candidates must be `MinisterDraftSourceRuleOnly`, `pending`, and `available` until selected, accepted, rejected, or staled.
+- The hidden candidate cache is not projected into `state.TurnRuntime.Planning.MinisterDrafts` until the LLM selects a candidate or stages a new proposal.
+- Generated candidates must be `MinisterDraftSourceRuleOnly`, `pending`, and `available` in the hidden runtime cache until selected, accepted, rejected, or staled.
 - Candidate generation must not write `BuildOrders`, `RecipeSelections`, `UnitOrders`, pending research/policy/institution maps, or resolving caches.
 - Draft IDs must include every command dimension that changes execution semantics, including `city_id`, `secondary_node_id`, and deterministic params when present.
 

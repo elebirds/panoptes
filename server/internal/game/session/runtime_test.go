@@ -224,22 +224,11 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
 	}
-	if len(start.GetMinisterDrafts()) == 0 {
-		t.Fatalf("planning start should include minister drafts")
+	if got := len(start.GetMinisterDrafts()); got != 0 {
+		t.Fatalf("planning start minister drafts = %d, want 0 before LLM selection", got)
 	}
-	if len(start.GetSnapshot().GetMinisterDrafts()) == 0 {
-		t.Fatalf("planning snapshot should include minister drafts")
-	}
-	var ministerPayload struct {
-		DraftID      string `json:"draft_id"`
-		MinisterRole string `json:"minister_role"`
-		Status       string `json:"status"`
-	}
-	if err := json.Unmarshal([]byte(start.GetMinisterDrafts()[0].GetJsonPayload()), &ministerPayload); err != nil {
-		t.Fatalf("unmarshal planning start minister draft payload: %v", err)
-	}
-	if ministerPayload.DraftID == "" || ministerPayload.MinisterRole != "domestic" || ministerPayload.Status != "pending" {
-		t.Fatalf("planning start minister payload = %+v, want domestic pending draft", ministerPayload)
+	if got := len(start.GetSnapshot().GetMinisterDrafts()); got != 0 {
+		t.Fatalf("planning snapshot minister drafts = %d, want 0 before LLM selection", got)
 	}
 	if len(start.GetPlanningStartEvents()) != 0 {
 		t.Fatalf("planning_start_events len = %d, want 0 without pending activations", len(start.GetPlanningStartEvents()))
@@ -472,7 +461,7 @@ func TestPreparePlanningStartStateIfNeededRunsOnlyOncePerTurn(t *testing.T) {
 	}
 }
 
-func TestPreparePlanningStartStateIfNeededAppliesPreparedMinisterDrafts(t *testing.T) {
+func TestPreparePlanningStartStateIfNeededKeepsMinisterCandidatesHidden(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -499,11 +488,15 @@ func TestPreparePlanningStartStateIfNeededAppliesPreparedMinisterDrafts(t *testi
 	runtime.PreparePlanningStartStateIfNeeded()
 
 	drafts := runtime.state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
-	if len(drafts) == 0 {
-		t.Fatalf("planning start should apply prepared minister drafts")
+	if len(drafts) != 0 {
+		t.Fatalf("planning start exposed hidden minister candidates as drafts: %#v", drafts)
 	}
-	if drafts[0].MinisterRole != "domestic" || drafts[0].Turn != 3 {
-		t.Fatalf("minister drafts = %#v, want domestic turn 3 draft", drafts)
+	candidates := runtime.preparedMinisterDraftsForPlayer(3, "player-1")
+	if len(candidates) == 0 {
+		t.Fatalf("planning start should prepare hidden minister candidates")
+	}
+	if summary := runtime.BuildMinisterActionCandidateSummary("player-1", "domestic"); !strings.Contains(summary, "candidate_id=domestic:") {
+		t.Fatalf("candidate summary = %q, want hidden domestic candidate", summary)
 	}
 }
 
@@ -531,6 +524,9 @@ func TestPrepareMinisterDraftCacheForTurnKeepsRuleOnlyCandidates(t *testing.T) {
 	}
 	if drafts[0].Source != domain.MinisterDraftSourceRuleOnly {
 		t.Fatalf("draft source = %q, want rule_only", drafts[0].Source)
+	}
+	if got := len(runtime.state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")); got != 0 {
+		t.Fatalf("visible minister drafts = %d, want 0 before LLM selects a candidate", got)
 	}
 }
 

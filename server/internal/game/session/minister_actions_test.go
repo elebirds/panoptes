@@ -242,51 +242,54 @@ func TestRuntimeApplyMinisterActionsIgnoresUnitActionCompatibilityTypes(t *testi
 	}
 }
 
-func TestRuntimeApplyMinisterActionsSelectsRuleCandidateAndStalesUnselectedRoleDrafts(t *testing.T) {
+func TestRuntimeApplyMinisterActionsSelectsRuleCandidateWithoutExposingOtherHiddenCandidates(t *testing.T) {
 	state := domain.NewGameState("game-candidate-selection", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Turn = 4
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
-		{
-			DraftID:      "domestic:research:bronze_working:4",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindResearch,
-			TargetID:     "bronze_working",
-			TargetLabel:  "Bronze Working",
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         4,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-		{
-			DraftID:      "domestic:policy:expansion:4",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindPolicy,
-			TargetID:     "expansion",
-			TargetLabel:  "Expansion",
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         4,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-		{
-			DraftID:      "military:operation:secure_a2:4",
-			PlayerID:     "player-1",
-			MinisterRole: "military",
-			Kind:         domain.MinisterDraftKindOperation,
-			TargetID:     "secure_a2",
-			TargetLabel:  "控制或侦察 A2",
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         4,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-	})
-
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
 	runtime := newTestRuntime("game-candidate-selection", []*capturePlayer{player}, nil)
 	runtime.SetState(state)
+	runtime.preparedMinisterDraftsMu.Lock()
+	runtime.preparedMinisterDrafts[4] = map[string][]domain.MinisterDraft{
+		"player-1": {
+			{
+				DraftID:      "domestic:research:bronze_working:4",
+				PlayerID:     "player-1",
+				MinisterRole: "domestic",
+				Kind:         domain.MinisterDraftKindResearch,
+				TargetID:     "bronze_working",
+				TargetLabel:  "Bronze Working",
+				Status:       domain.MinisterDraftStatusPending,
+				Available:    true,
+				Turn:         4,
+				Source:       domain.MinisterDraftSourceRuleOnly,
+			},
+			{
+				DraftID:      "domestic:policy:expansion:4",
+				PlayerID:     "player-1",
+				MinisterRole: "domestic",
+				Kind:         domain.MinisterDraftKindPolicy,
+				TargetID:     "expansion",
+				TargetLabel:  "Expansion",
+				Status:       domain.MinisterDraftStatusPending,
+				Available:    true,
+				Turn:         4,
+				Source:       domain.MinisterDraftSourceRuleOnly,
+			},
+			{
+				DraftID:      "military:operation:secure_a2:4",
+				PlayerID:     "player-1",
+				MinisterRole: "military",
+				Kind:         domain.MinisterDraftKindOperation,
+				TargetID:     "secure_a2",
+				TargetLabel:  "控制或侦察 A2",
+				Status:       domain.MinisterDraftStatusPending,
+				Available:    true,
+				Turn:         4,
+				Source:       domain.MinisterDraftSourceRuleOnly,
+			},
+		},
+	}
+	runtime.preparedMinisterDraftsMu.Unlock()
 
 	err := runtime.ApplyMinisterActions("player-1", "domestic", []ministerengine.MinisterActionItem{
 		{Type: "select_candidate", Params: map[string]any{"draft_id": "domestic:research:bronze_working:4"}},
@@ -304,16 +307,14 @@ func TestRuntimeApplyMinisterActionsSelectsRuleCandidateAndStalesUnselectedRoleD
 	if selected.Source != domain.MinisterDraftSourceLLMAction || selected.Status != domain.MinisterDraftStatusPending || !selected.Available {
 		t.Fatalf("selected draft = %#v, want pending llm_action", selected)
 	}
-	unselected := byID["domestic:policy:expansion:4"]
-	if unselected.Status != domain.MinisterDraftStatusStale || unselected.Available {
-		t.Fatalf("unselected same-role draft = %#v, want stale unavailable", unselected)
+	if _, ok := byID["domestic:policy:expansion:4"]; ok {
+		t.Fatalf("unselected domestic candidate should stay hidden, got visible draft %#v", byID["domestic:policy:expansion:4"])
 	}
-	otherRole := byID["military:operation:secure_a2:4"]
-	if otherRole.Status != domain.MinisterDraftStatusPending || !otherRole.Available || otherRole.Source != domain.MinisterDraftSourceRuleOnly {
-		t.Fatalf("other role draft = %#v, want unchanged", otherRole)
+	if _, ok := byID["military:operation:secure_a2:4"]; ok {
+		t.Fatalf("other role candidate should stay hidden, got visible draft %#v", byID["military:operation:secure_a2:4"])
 	}
 	proposals := query.BuildMinisterProposalViews(state, "player-1")
-	if len(proposals) != 2 {
-		t.Fatalf("proposal views = %d, want selected domestic plus unchanged military", len(proposals))
+	if len(proposals) != 1 {
+		t.Fatalf("proposal views = %d, want only selected candidate proposal", len(proposals))
 	}
 }

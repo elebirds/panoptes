@@ -269,7 +269,6 @@ func (r *Runtime) PreparePlanningStartStateIfNeeded() {
 	// 其它调用方只读取缓存结果，不再各自直接推进状态。
 	result := PreparePlanningStartState(r.state)
 	r.PrepareMinisterDraftCacheForTurn(r.state.Turn)
-	r.ApplyPreparedMinisterDrafts(r.state.Turn)
 	r.preparedMinisterDraftsMu.Lock()
 	r.planningStartResult = result
 	r.planningStartPreparedTurn = r.state.Turn
