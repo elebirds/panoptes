@@ -16,6 +16,7 @@ import (
 	ministerskills "github.com/elebirds/panoptes/internal/engine/minister/skills"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"google.golang.org/protobuf/proto"
 )
@@ -52,6 +53,31 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 		}
 		delivery.snapshot()
 		return acceptedHandleIntentResult(), nil
+	case "refresh_candidates":
+		state.RefreshMinisterCandidatesForPlayer(playerID)
+		delivery.snapshot()
+		return acceptedHandleIntentResult(), nil
+	case "fire":
+		if !s.fireMinister(delivery, room, playerID, intent.MinisterRole) {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister not found")
+		}
+		state.RefreshMinisterCandidatesForPlayer(playerID)
+		delivery.snapshot()
+		return acceptedHandleIntentResult(), nil
+	case "hire":
+		if !s.hireMinister(delivery, room, playerID, intent.MinisterRole, intent.CandidateID) {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister candidate not found")
+		}
+		state.RefreshMinisterCandidatesForPlayer(playerID)
+		delivery.snapshot()
+		return acceptedHandleIntentResult(), nil
+	case "replace":
+		if !s.replaceMinister(delivery, room, playerID, intent.MinisterRole, intent.CandidateID) {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister replacement failed")
+		}
+		state.RefreshMinisterCandidatesForPlayer(playerID)
+		delivery.snapshot()
+		return acceptedHandleIntentResult(), nil
 	case "accept":
 		draft, _, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
 		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
@@ -80,6 +106,75 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 	default:
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}
+}
+
+func (s *Service) fireMinister(delivery commandDelivery, room Session, playerID string, role string) bool {
+	state := room.State()
+	if state == nil {
+		return false
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil {
+		return false
+	}
+	role = ministerroles.Canonical(role)
+	if role == "" {
+		return false
+	}
+	if _, ok := playerState.MinisterForRole(role); !ok {
+		return false
+	}
+	playerState.ClearMinisterForRole(role)
+	return true
+}
+
+func (s *Service) hireMinister(delivery commandDelivery, room Session, playerID string, role string, candidateID string) bool {
+	state := room.State()
+	if state == nil {
+		return false
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil {
+		return false
+	}
+	role = ministerroles.Canonical(role)
+	candidateID = strings.TrimSpace(candidateID)
+	if role == "" || candidateID == "" {
+		return false
+	}
+	if _, ok := playerState.MinisterForRole(role); ok {
+		return false
+	}
+	candidate, ok := playerState.MinisterCandidateForRole(role)
+	if !ok || !strings.EqualFold(strings.TrimSpace(candidate.ID), candidateID) {
+		return false
+	}
+	playerState.SetMinisterForRole(role, candidate)
+	delete(playerState.MinisterCandidates, role)
+	return true
+}
+
+func (s *Service) replaceMinister(delivery commandDelivery, room Session, playerID string, role string, candidateID string) bool {
+	state := room.State()
+	if state == nil {
+		return false
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil {
+		return false
+	}
+	role = ministerroles.Canonical(role)
+	candidateID = strings.TrimSpace(candidateID)
+	if role == "" || candidateID == "" {
+		return false
+	}
+	candidate, ok := playerState.MinisterCandidateForRole(role)
+	if !ok || !strings.EqualFold(strings.TrimSpace(candidate.ID), candidateID) {
+		return false
+	}
+	playerState.SetMinisterForRole(role, candidate)
+	delete(playerState.MinisterCandidates, role)
+	return true
 }
 
 func (s *Service) acceptMinisterRoleDrafts(delivery commandDelivery, room Session, playerID string, role string) (handleIntentResult, error) {

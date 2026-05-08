@@ -162,28 +162,130 @@ func cloneDraftParams(src map[string]string) map[string]string {
 }
 
 func BuildMinisterRosterViews() []*pb.MinisterView {
-	ministers := ministerroles.NormalizeMinisters(staticdata.Default().Ministers())
-	if len(ministers) == 0 {
+	return BuildMinisterRosterViewsForPlayer(nil, "")
+}
+
+func BuildMinisterRosterViewsForPlayer(state *domain.GameState, playerID string) []*pb.MinisterView {
+	ministers := ministerRosterForPlayer(state, playerID)
+	out := make([]*pb.MinisterView, 0, len(ministerroles.OrderedRoles()))
+	for _, role := range ministerroles.OrderedRoles() {
+		minister, ok := ministers[role]
+		if !ok {
+			out = append(out, ministerViewFromMinister(role, staticdata.Minister{}, true))
+			continue
+		}
+		out = append(out, ministerViewFromMinister(role, minister, false))
+	}
+	return out
+}
+
+func BuildMinisterCandidateViewsForPlayer(state *domain.GameState, playerID string) []*pb.MinisterCandidateView {
+	candidates := ministerCandidateForPlayer(state, playerID)
+	if len(candidates) == 0 {
 		return nil
 	}
-	out := make([]*pb.MinisterView, 0, len(ministers))
+	out := make([]*pb.MinisterCandidateView, 0, len(candidates))
+	for _, role := range ministerroles.OrderedRoles() {
+		minister, ok := candidates[role]
+		if !ok {
+			continue
+		}
+		out = append(out, ministerCandidateViewFromMinister(role, minister))
+	}
+	return out
+}
+
+func ministerRosterForPlayer(state *domain.GameState, playerID string) map[string]staticdata.Minister {
+	if state != nil {
+		if playerState := state.Players[playerID]; playerState != nil && playerState.MinisterRoster != nil {
+			return playerState.MinisterRoster
+		}
+	}
+	return normalizeMinisterRoster(staticdata.Default().Ministers())
+}
+
+func ministerCandidateForPlayer(state *domain.GameState, playerID string) map[string]staticdata.Minister {
+	if state == nil {
+		return nil
+	}
+	if playerState := state.Players[playerID]; playerState != nil && len(playerState.MinisterCandidates) > 0 {
+		return playerState.MinisterCandidates
+	}
+	return nil
+}
+
+func normalizeMinisterRoster(pool []staticdata.Minister) map[string]staticdata.Minister {
+	if len(pool) == 0 {
+		return nil
+	}
+	ministers := ministerroles.NormalizeMinisters(pool)
+	out := make(map[string]staticdata.Minister, len(ministerroles.OrderedRoles()))
 	for _, minister := range ministers {
 		role := ministerroles.Canonical(minister.Role)
 		if role == "" {
 			continue
 		}
-		out = append(out, &pb.MinisterView{
-			Role:            role,
-			Name:            strings.TrimSpace(minister.Name),
-			Ability:         int32(minister.Ability),
-			Personality:     strings.TrimSpace(minister.Personality),
-			Loyalty:         int32(minister.Loyalty),
-			Ambition:        int32(minister.Ambition),
-			Cautiousness:    int32(minister.Cautiousness),
-			Decisiveness:    int32(minister.Decisiveness),
-			LoyaltyTendency: int32(minister.LoyaltyTendency),
-			AmbitionStyle:   int32(minister.AmbitionStyle),
-		})
+		out[role] = minister
 	}
 	return out
+}
+
+func ministerViewFromMinister(role string, minister staticdata.Minister, vacant bool) *pb.MinisterView {
+	role = ministerroles.Canonical(role)
+	if role == "" {
+		return nil
+	}
+	minister.Role = role
+	if strings.TrimSpace(minister.IconKey) == "" {
+		minister.IconKey = role
+	}
+	ministerID := strings.TrimSpace(minister.ID)
+	ministerName := strings.TrimSpace(minister.Name)
+	vacated := vacant || ministerID == ""
+	if vacated {
+		ministerID = ""
+		ministerName = "空缺"
+	}
+	return &pb.MinisterView{
+		MinisterId:      ministerID,
+		Role:            role,
+		Name:            ministerName,
+		IconKey:         strings.TrimSpace(minister.IconKey),
+		Personality:     strings.TrimSpace(minister.Personality),
+		PersonalityDesc: strings.TrimSpace(minister.PersonalityDesc),
+		Ability:         int32(minister.Ability),
+		Loyalty:         int32(minister.Loyalty),
+		Ambition:        int32(minister.Ambition),
+		Cautiousness:    int32(minister.Cautiousness),
+		Decisiveness:    int32(minister.Decisiveness),
+		LoyaltyTendency: int32(minister.LoyaltyTendency),
+		AmbitionStyle:   int32(minister.AmbitionStyle),
+		Vacant:          vacated,
+	}
+}
+
+func ministerCandidateViewFromMinister(role string, minister staticdata.Minister) *pb.MinisterCandidateView {
+	role = ministerroles.Canonical(role)
+	if role == "" {
+		return nil
+	}
+	minister.Role = role
+	if strings.TrimSpace(minister.IconKey) == "" {
+		minister.IconKey = role
+	}
+	return &pb.MinisterCandidateView{
+		MinisterId:      strings.TrimSpace(minister.ID),
+		Role:            role,
+		Name:            strings.TrimSpace(minister.Name),
+		IconKey:         strings.TrimSpace(minister.IconKey),
+		Personality:     strings.TrimSpace(minister.Personality),
+		PersonalityDesc: strings.TrimSpace(minister.PersonalityDesc),
+		Ability:         int32(minister.Ability),
+		Loyalty:         int32(minister.Loyalty),
+		Ambition:        int32(minister.Ambition),
+		Cautiousness:    int32(minister.Cautiousness),
+		Decisiveness:    int32(minister.Decisiveness),
+		LoyaltyTendency: int32(minister.LoyaltyTendency),
+		AmbitionStyle:   int32(minister.AmbitionStyle),
+	}
 }

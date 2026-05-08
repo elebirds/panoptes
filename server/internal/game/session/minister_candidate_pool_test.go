@@ -9,6 +9,7 @@ import (
 	"github.com/elebirds/panoptes/internal/game/planning"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/ministerroles"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
@@ -240,6 +241,72 @@ func TestMinisterDraftFromIntentKeepsDraftIDsUniqueForCommandDimensions(t *testi
 	}
 	if leftUnit.DraftID == rightUnit.DraftID {
 		t.Fatalf("unit draft ids should include secondary target, both were %q", leftUnit.DraftID)
+	}
+}
+
+func TestMinisterRosterViewsTreatFiredRolesAsVacant(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+	}))
+
+	state := domain.NewGameState("game-minister-roster", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].ClearMinisterForRole(ministerroles.Domestic)
+
+	views := gamequery.BuildMinisterRosterViewsForPlayer(state, "player-1")
+	for _, view := range views {
+		if view == nil || view.Role != ministerroles.Domestic {
+			continue
+		}
+		if !view.Vacant || view.MinisterId != "" || view.Name != "空缺" {
+			t.Fatalf("domestic roster view = %#v, want vacant minister slot", view)
+		}
+		return
+	}
+
+	t.Fatalf("domestic roster view missing: %#v", views)
+}
+
+func TestRefreshMinisterCandidatesForPlayerOnlyAffectsTargetPlayer(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+	}))
+
+	state := domain.NewGameState("game-minister-candidates", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{ID: "default"})
+	before1 := state.Players["player-1"].MinisterCandidates[ministerroles.Domestic].ID
+	before2 := state.Players["player-2"].MinisterCandidates[ministerroles.Domestic].ID
+	beforeCycle1 := state.Players["player-1"].MinisterCandidateCycle
+	beforeCycle2 := state.Players["player-2"].MinisterCandidateCycle
+
+	state.RefreshMinisterCandidatesForPlayer("player-1")
+
+	after1 := state.Players["player-1"].MinisterCandidates[ministerroles.Domestic].ID
+	after2 := state.Players["player-2"].MinisterCandidates[ministerroles.Domestic].ID
+
+	if state.Players["player-1"].MinisterCandidateCycle != beforeCycle1+1 {
+		t.Fatalf("player-1 cycle = %d, want %d", state.Players["player-1"].MinisterCandidateCycle, beforeCycle1+1)
+	}
+	if state.Players["player-2"].MinisterCandidateCycle != beforeCycle2 {
+		t.Fatalf("player-2 cycle = %d, want %d", state.Players["player-2"].MinisterCandidateCycle, beforeCycle2)
+	}
+	if after1 == before1 {
+		t.Fatalf("player-1 domestic candidate id did not change after refresh: %q", after1)
+	}
+	if after2 != before2 {
+		t.Fatalf("player-2 domestic candidate id changed unexpectedly: before=%q after=%q", before2, after2)
 	}
 }
 

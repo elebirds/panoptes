@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
@@ -41,6 +42,11 @@ type Runtime struct {
 	bootstrapMu                sync.RWMutex
 	bootstrapPlanningStartSent bool
 	bootstrapReadyByPlayer     map[string]bool
+	turnReportMu               sync.Mutex
+	turnReportTurn             int
+	turnReportPending          map[string]struct{}
+	turnReportDoneCh           chan struct{}
+	turnReportAcked            bool
 	chatMu                     sync.Mutex
 	chatHistory                []*pb.ChatEntry
 	nextChatSequence           int64
@@ -91,6 +97,7 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.participants))
 	r.bootstrapPlanningStartSent = false
 	r.bootstrapMu.Unlock()
+	r.resetTurnReportState()
 }
 
 func (r *Runtime) SubmitChannel() chan string {
@@ -171,6 +178,13 @@ func (r *Runtime) PlayerCount() int {
 	return r.ParticipantCount()
 }
 
+func (r *Runtime) TurnReportTimeout() time.Duration {
+	if r == nil || r.cfg == nil || r.cfg.TurnReportTimeoutMs <= 0 {
+		return 10 * time.Second
+	}
+	return time.Duration(r.cfg.TurnReportTimeoutMs) * time.Millisecond
+}
+
 func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
 	if r == nil {
 		return false
@@ -182,6 +196,95 @@ func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
 	}
 	r.bootstrapPlanningStartSent = false
 	return true
+}
+
+func (r *Runtime) BeginTurnReport(turn int) {
+	if r == nil {
+		return
+	}
+	pending := make(map[string]struct{}, len(r.HumanPlayerIDs()))
+	for _, participantID := range r.HumanPlayerIDs() {
+		if strings.TrimSpace(participantID) == "" {
+			continue
+		}
+		pending[participantID] = struct{}{}
+	}
+
+	r.turnReportMu.Lock()
+	defer r.turnReportMu.Unlock()
+	r.turnReportTurn = turn
+	r.turnReportPending = pending
+	r.turnReportAcked = len(pending) == 0
+	r.turnReportDoneCh = make(chan struct{})
+	if r.turnReportAcked {
+		close(r.turnReportDoneCh)
+	}
+}
+
+func (r *Runtime) AcknowledgeTurnReport(playerID string, turn int) bool {
+	if r == nil {
+		return false
+	}
+	playerID = strings.TrimSpace(playerID)
+	if playerID == "" {
+		return false
+	}
+
+	r.turnReportMu.Lock()
+	defer r.turnReportMu.Unlock()
+	if r.turnReportTurn != turn || r.turnReportAcked || len(r.turnReportPending) == 0 {
+		return false
+	}
+	if _, ok := r.turnReportPending[playerID]; !ok {
+		return false
+	}
+	delete(r.turnReportPending, playerID)
+	if len(r.turnReportPending) == 0 {
+		r.turnReportAcked = true
+		if r.turnReportDoneCh != nil {
+			close(r.turnReportDoneCh)
+		}
+	}
+	return true
+}
+
+func (r *Runtime) WaitTurnReport(ctx context.Context, timeout time.Duration) bool {
+	if r == nil {
+		return true
+	}
+	r.turnReportMu.Lock()
+	doneCh := r.turnReportDoneCh
+	acked := r.turnReportAcked
+	r.turnReportMu.Unlock()
+	if acked || doneCh == nil {
+		return true
+	}
+	if timeout <= 0 {
+		timeout = r.TurnReportTimeout()
+	}
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return false
+	case <-doneCh:
+		return true
+	case <-timer.C:
+		return false
+	}
+}
+
+func (r *Runtime) FinishTurnReport(turn int) {
+	if r == nil {
+		return
+	}
+	r.turnReportMu.Lock()
+	defer r.turnReportMu.Unlock()
+	if r.turnReportTurn != turn {
+		return
+	}
+	r.resetTurnReportStateLocked()
 }
 
 func (r *Runtime) SendToParticipant(ctx context.Context, participantID string, msg proto.Message) error {
@@ -351,6 +454,19 @@ func (r *Runtime) ChatHistorySnapshot() []*pb.ChatEntry {
 	return out
 }
 
+func (r *Runtime) resetTurnReportState() {
+	r.turnReportMu.Lock()
+	defer r.turnReportMu.Unlock()
+	r.resetTurnReportStateLocked()
+}
+
+func (r *Runtime) resetTurnReportStateLocked() {
+	r.turnReportTurn = 0
+	r.turnReportPending = nil
+	r.turnReportAcked = false
+	r.turnReportDoneCh = nil
+}
+
 func (r *Runtime) gameSessionID() string {
 	if r == nil {
 		return ""
@@ -374,7 +490,7 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 		MapWidth:          int32(r.state.Map.Width),
 		MapHeight:         int32(r.state.Map.Height),
 		MyPlayer:          observation.MyPlayer,
-		Ministers:         gamequery.BuildMinisterRosterViews(),
+		Ministers:         gamequery.BuildMinisterRosterViewsForPlayer(r.state, p.ID),
 		Nodes:             observation.Nodes,
 		Units:             observation.Units,
 		InformationReport: gamequery.BuildInformationReport(observation),

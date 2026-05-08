@@ -51,6 +51,8 @@ namespace Panoptes.Core.Application.Cache
 
         private readonly List<MinisterProfileDto> _ministers = new();
         public IReadOnlyList<MinisterProfileDto> Ministers => _ministers;
+        private readonly List<MinisterProfileDto> _ministerCandidates = new();
+        public IReadOnlyList<MinisterProfileDto> MinisterCandidates => _ministerCandidates;
 
         public int TokensLeft { get; private set; }
         public int EnemyCityCoreHP { get; private set; }
@@ -133,21 +135,7 @@ namespace Panoptes.Core.Application.Cache
             MyPlayer = msg.MyPlayer?.Clone();
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : 0;
 
-            _ministers.Clear();
-            if (msg.Ministers != null)
-            {
-                for (var i = 0; i < msg.Ministers.Count; i++)
-                {
-                    if (msg.Ministers[i] != null)
-                    {
-                        var minister = MinisterMapper.ToProfileDto(msg.Ministers[i]);
-                        if (minister != null)
-                        {
-                            _ministers.Add(minister);
-                        }
-                    }
-                }
-            }
+            SyncMinisterViews(msg.Ministers, msg.MyPlayer?.MinisterCandidates);
 
             _cityBuiltBuildings.Clear();
             SeedCityResourcesFromCurrentState();
@@ -205,6 +193,10 @@ namespace Panoptes.Core.Application.Cache
 
             ApplyPlanningStartActiveState(msg);
             ApplyPlanningStartDraft(msg.Snapshot);
+            if (MyPlayer != null)
+            {
+                SyncMinisterViews(MyPlayer.Ministers, MyPlayer.MinisterCandidates);
+            }
             // planning start 事件与 active state 一起进缓存，
             // 这样客户端既拿到“当前已经生效后的快照”，也保留“这次为什么生效”的事件面。
             _lastPlanningStartEvents.Clear();
@@ -227,6 +219,12 @@ namespace Panoptes.Core.Application.Cache
             }
 
             Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
+            if (msg.MyPlayer != null)
+            {
+                MyPlayer = msg.MyPlayer.Clone();
+                TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
+                SyncMinisterViews(MyPlayer.Ministers, MyPlayer.MinisterCandidates);
+            }
             _planningDraftCache?.ApplyPlanningSnapshot(msg);
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
@@ -253,6 +251,7 @@ namespace Panoptes.Core.Application.Cache
             if (msg.MyPlayer != null)
             {
                 MyPlayer = msg.MyPlayer.Clone();
+                SyncMinisterViews(MyPlayer.Ministers, MyPlayer.MinisterCandidates);
             }
 
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
@@ -295,6 +294,23 @@ namespace Panoptes.Core.Application.Cache
             }, nameof(OnTurnSettled));
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyTurnReport(MsgTurnReport msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (msg.Turn > 0)
+            {
+                Turn = msg.Turn;
+            }
+
+            Phase = NormalizePhase(msg.Phase, GamePhases.TurnReport);
+            PublishPhaseState(Turn, Phase, Mathf.Max(0, msg.TimeoutSeconds), TokensLeft, msg.NextPhase ?? string.Empty);
             OnStateChanged?.Invoke();
         }
 
@@ -543,6 +559,35 @@ namespace Panoptes.Core.Application.Cache
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
         public void PublishGameError(GameErrorEvent evtArgs) => Fire(OnGameError, evtArgs, nameof(OnGameError));
 
+        private void SyncMinisterViews(IEnumerable<MinisterView> ministers, IEnumerable<MinisterCandidateView> candidates)
+        {
+            _ministers.Clear();
+            if (ministers != null)
+            {
+                foreach (var minister in ministers)
+                {
+                    var mapped = MinisterMapper.ToProfileDto(minister);
+                    if (mapped != null)
+                    {
+                        _ministers.Add(mapped);
+                    }
+                }
+            }
+
+            _ministerCandidates.Clear();
+            if (candidates != null)
+            {
+                foreach (var candidate in candidates)
+                {
+                    var mapped = MinisterMapper.ToProfileDto(candidate);
+                    if (mapped != null)
+                    {
+                        _ministerCandidates.Add(mapped);
+                    }
+                }
+            }
+        }
+
         private void ApplyPlanningStartActiveState(MsgPlanningStart msg)
         {
             Turn = msg.Turn;
@@ -554,6 +599,7 @@ namespace Panoptes.Core.Application.Cache
             if (msg.MyPlayer != null)
             {
                 MyPlayer = msg.MyPlayer.Clone();
+                SyncMinisterViews(MyPlayer.Ministers, MyPlayer.MinisterCandidates);
             }
 
             ReplaceNodesByDiff(msg.Nodes, "planning_start");

@@ -54,7 +54,7 @@ namespace Panoptes.Protocol.V1 {
             "dGVkIqcBCghVbml0VmlldxIOCgJpZBgBIAEoCVICaWQSGAoHZmFjdGlvbhgC",
             "IAEoCVIHZmFjdGlvbhIbCgl1bml0X3R5cGUYAyABKAlSCHVuaXRUeXBlEg4K",
             "AmhwGAQgASgFUgJocBIVCgZtYXhfaHAYBSABKAVSBW1heEhwEi0KA3BvcxgG",
-            "IAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgNwb3MiuAQKClBs",
+            "IAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgNwb3Mi0gUKClBs",
             "YXllclZpZXcSDgoCaWQYASABKAlSAmlkEhoKCHVzZXJuYW1lGAIgASgJUgh1",
             "c2VybmFtZRI8CglyZXNvdXJjZXMYAyABKAsyHi5wYW5vcHRlcy5wcm90by52",
             "MS5SZXNvdXJjZUJhZ1IJcmVzb3VyY2VzEjMKBnBvaW50cxgEIAEoCzIbLnBh",
@@ -67,78 +67,95 @@ namespace Panoptes.Protocol.V1 {
             "YXJab25lUgh3YXJab25lcxJACghyZXNlYXJjaBgKIAEoCzIkLnBhbm9wdGVz",
             "LnByb3RvLnYxLlJlc2VhcmNoU3RhdGVWaWV3UghyZXNlYXJjaBJLCgxpbnN0",
             "aXR1dGlvbnMYCyABKAsyJy5wYW5vcHRlcy5wcm90by52MS5JbnN0aXR1dGlv",
-            "blN0YXRlVmlld1IMaW5zdGl0dXRpb25zIrYDChFSZXNlYXJjaFN0YXRlVmll",
-            "dxI/ChxjdXJyZW50X3RhcmdldF90ZWNobm9sb2d5X2lkGAEgASgJUhljdXJy",
-            "ZW50VGFyZ2V0VGVjaG5vbG9neUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiAB",
-            "KAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEo",
-            "BVIQcmVxdWlyZWRQcm9ncmVzcxI4Chhjb21wbGV0ZWRfdGVjaG5vbG9neV9p",
-            "ZHMYBCADKAlSFmNvbXBsZXRlZFRlY2hub2xvZ3lJZHMSMgoVYWN0aXZlX3Rl",
-            "Y2hub2xvZ3lfaWRzGAUgAygJUhNhY3RpdmVUZWNobm9sb2d5SWRzEkkKIXBl",
-            "bmRpbmdfYWN0aXZhdGlvbl90ZWNobm9sb2d5X2lkcxgGIAMoCVIecGVuZGlu",
-            "Z0FjdGl2YXRpb25UZWNobm9sb2d5SWRzEk8KDnNhdmVkX3Byb2dyZXNzGAcg",
-            "AygLMigucGFub3B0ZXMucHJvdG8udjEuUmVzZWFyY2hQcm9ncmVzc0VudHJ5",
-            "Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJjaFByb2dyZXNzRW50cnkSIwoN",
-            "dGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5vbG9neUlkEikKEGN1cnJlbnRf",
-            "cHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9w",
-            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKnAQoUSW5zdGl0dXRp",
-            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjoK",
-            "GWNhbmRpZGF0ZV9pbnN0aXR1dGlvbl9pZHMYAiADKAlSF2NhbmRpZGF0ZUlu",
-            "c3RpdHV0aW9uSWRzEjQKFmFjdGl2ZV9pbnN0aXR1dGlvbl9pZHMYAyADKAlS",
-            "FGFjdGl2ZUluc3RpdHV0aW9uSWRzIpICChVCdWlsZGluZ09wZXJhdGlvblZp",
-            "ZXcSLAoSc2VsZWN0ZWRfcmVjaXBlX2lkGAEgASgJUhBzZWxlY3RlZFJlY2lw",
-            "ZUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVz",
-            "cxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVz",
-            "cxIjCg1iYXNlX3Byb2dyZXNzGAQgASgFUgxiYXNlUHJvZ3Jlc3MSJQoOYmxv",
-            "Y2tlZF9yZWFzb24YBSABKAlSDWJsb2NrZWRSZWFzb24SJwoPYmxvY2tlZF9t",
-            "ZXNzYWdlGAYgASgJUg5ibG9ja2VkTWVzc2FnZSKHAQoHV2FyWm9uZRIOCgJp",
-            "ZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIZCghub2RlX2lkcxgD",
-            "IAMoCVIHbm9kZUlkcxIcCglkaXJlY3RpdmUYBCABKAlSCWRpcmVjdGl2ZRIf",
-            "Cgt0YXJnZXRfbm9kZRgFIAEoCVIKdGFyZ2V0Tm9kZSLCAgoMTWluaXN0ZXJW",
-            "aWV3EhIKBHJvbGUYASABKAlSBHJvbGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIY",
-            "CgdhYmlsaXR5GAMgASgFUgdhYmlsaXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJ",
-            "UgtwZXJzb25hbGl0eRIYCgdsb3lhbHR5GAUgASgFUgdsb3lhbHR5EhoKCGFt",
-            "Yml0aW9uGAYgASgFUghhbWJpdGlvbhIiCgxjYXV0aW91c25lc3MYByABKAVS",
-            "DGNhdXRpb3VzbmVzcxIiCgxkZWNpc2l2ZW5lc3MYCCABKAVSDGRlY2lzaXZl",
-            "bmVzcxIpChBsb3lhbHR5X3RlbmRlbmN5GAkgASgFUg9sb3lhbHR5VGVuZGVu",
-            "Y3kSJQoOYW1iaXRpb25fc3R5bGUYCiABKAVSDWFtYml0aW9uU3R5bGUi3wMK",
-            "FUluZm9ybWF0aW9uUmVwb3J0VmlldxISCgRtb2RlGAEgASgJUgRtb2RlEh4K",
-            "CmNvbmZpZGVuY2UYAiABKAlSCmNvbmZpZGVuY2USLAoSdmlzaWJsZV9ub2Rl",
-            "X2NvdW50GAMgASgFUhB2aXNpYmxlTm9kZUNvdW50EioKEW1lbW9yeV9ub2Rl",
-            "X2NvdW50GAQgASgFUg9tZW1vcnlOb2RlQ291bnQSLAoSdW5rbm93bl9ub2Rl",
-            "X2NvdW50GAUgASgFUhB1bmtub3duTm9kZUNvdW50EiwKEnZpc2libGVfdW5p",
-            "dF9jb3VudBgGIAEoBVIQdmlzaWJsZVVuaXRDb3VudBIqChFtZW1vcnlfdW5p",
-            "dF9jb3VudBgHIAEoBVIPbWVtb3J5VW5pdENvdW50EiMKDW9taXR0ZWRfY291",
-            "bnQYCCABKAVSDG9taXR0ZWRDb3VudBIjCg1kZWxheWVkX2NvdW50GAkgASgF",
-            "UgxkZWxheWVkQ291bnQSIwoNbWlzcmVhZF9jb3VudBgKIAEoBVIMbWlzcmVh",
-            "ZENvdW50EisKEWRpcmVjdF9pbnNwZWN0aW9uGAsgASgIUhBkaXJlY3RJbnNw",
-            "ZWN0aW9uEhQKBW5vdGVzGAwgAygJUgVub3RlcyLsAwoLTXNnR2FtZUluaXQS",
-            "FwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQKDnlvdXJfcGxheWVyX2lkGAIg",
-            "ASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgDIAEoBVIEdHVybhIUCgVwaGFz",
-            "ZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSADKAsyGy5wYW5vcHRlcy5wcm90",
-            "by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5pdHMYBiADKAsyGy5wYW5vcHRl",
-            "cy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMSOgoJbXlfcGxheWVyGAcgASgL",
-            "Mh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVyVmlld1IIbXlQbGF5ZXISPQoJ",
-            "bWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMucHJvdG8udjEuTWluaXN0ZXJW",
-            "aWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRoGAkgASgFUghtYXBXaWR0aBId",
-            "CgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWlnaHQSVwoSaW5mb3JtYXRpb25f",
-            "cmVwb3J0GAsgASgLMigucGFub3B0ZXMucHJvdG8udjEuSW5mb3JtYXRpb25S",
-            "ZXBvcnRWaWV3UhFpbmZvcm1hdGlvblJlcG9ydCJgCgtNc2dHYW1lT3ZlchIb",
-            "Cgl3aW5uZXJfaWQYASABKAlSCHdpbm5lcklkEhYKBnJlYXNvbhgCIAEoCVIG",
-            "cmVhc29uEhwKCW5hcnJhdGl2ZRgDIAEoCVIJbmFycmF0aXZlQlBaN2dpdGh1",
-            "Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvO3By",
-            "b3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "blN0YXRlVmlld1IMaW5zdGl0dXRpb25zEj0KCW1pbmlzdGVycxgMIAMoCzIf",
+            "LnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJzElkK",
+            "E21pbmlzdGVyX2NhbmRpZGF0ZXMYDSADKAsyKC5wYW5vcHRlcy5wcm90by52",
+            "MS5NaW5pc3RlckNhbmRpZGF0ZVZpZXdSEm1pbmlzdGVyQ2FuZGlkYXRlcyK2",
+            "AwoRUmVzZWFyY2hTdGF0ZVZpZXcSPwocY3VycmVudF90YXJnZXRfdGVjaG5v",
+            "bG9neV9pZBgBIAEoCVIZY3VycmVudFRhcmdldFRlY2hub2xvZ3lJZBIpChBj",
+            "dXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVx",
+            "dWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSOAoYY29t",
+            "cGxldGVkX3RlY2hub2xvZ3lfaWRzGAQgAygJUhZjb21wbGV0ZWRUZWNobm9s",
+            "b2d5SWRzEjIKFWFjdGl2ZV90ZWNobm9sb2d5X2lkcxgFIAMoCVITYWN0aXZl",
+            "VGVjaG5vbG9neUlkcxJJCiFwZW5kaW5nX2FjdGl2YXRpb25fdGVjaG5vbG9n",
+            "eV9pZHMYBiADKAlSHnBlbmRpbmdBY3RpdmF0aW9uVGVjaG5vbG9neUlkcxJP",
+            "Cg5zYXZlZF9wcm9ncmVzcxgHIAMoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlJl",
+            "c2VhcmNoUHJvZ3Jlc3NFbnRyeVINc2F2ZWRQcm9ncmVzcyKUAQoVUmVzZWFy",
+            "Y2hQcm9ncmVzc0VudHJ5EiMKDXRlY2hub2xvZ3lfaWQYASABKAlSDHRlY2hu",
+            "b2xvZ3lJZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJv",
+            "Z3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJv",
+            "Z3Jlc3MipwEKFEluc3RpdHV0aW9uU3RhdGVWaWV3Eh0KCnNsb3RfY291bnQY",
+            "ASABKAVSCXNsb3RDb3VudBI6ChljYW5kaWRhdGVfaW5zdGl0dXRpb25faWRz",
+            "GAIgAygJUhdjYW5kaWRhdGVJbnN0aXR1dGlvbklkcxI0ChZhY3RpdmVfaW5z",
+            "dGl0dXRpb25faWRzGAMgAygJUhRhY3RpdmVJbnN0aXR1dGlvbklkcyKSAgoV",
+            "QnVpbGRpbmdPcGVyYXRpb25WaWV3EiwKEnNlbGVjdGVkX3JlY2lwZV9pZBgB",
+            "IAEoCVIQc2VsZWN0ZWRSZWNpcGVJZBIpChBjdXJyZW50X3Byb2dyZXNzGAIg",
+            "ASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyAB",
+            "KAVSEHJlcXVpcmVkUHJvZ3Jlc3MSIwoNYmFzZV9wcm9ncmVzcxgEIAEoBVIM",
+            "YmFzZVByb2dyZXNzEiUKDmJsb2NrZWRfcmVhc29uGAUgASgJUg1ibG9ja2Vk",
+            "UmVhc29uEicKD2Jsb2NrZWRfbWVzc2FnZRgGIAEoCVIOYmxvY2tlZE1lc3Nh",
+            "Z2UihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlS",
+            "BG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJZHMSHAoJZGlyZWN0aXZl",
+            "GAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUYBSABKAlSCnRhcmdl",
+            "dE5vZGUiwQMKDE1pbmlzdGVyVmlldxIfCgttaW5pc3Rlcl9pZBgBIAEoCVIK",
+            "bWluaXN0ZXJJZBISCgRyb2xlGAIgASgJUgRyb2xlEhIKBG5hbWUYAyABKAlS",
+            "BG5hbWUSGQoIaWNvbl9rZXkYBCABKAlSB2ljb25LZXkSIAoLcGVyc29uYWxp",
+            "dHkYBSABKAlSC3BlcnNvbmFsaXR5EikKEHBlcnNvbmFsaXR5X2Rlc2MYBiAB",
+            "KAlSD3BlcnNvbmFsaXR5RGVzYxIYCgdhYmlsaXR5GAcgASgFUgdhYmlsaXR5",
+            "EhgKB2xveWFsdHkYCCABKAVSB2xveWFsdHkSGgoIYW1iaXRpb24YCSABKAVS",
+            "CGFtYml0aW9uEiIKDGNhdXRpb3VzbmVzcxgKIAEoBVIMY2F1dGlvdXNuZXNz",
+            "EiIKDGRlY2lzaXZlbmVzcxgLIAEoBVIMZGVjaXNpdmVuZXNzEikKEGxveWFs",
+            "dHlfdGVuZGVuY3kYDCABKAVSD2xveWFsdHlUZW5kZW5jeRIlCg5hbWJpdGlv",
+            "bl9zdHlsZRgNIAEoBVINYW1iaXRpb25TdHlsZRIWCgZ2YWNhbnQYDiABKAhS",
+            "BnZhY2FudCKyAwoVTWluaXN0ZXJDYW5kaWRhdGVWaWV3Eh8KC21pbmlzdGVy",
+            "X2lkGAEgASgJUgptaW5pc3RlcklkEhIKBHJvbGUYAiABKAlSBHJvbGUSEgoE",
+            "bmFtZRgDIAEoCVIEbmFtZRIZCghpY29uX2tleRgEIAEoCVIHaWNvbktleRIg",
+            "CgtwZXJzb25hbGl0eRgFIAEoCVILcGVyc29uYWxpdHkSKQoQcGVyc29uYWxp",
+            "dHlfZGVzYxgGIAEoCVIPcGVyc29uYWxpdHlEZXNjEhgKB2FiaWxpdHkYByAB",
+            "KAVSB2FiaWxpdHkSGAoHbG95YWx0eRgIIAEoBVIHbG95YWx0eRIaCghhbWJp",
+            "dGlvbhgJIAEoBVIIYW1iaXRpb24SIgoMY2F1dGlvdXNuZXNzGAogASgFUgxj",
+            "YXV0aW91c25lc3MSIgoMZGVjaXNpdmVuZXNzGAsgASgFUgxkZWNpc2l2ZW5l",
+            "c3MSKQoQbG95YWx0eV90ZW5kZW5jeRgMIAEoBVIPbG95YWx0eVRlbmRlbmN5",
+            "EiUKDmFtYml0aW9uX3N0eWxlGA0gASgFUg1hbWJpdGlvblN0eWxlIt8DChVJ",
+            "bmZvcm1hdGlvblJlcG9ydFZpZXcSEgoEbW9kZRgBIAEoCVIEbW9kZRIeCgpj",
+            "b25maWRlbmNlGAIgASgJUgpjb25maWRlbmNlEiwKEnZpc2libGVfbm9kZV9j",
+            "b3VudBgDIAEoBVIQdmlzaWJsZU5vZGVDb3VudBIqChFtZW1vcnlfbm9kZV9j",
+            "b3VudBgEIAEoBVIPbWVtb3J5Tm9kZUNvdW50EiwKEnVua25vd25fbm9kZV9j",
+            "b3VudBgFIAEoBVIQdW5rbm93bk5vZGVDb3VudBIsChJ2aXNpYmxlX3VuaXRf",
+            "Y291bnQYBiABKAVSEHZpc2libGVVbml0Q291bnQSKgoRbWVtb3J5X3VuaXRf",
+            "Y291bnQYByABKAVSD21lbW9yeVVuaXRDb3VudBIjCg1vbWl0dGVkX2NvdW50",
+            "GAggASgFUgxvbWl0dGVkQ291bnQSIwoNZGVsYXllZF9jb3VudBgJIAEoBVIM",
+            "ZGVsYXllZENvdW50EiMKDW1pc3JlYWRfY291bnQYCiABKAVSDG1pc3JlYWRD",
+            "b3VudBIrChFkaXJlY3RfaW5zcGVjdGlvbhgLIAEoCFIQZGlyZWN0SW5zcGVj",
+            "dGlvbhIUCgVub3RlcxgMIAMoCVIFbm90ZXMi7AMKC01zZ0dhbWVJbml0EhcK",
+            "B2dhbWVfaWQYASABKAlSBmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEo",
+            "CVIMeW91clBsYXllcklkEhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UY",
+            "BCABKAlSBXBoYXNlEjEKBW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8u",
+            "djEuTm9kZVZpZXdSBW5vZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMu",
+            "cHJvdG8udjEuVW5pdFZpZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzId",
+            "LnBhbm9wdGVzLnByb3RvLnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1p",
+            "bmlzdGVycxgIIAMoCzIfLnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmll",
+            "d1IJbWluaXN0ZXJzEhsKCW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoK",
+            "bWFwX2hlaWdodBgKIAEoBVIJbWFwSGVpZ2h0ElcKEmluZm9ybWF0aW9uX3Jl",
+            "cG9ydBgLIAEoCzIoLnBhbm9wdGVzLnByb3RvLnYxLkluZm9ybWF0aW9uUmVw",
+            "b3J0Vmlld1IRaW5mb3JtYXRpb25SZXBvcnQiYAoLTXNnR2FtZU92ZXISGwoJ",
+            "d2lubmVyX2lkGAEgASgJUgh3aW5uZXJJZBIWCgZyZWFzb24YAiABKAlSBnJl",
+            "YXNvbhIcCgluYXJyYXRpdmUYAyABKAlSCW5hcnJhdGl2ZUJQWjdnaXRodWIu",
+            "Y29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90bztwcm90",
+            "b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired", "IsCurrentlyVisible", "IsMemory", "LastObservedTurn", "RoadStatus", "NetworkStatus", "NetworkCityId", "IsNetworkConnected" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions", "Ministers", "MinisterCandidates" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchProgressEntry), global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser, new[]{ "TechnologyId", "CurrentProgress", "RequiredProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidateInstitutionIds", "ActiveInstitutionIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason", "BlockedMessage" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality", "Loyalty", "Ambition", "Cautiousness", "Decisiveness", "LoyaltyTendency", "AmbitionStyle" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "MinisterId", "Role", "Name", "IconKey", "Personality", "PersonalityDesc", "Ability", "Loyalty", "Ambition", "Cautiousness", "Decisiveness", "LoyaltyTendency", "AmbitionStyle", "Vacant" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterCandidateView), global::Panoptes.Protocol.V1.MinisterCandidateView.Parser, new[]{ "MinisterId", "Role", "Name", "IconKey", "Personality", "PersonalityDesc", "Ability", "Loyalty", "Ambition", "Cautiousness", "Decisiveness", "LoyaltyTendency", "AmbitionStyle" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InformationReportView), global::Panoptes.Protocol.V1.InformationReportView.Parser, new[]{ "Mode", "Confidence", "VisibleNodeCount", "MemoryNodeCount", "UnknownNodeCount", "VisibleUnitCount", "MemoryUnitCount", "OmittedCount", "DelayedCount", "MisreadCount", "DirectInspection", "Notes" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight", "InformationReport" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameOver), global::Panoptes.Protocol.V1.MsgGameOver.Parser, new[]{ "WinnerId", "Reason", "Narrative" }, null, null, null, null)
@@ -1064,11 +1081,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1197,11 +1210,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1630,11 +1639,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1676,11 +1681,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1764,6 +1765,8 @@ namespace Panoptes.Protocol.V1 {
       warZones_ = other.warZones_.Clone();
       research_ = other.research_ != null ? other.research_.Clone() : null;
       institutions_ = other.institutions_ != null ? other.institutions_.Clone() : null;
+      ministers_ = other.ministers_.Clone();
+      ministerCandidates_ = other.ministerCandidates_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1904,6 +1907,28 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "ministers" field.</summary>
+    public const int MinistersFieldNumber = 12;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.MinisterView> _repeated_ministers_codec
+        = pb::FieldCodec.ForMessage(98, global::Panoptes.Protocol.V1.MinisterView.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterView> ministers_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterView>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterView> Ministers {
+      get { return ministers_; }
+    }
+
+    /// <summary>Field number for the "minister_candidates" field.</summary>
+    public const int MinisterCandidatesFieldNumber = 13;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.MinisterCandidateView> _repeated_ministerCandidates_codec
+        = pb::FieldCodec.ForMessage(106, global::Panoptes.Protocol.V1.MinisterCandidateView.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterCandidateView> ministerCandidates_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterCandidateView>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.MinisterCandidateView> MinisterCandidates {
+      get { return ministerCandidates_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1930,6 +1955,8 @@ namespace Panoptes.Protocol.V1 {
       if(!warZones_.Equals(other.warZones_)) return false;
       if (!object.Equals(Research, other.Research)) return false;
       if (!object.Equals(Institutions, other.Institutions)) return false;
+      if(!ministers_.Equals(other.ministers_)) return false;
+      if(!ministerCandidates_.Equals(other.ministerCandidates_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1948,6 +1975,8 @@ namespace Panoptes.Protocol.V1 {
       hash ^= warZones_.GetHashCode();
       if (research_ != null) hash ^= Research.GetHashCode();
       if (institutions_ != null) hash ^= Institutions.GetHashCode();
+      hash ^= ministers_.GetHashCode();
+      hash ^= ministerCandidates_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2007,6 +2036,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(90);
         output.WriteMessage(Institutions);
       }
+      ministers_.WriteTo(output, _repeated_ministers_codec);
+      ministerCandidates_.WriteTo(output, _repeated_ministerCandidates_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2058,6 +2089,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(90);
         output.WriteMessage(Institutions);
       }
+      ministers_.WriteTo(ref output, _repeated_ministers_codec);
+      ministerCandidates_.WriteTo(ref output, _repeated_ministerCandidates_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2099,6 +2132,8 @@ namespace Panoptes.Protocol.V1 {
       if (institutions_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Institutions);
       }
+      size += ministers_.CalculateSize(_repeated_ministers_codec);
+      size += ministerCandidates_.CalculateSize(_repeated_ministerCandidates_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2154,6 +2189,8 @@ namespace Panoptes.Protocol.V1 {
         }
         Institutions.MergeFrom(other.Institutions);
       }
+      ministers_.Add(other.ministers_);
+      ministerCandidates_.Add(other.ministerCandidates_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2165,11 +2202,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2229,6 +2262,14 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(Institutions);
             break;
           }
+          case 98: {
+            ministers_.AddEntriesFrom(input, _repeated_ministers_codec);
+            break;
+          }
+          case 106: {
+            ministerCandidates_.AddEntriesFrom(input, _repeated_ministerCandidates_codec);
+            break;
+          }
         }
       }
     #endif
@@ -2240,11 +2281,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2302,6 +2339,14 @@ namespace Panoptes.Protocol.V1 {
               Institutions = new global::Panoptes.Protocol.V1.InstitutionStateView();
             }
             input.ReadMessage(Institutions);
+            break;
+          }
+          case 98: {
+            ministers_.AddEntriesFrom(ref input, _repeated_ministers_codec);
+            break;
+          }
+          case 106: {
+            ministerCandidates_.AddEntriesFrom(ref input, _repeated_ministerCandidates_codec);
             break;
           }
         }
@@ -2597,11 +2642,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2644,11 +2685,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2901,11 +2938,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2932,11 +2965,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3151,11 +3180,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3182,11 +3207,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3510,11 +3531,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3553,11 +3570,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3853,11 +3866,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3892,11 +3901,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3962,16 +3967,20 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public MinisterView(MinisterView other) : this() {
+      ministerId_ = other.ministerId_;
       role_ = other.role_;
       name_ = other.name_;
-      ability_ = other.ability_;
+      iconKey_ = other.iconKey_;
       personality_ = other.personality_;
+      personalityDesc_ = other.personalityDesc_;
+      ability_ = other.ability_;
       loyalty_ = other.loyalty_;
       ambition_ = other.ambition_;
       cautiousness_ = other.cautiousness_;
       decisiveness_ = other.decisiveness_;
       loyaltyTendency_ = other.loyaltyTendency_;
       ambitionStyle_ = other.ambitionStyle_;
+      vacant_ = other.vacant_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3981,8 +3990,20 @@ namespace Panoptes.Protocol.V1 {
       return new MinisterView(this);
     }
 
+    /// <summary>Field number for the "minister_id" field.</summary>
+    public const int MinisterIdFieldNumber = 1;
+    private string ministerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string MinisterId {
+      get { return ministerId_; }
+      set {
+        ministerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "role" field.</summary>
-    public const int RoleFieldNumber = 1;
+    public const int RoleFieldNumber = 2;
     private string role_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -3994,7 +4015,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "name" field.</summary>
-    public const int NameFieldNumber = 2;
+    public const int NameFieldNumber = 3;
     private string name_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4005,20 +4026,20 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "ability" field.</summary>
-    public const int AbilityFieldNumber = 3;
-    private int ability_;
+    /// <summary>Field number for the "icon_key" field.</summary>
+    public const int IconKeyFieldNumber = 4;
+    private string iconKey_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Ability {
-      get { return ability_; }
+    public string IconKey {
+      get { return iconKey_; }
       set {
-        ability_ = value;
+        iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
     /// <summary>Field number for the "personality" field.</summary>
-    public const int PersonalityFieldNumber = 4;
+    public const int PersonalityFieldNumber = 5;
     private string personality_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4029,8 +4050,32 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "personality_desc" field.</summary>
+    public const int PersonalityDescFieldNumber = 6;
+    private string personalityDesc_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PersonalityDesc {
+      get { return personalityDesc_; }
+      set {
+        personalityDesc_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "ability" field.</summary>
+    public const int AbilityFieldNumber = 7;
+    private int ability_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Ability {
+      get { return ability_; }
+      set {
+        ability_ = value;
+      }
+    }
+
     /// <summary>Field number for the "loyalty" field.</summary>
-    public const int LoyaltyFieldNumber = 5;
+    public const int LoyaltyFieldNumber = 8;
     private int loyalty_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4042,7 +4087,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "ambition" field.</summary>
-    public const int AmbitionFieldNumber = 6;
+    public const int AmbitionFieldNumber = 9;
     private int ambition_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4054,7 +4099,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "cautiousness" field.</summary>
-    public const int CautiousnessFieldNumber = 7;
+    public const int CautiousnessFieldNumber = 10;
     private int cautiousness_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4066,7 +4111,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "decisiveness" field.</summary>
-    public const int DecisivenessFieldNumber = 8;
+    public const int DecisivenessFieldNumber = 11;
     private int decisiveness_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4078,7 +4123,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "loyalty_tendency" field.</summary>
-    public const int LoyaltyTendencyFieldNumber = 9;
+    public const int LoyaltyTendencyFieldNumber = 12;
     private int loyaltyTendency_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4090,7 +4135,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "ambition_style" field.</summary>
-    public const int AmbitionStyleFieldNumber = 10;
+    public const int AmbitionStyleFieldNumber = 13;
     private int ambitionStyle_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -4098,6 +4143,18 @@ namespace Panoptes.Protocol.V1 {
       get { return ambitionStyle_; }
       set {
         ambitionStyle_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "vacant" field.</summary>
+    public const int VacantFieldNumber = 14;
+    private bool vacant_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Vacant {
+      get { return vacant_; }
+      set {
+        vacant_ = value;
       }
     }
 
@@ -4116,10 +4173,671 @@ namespace Panoptes.Protocol.V1 {
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (MinisterId != other.MinisterId) return false;
       if (Role != other.Role) return false;
       if (Name != other.Name) return false;
-      if (Ability != other.Ability) return false;
+      if (IconKey != other.IconKey) return false;
       if (Personality != other.Personality) return false;
+      if (PersonalityDesc != other.PersonalityDesc) return false;
+      if (Ability != other.Ability) return false;
+      if (Loyalty != other.Loyalty) return false;
+      if (Ambition != other.Ambition) return false;
+      if (Cautiousness != other.Cautiousness) return false;
+      if (Decisiveness != other.Decisiveness) return false;
+      if (LoyaltyTendency != other.LoyaltyTendency) return false;
+      if (AmbitionStyle != other.AmbitionStyle) return false;
+      if (Vacant != other.Vacant) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (MinisterId.Length != 0) hash ^= MinisterId.GetHashCode();
+      if (Role.Length != 0) hash ^= Role.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+      if (Personality.Length != 0) hash ^= Personality.GetHashCode();
+      if (PersonalityDesc.Length != 0) hash ^= PersonalityDesc.GetHashCode();
+      if (Ability != 0) hash ^= Ability.GetHashCode();
+      if (Loyalty != 0) hash ^= Loyalty.GetHashCode();
+      if (Ambition != 0) hash ^= Ambition.GetHashCode();
+      if (Cautiousness != 0) hash ^= Cautiousness.GetHashCode();
+      if (Decisiveness != 0) hash ^= Decisiveness.GetHashCode();
+      if (LoyaltyTendency != 0) hash ^= LoyaltyTendency.GetHashCode();
+      if (AmbitionStyle != 0) hash ^= AmbitionStyle.GetHashCode();
+      if (Vacant != false) hash ^= Vacant.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (MinisterId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(MinisterId);
+      }
+      if (Role.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Role);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (Personality.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Personality);
+      }
+      if (PersonalityDesc.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Ability);
+      }
+      if (Loyalty != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(Loyalty);
+      }
+      if (Ambition != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(Ambition);
+      }
+      if (Cautiousness != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        output.WriteRawTag(88);
+        output.WriteInt32(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        output.WriteRawTag(96);
+        output.WriteInt32(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        output.WriteRawTag(104);
+        output.WriteInt32(AmbitionStyle);
+      }
+      if (Vacant != false) {
+        output.WriteRawTag(112);
+        output.WriteBool(Vacant);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (MinisterId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(MinisterId);
+      }
+      if (Role.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Role);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (Personality.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Personality);
+      }
+      if (PersonalityDesc.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Ability);
+      }
+      if (Loyalty != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(Loyalty);
+      }
+      if (Ambition != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(Ambition);
+      }
+      if (Cautiousness != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        output.WriteRawTag(88);
+        output.WriteInt32(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        output.WriteRawTag(96);
+        output.WriteInt32(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        output.WriteRawTag(104);
+        output.WriteInt32(AmbitionStyle);
+      }
+      if (Vacant != false) {
+        output.WriteRawTag(112);
+        output.WriteBool(Vacant);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (MinisterId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(MinisterId);
+      }
+      if (Role.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Role);
+      }
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (IconKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+      }
+      if (Personality.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Personality);
+      }
+      if (PersonalityDesc.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ability);
+      }
+      if (Loyalty != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Loyalty);
+      }
+      if (Ambition != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ambition);
+      }
+      if (Cautiousness != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Cautiousness);
+      }
+      if (Decisiveness != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Decisiveness);
+      }
+      if (LoyaltyTendency != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(LoyaltyTendency);
+      }
+      if (AmbitionStyle != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(AmbitionStyle);
+      }
+      if (Vacant != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MinisterView other) {
+      if (other == null) {
+        return;
+      }
+      if (other.MinisterId.Length != 0) {
+        MinisterId = other.MinisterId;
+      }
+      if (other.Role.Length != 0) {
+        Role = other.Role;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      if (other.IconKey.Length != 0) {
+        IconKey = other.IconKey;
+      }
+      if (other.Personality.Length != 0) {
+        Personality = other.Personality;
+      }
+      if (other.PersonalityDesc.Length != 0) {
+        PersonalityDesc = other.PersonalityDesc;
+      }
+      if (other.Ability != 0) {
+        Ability = other.Ability;
+      }
+      if (other.Loyalty != 0) {
+        Loyalty = other.Loyalty;
+      }
+      if (other.Ambition != 0) {
+        Ambition = other.Ambition;
+      }
+      if (other.Cautiousness != 0) {
+        Cautiousness = other.Cautiousness;
+      }
+      if (other.Decisiveness != 0) {
+        Decisiveness = other.Decisiveness;
+      }
+      if (other.LoyaltyTendency != 0) {
+        LoyaltyTendency = other.LoyaltyTendency;
+      }
+      if (other.AmbitionStyle != 0) {
+        AmbitionStyle = other.AmbitionStyle;
+      }
+      if (other.Vacant != false) {
+        Vacant = other.Vacant;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            MinisterId = input.ReadString();
+            break;
+          }
+          case 18: {
+            Role = input.ReadString();
+            break;
+          }
+          case 26: {
+            Name = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            Personality = input.ReadString();
+            break;
+          }
+          case 50: {
+            PersonalityDesc = input.ReadString();
+            break;
+          }
+          case 56: {
+            Ability = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            Loyalty = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            Ambition = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 96: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 104: {
+            AmbitionStyle = input.ReadInt32();
+            break;
+          }
+          case 112: {
+            Vacant = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            MinisterId = input.ReadString();
+            break;
+          }
+          case 18: {
+            Role = input.ReadString();
+            break;
+          }
+          case 26: {
+            Name = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            Personality = input.ReadString();
+            break;
+          }
+          case 50: {
+            PersonalityDesc = input.ReadString();
+            break;
+          }
+          case 56: {
+            Ability = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            Loyalty = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            Ambition = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 96: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 104: {
+            AmbitionStyle = input.ReadInt32();
+            break;
+          }
+          case 112: {
+            Vacant = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MinisterCandidateView : pb::IMessage<MinisterCandidateView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MinisterCandidateView> _parser = new pb::MessageParser<MinisterCandidateView>(() => new MinisterCandidateView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MinisterCandidateView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MinisterCandidateView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MinisterCandidateView(MinisterCandidateView other) : this() {
+      ministerId_ = other.ministerId_;
+      role_ = other.role_;
+      name_ = other.name_;
+      iconKey_ = other.iconKey_;
+      personality_ = other.personality_;
+      personalityDesc_ = other.personalityDesc_;
+      ability_ = other.ability_;
+      loyalty_ = other.loyalty_;
+      ambition_ = other.ambition_;
+      cautiousness_ = other.cautiousness_;
+      decisiveness_ = other.decisiveness_;
+      loyaltyTendency_ = other.loyaltyTendency_;
+      ambitionStyle_ = other.ambitionStyle_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MinisterCandidateView Clone() {
+      return new MinisterCandidateView(this);
+    }
+
+    /// <summary>Field number for the "minister_id" field.</summary>
+    public const int MinisterIdFieldNumber = 1;
+    private string ministerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string MinisterId {
+      get { return ministerId_; }
+      set {
+        ministerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "role" field.</summary>
+    public const int RoleFieldNumber = 2;
+    private string role_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Role {
+      get { return role_; }
+      set {
+        role_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 3;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "icon_key" field.</summary>
+    public const int IconKeyFieldNumber = 4;
+    private string iconKey_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string IconKey {
+      get { return iconKey_; }
+      set {
+        iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "personality" field.</summary>
+    public const int PersonalityFieldNumber = 5;
+    private string personality_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Personality {
+      get { return personality_; }
+      set {
+        personality_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "personality_desc" field.</summary>
+    public const int PersonalityDescFieldNumber = 6;
+    private string personalityDesc_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PersonalityDesc {
+      get { return personalityDesc_; }
+      set {
+        personalityDesc_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "ability" field.</summary>
+    public const int AbilityFieldNumber = 7;
+    private int ability_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Ability {
+      get { return ability_; }
+      set {
+        ability_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "loyalty" field.</summary>
+    public const int LoyaltyFieldNumber = 8;
+    private int loyalty_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Loyalty {
+      get { return loyalty_; }
+      set {
+        loyalty_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ambition" field.</summary>
+    public const int AmbitionFieldNumber = 9;
+    private int ambition_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Ambition {
+      get { return ambition_; }
+      set {
+        ambition_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cautiousness" field.</summary>
+    public const int CautiousnessFieldNumber = 10;
+    private int cautiousness_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Cautiousness {
+      get { return cautiousness_; }
+      set {
+        cautiousness_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "decisiveness" field.</summary>
+    public const int DecisivenessFieldNumber = 11;
+    private int decisiveness_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Decisiveness {
+      get { return decisiveness_; }
+      set {
+        decisiveness_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "loyalty_tendency" field.</summary>
+    public const int LoyaltyTendencyFieldNumber = 12;
+    private int loyaltyTendency_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int LoyaltyTendency {
+      get { return loyaltyTendency_; }
+      set {
+        loyaltyTendency_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ambition_style" field.</summary>
+    public const int AmbitionStyleFieldNumber = 13;
+    private int ambitionStyle_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int AmbitionStyle {
+      get { return ambitionStyle_; }
+      set {
+        ambitionStyle_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MinisterCandidateView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MinisterCandidateView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (MinisterId != other.MinisterId) return false;
+      if (Role != other.Role) return false;
+      if (Name != other.Name) return false;
+      if (IconKey != other.IconKey) return false;
+      if (Personality != other.Personality) return false;
+      if (PersonalityDesc != other.PersonalityDesc) return false;
+      if (Ability != other.Ability) return false;
       if (Loyalty != other.Loyalty) return false;
       if (Ambition != other.Ambition) return false;
       if (Cautiousness != other.Cautiousness) return false;
@@ -4133,10 +4851,13 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
+      if (MinisterId.Length != 0) hash ^= MinisterId.GetHashCode();
       if (Role.Length != 0) hash ^= Role.GetHashCode();
       if (Name.Length != 0) hash ^= Name.GetHashCode();
-      if (Ability != 0) hash ^= Ability.GetHashCode();
+      if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
       if (Personality.Length != 0) hash ^= Personality.GetHashCode();
+      if (PersonalityDesc.Length != 0) hash ^= PersonalityDesc.GetHashCode();
+      if (Ability != 0) hash ^= Ability.GetHashCode();
       if (Loyalty != 0) hash ^= Loyalty.GetHashCode();
       if (Ambition != 0) hash ^= Ambition.GetHashCode();
       if (Cautiousness != 0) hash ^= Cautiousness.GetHashCode();
@@ -4161,44 +4882,56 @@ namespace Panoptes.Protocol.V1 {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Role.Length != 0) {
+      if (MinisterId.Length != 0) {
         output.WriteRawTag(10);
+        output.WriteString(MinisterId);
+      }
+      if (Role.Length != 0) {
+        output.WriteRawTag(18);
         output.WriteString(Role);
       }
       if (Name.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(26);
         output.WriteString(Name);
       }
-      if (Ability != 0) {
-        output.WriteRawTag(24);
-        output.WriteInt32(Ability);
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
       }
       if (Personality.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Personality);
       }
+      if (PersonalityDesc.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Ability);
+      }
       if (Loyalty != 0) {
-        output.WriteRawTag(40);
+        output.WriteRawTag(64);
         output.WriteInt32(Loyalty);
       }
       if (Ambition != 0) {
-        output.WriteRawTag(48);
+        output.WriteRawTag(72);
         output.WriteInt32(Ambition);
       }
       if (Cautiousness != 0) {
-        output.WriteRawTag(56);
+        output.WriteRawTag(80);
         output.WriteInt32(Cautiousness);
       }
       if (Decisiveness != 0) {
-        output.WriteRawTag(64);
+        output.WriteRawTag(88);
         output.WriteInt32(Decisiveness);
       }
       if (LoyaltyTendency != 0) {
-        output.WriteRawTag(72);
+        output.WriteRawTag(96);
         output.WriteInt32(LoyaltyTendency);
       }
       if (AmbitionStyle != 0) {
-        output.WriteRawTag(80);
+        output.WriteRawTag(104);
         output.WriteInt32(AmbitionStyle);
       }
       if (_unknownFields != null) {
@@ -4211,44 +4944,56 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Role.Length != 0) {
+      if (MinisterId.Length != 0) {
         output.WriteRawTag(10);
+        output.WriteString(MinisterId);
+      }
+      if (Role.Length != 0) {
+        output.WriteRawTag(18);
         output.WriteString(Role);
       }
       if (Name.Length != 0) {
-        output.WriteRawTag(18);
+        output.WriteRawTag(26);
         output.WriteString(Name);
       }
-      if (Ability != 0) {
-        output.WriteRawTag(24);
-        output.WriteInt32(Ability);
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
       }
       if (Personality.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Personality);
       }
+      if (PersonalityDesc.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(Ability);
+      }
       if (Loyalty != 0) {
-        output.WriteRawTag(40);
+        output.WriteRawTag(64);
         output.WriteInt32(Loyalty);
       }
       if (Ambition != 0) {
-        output.WriteRawTag(48);
+        output.WriteRawTag(72);
         output.WriteInt32(Ambition);
       }
       if (Cautiousness != 0) {
-        output.WriteRawTag(56);
+        output.WriteRawTag(80);
         output.WriteInt32(Cautiousness);
       }
       if (Decisiveness != 0) {
-        output.WriteRawTag(64);
+        output.WriteRawTag(88);
         output.WriteInt32(Decisiveness);
       }
       if (LoyaltyTendency != 0) {
-        output.WriteRawTag(72);
+        output.WriteRawTag(96);
         output.WriteInt32(LoyaltyTendency);
       }
       if (AmbitionStyle != 0) {
-        output.WriteRawTag(80);
+        output.WriteRawTag(104);
         output.WriteInt32(AmbitionStyle);
       }
       if (_unknownFields != null) {
@@ -4261,17 +5006,26 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
+      if (MinisterId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(MinisterId);
+      }
       if (Role.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Role);
       }
       if (Name.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
-      if (Ability != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ability);
+      if (IconKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
       }
       if (Personality.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Personality);
+      }
+      if (PersonalityDesc.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PersonalityDesc);
+      }
+      if (Ability != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ability);
       }
       if (Loyalty != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(Loyalty);
@@ -4299,9 +5053,12 @@ namespace Panoptes.Protocol.V1 {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(MinisterView other) {
+    public void MergeFrom(MinisterCandidateView other) {
       if (other == null) {
         return;
+      }
+      if (other.MinisterId.Length != 0) {
+        MinisterId = other.MinisterId;
       }
       if (other.Role.Length != 0) {
         Role = other.Role;
@@ -4309,11 +5066,17 @@ namespace Panoptes.Protocol.V1 {
       if (other.Name.Length != 0) {
         Name = other.Name;
       }
-      if (other.Ability != 0) {
-        Ability = other.Ability;
+      if (other.IconKey.Length != 0) {
+        IconKey = other.IconKey;
       }
       if (other.Personality.Length != 0) {
         Personality = other.Personality;
+      }
+      if (other.PersonalityDesc.Length != 0) {
+        PersonalityDesc = other.PersonalityDesc;
+      }
+      if (other.Ability != 0) {
+        Ability = other.Ability;
       }
       if (other.Loyalty != 0) {
         Loyalty = other.Loyalty;
@@ -4344,51 +5107,59 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Role = input.ReadString();
+            MinisterId = input.ReadString();
             break;
           }
           case 18: {
+            Role = input.ReadString();
+            break;
+          }
+          case 26: {
             Name = input.ReadString();
             break;
           }
-          case 24: {
-            Ability = input.ReadInt32();
+          case 34: {
+            IconKey = input.ReadString();
             break;
           }
-          case 34: {
+          case 42: {
             Personality = input.ReadString();
             break;
           }
-          case 40: {
-            Loyalty = input.ReadInt32();
-            break;
-          }
-          case 48: {
-            Ambition = input.ReadInt32();
+          case 50: {
+            PersonalityDesc = input.ReadString();
             break;
           }
           case 56: {
-            Cautiousness = input.ReadInt32();
+            Ability = input.ReadInt32();
             break;
           }
           case 64: {
-            Decisiveness = input.ReadInt32();
+            Loyalty = input.ReadInt32();
             break;
           }
           case 72: {
-            LoyaltyTendency = input.ReadInt32();
+            Ambition = input.ReadInt32();
             break;
           }
           case 80: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 96: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 104: {
             AmbitionStyle = input.ReadInt32();
             break;
           }
@@ -4403,51 +5174,59 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Role = input.ReadString();
+            MinisterId = input.ReadString();
             break;
           }
           case 18: {
+            Role = input.ReadString();
+            break;
+          }
+          case 26: {
             Name = input.ReadString();
             break;
           }
-          case 24: {
-            Ability = input.ReadInt32();
+          case 34: {
+            IconKey = input.ReadString();
             break;
           }
-          case 34: {
+          case 42: {
             Personality = input.ReadString();
             break;
           }
-          case 40: {
-            Loyalty = input.ReadInt32();
-            break;
-          }
-          case 48: {
-            Ambition = input.ReadInt32();
+          case 50: {
+            PersonalityDesc = input.ReadString();
             break;
           }
           case 56: {
-            Cautiousness = input.ReadInt32();
+            Ability = input.ReadInt32();
             break;
           }
           case 64: {
-            Decisiveness = input.ReadInt32();
+            Loyalty = input.ReadInt32();
             break;
           }
           case 72: {
-            LoyaltyTendency = input.ReadInt32();
+            Ambition = input.ReadInt32();
             break;
           }
           case 80: {
+            Cautiousness = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            Decisiveness = input.ReadInt32();
+            break;
+          }
+          case 96: {
+            LoyaltyTendency = input.ReadInt32();
+            break;
+          }
+          case 104: {
             AmbitionStyle = input.ReadInt32();
             break;
           }
@@ -4473,7 +5252,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4922,11 +5701,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4989,11 +5764,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -5067,7 +5838,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5471,11 +6242,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5540,11 +6307,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -5620,7 +6383,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5822,11 +6585,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5853,11 +6612,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

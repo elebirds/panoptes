@@ -163,6 +163,74 @@ namespace Panoptes.Presentation.ViewModels
             Publish();
         }
 
+        public void FireMinister(string role)
+        {
+            role = NormalizeRole(role);
+            if (string.IsNullOrWhiteSpace(role))
+            {
+                return;
+            }
+
+            if (_ministerCommandService != null && !_ministerCommandService.FireMinister(role))
+            {
+                AddPlayerMessage(role, "辞退指令暂时无法发送。");
+                Publish();
+                return;
+            }
+
+            _activeRole = role;
+            Publish();
+        }
+
+        public void HireMinister(string role, string candidateId)
+        {
+            SendMinisterRosterAction(role, candidateId, false);
+        }
+
+        public void ReplaceMinister(string role, string candidateId)
+        {
+            SendMinisterRosterAction(role, candidateId, true);
+        }
+
+        public void RefreshMinisterCandidates(string role = null)
+        {
+            role = NormalizeRole(role);
+            if (_ministerCommandService != null && !_ministerCommandService.RefreshCandidates(role))
+            {
+                AddPlayerMessage(role, "候选刷新暂时无法发送。");
+                Publish();
+                return;
+            }
+
+            _activeRole = role;
+            Publish();
+        }
+
+        private void SendMinisterRosterAction(string role, string candidateId, bool replace)
+        {
+            role = NormalizeRole(role);
+            candidateId = candidateId ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(role) || string.IsNullOrWhiteSpace(candidateId))
+            {
+                return;
+            }
+
+            var sent = _ministerCommandService == null
+                ? false
+                : (replace
+                    ? _ministerCommandService.ReplaceMinister(role, candidateId)
+                    : _ministerCommandService.HireMinister(role, candidateId));
+            if (!sent)
+            {
+                AddPlayerMessage(role, replace ? "替换指令暂时无法发送。" : "雇佣指令暂时无法发送。");
+                Publish();
+                return;
+            }
+
+            _activeRole = role;
+            Publish();
+        }
+
         public void Dispose()
         {
             if (_disposed)
@@ -337,6 +405,7 @@ namespace Panoptes.Presentation.ViewModels
         {
             EnsureRuntimeSourceSubscriptions();
             var tabs = BuildTabs();
+            var candidates = BuildCandidates();
             var activeRole = ResolveActiveRole(tabs);
             var messages = _messagesByRole.TryGetValue(activeRole, out var roleMessages)
                 ? roleMessages.Select(CloneMessage).ToList()
@@ -348,6 +417,7 @@ namespace Panoptes.Presentation.ViewModels
                 "大臣汇报",
                 activeRole,
                 tabs,
+                candidates,
                 messages,
                 options,
                 skills,
@@ -440,15 +510,70 @@ namespace Panoptes.Presentation.ViewModels
                 .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(pair => new MinisterTabState(
                     pair.Key,
+                    pair.Value.MinisterId,
                     pair.Value.Name,
                     pair.Value.Title,
                     pair.Value.IconResource,
                     AvatarText(pair.Value.Name, pair.Key),
                     string.Equals(pair.Key, _activeRole, StringComparison.OrdinalIgnoreCase),
+                    pair.Value.IsVacant,
+                    pair.Value.IsVacant,
                     AffectionFor(pair.Key),
                     AffectionPulseSequenceFor(pair.Key),
                     AffectionPulseDeltaFor(pair.Key),
                     pair.Value.Attributes))
+                .ToList();
+        }
+
+        private List<MinisterTabState> BuildCandidates()
+        {
+            var candidates = _gameStateCache?.MinisterCandidates;
+            if (candidates == null || candidates.Count == 0)
+            {
+                return new List<MinisterTabState>();
+            }
+
+            var roster = new Dictionary<string, MinisterProfileDto>(StringComparer.OrdinalIgnoreCase);
+            var ministers = _gameStateCache?.Ministers;
+            if (ministers != null)
+            {
+                for (var i = 0; i < ministers.Count; i++)
+                {
+                    var minister = ministers[i];
+                    if (minister == null || string.IsNullOrWhiteSpace(minister.Role))
+                    {
+                        continue;
+                    }
+
+                    roster[NormalizeRole(minister.Role)] = minister;
+                }
+            }
+
+            return candidates
+                .Where(candidate => candidate != null && !string.IsNullOrWhiteSpace(candidate.Role))
+                .OrderBy(candidate => RoleSortKey(candidate.Role), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(candidate => candidate.Role, StringComparer.OrdinalIgnoreCase)
+                .Select(candidate =>
+                {
+                    var role = NormalizeRole(candidate.Role);
+                    roster.TryGetValue(role, out var currentMinister);
+                    var source = MinisterTabSource.FromProfile(role, candidate, IconResourceFor(candidate.IconKey, role));
+                    var roleVacant = currentMinister == null || currentMinister.IsVacant;
+                    return new MinisterTabState(
+                        role,
+                        source.MinisterId,
+                        source.Name,
+                        source.Title,
+                        source.IconResource,
+                        AvatarText(source.Name, role),
+                        false,
+                        false,
+                        roleVacant,
+                        AffectionFor(role),
+                        AffectionPulseSequenceFor(role),
+                        AffectionPulseDeltaFor(role),
+                        source.Attributes);
+                })
                 .ToList();
         }
 
@@ -865,7 +990,11 @@ namespace Panoptes.Presentation.ViewModels
         {
             return NormalizeRole(role) switch
             {
-                "military" => "军事大臣",
+                "works" => "工务大臣",
+                "defense" => "军备大臣",
+                "command" => "军令大臣",
+                "frontier" => "边务大臣",
+                "military" => "军务大臣",
                 "finance" => "财政大臣",
                 "agriculture" => "农政大臣",
                 "domestic" => "内政大臣",
@@ -884,9 +1013,13 @@ namespace Panoptes.Presentation.ViewModels
             return NormalizeRole(role) switch
             {
                 "domestic" => "00",
-                "military" => "01",
-                "finance" => "02",
-                "agriculture" => "03",
+                "works" => "01",
+                "defense" => "02",
+                "command" => "03",
+                "frontier" => "04",
+                "military" => "05",
+                "finance" => "06",
+                "agriculture" => "07",
                 _ => "99-" + role
             };
         }
@@ -1018,18 +1151,22 @@ namespace Panoptes.Presentation.ViewModels
 
         private sealed class MinisterTabSource
         {
+            public string MinisterId;
             public string Name;
             public string Title;
             public string IconResource;
+            public bool IsVacant;
             public IReadOnlyList<MinisterAttributeState> Attributes = Array.Empty<MinisterAttributeState>();
 
             public static MinisterTabSource Empty(string role)
             {
                 return new MinisterTabSource
                 {
+                    MinisterId = string.Empty,
                     Name = RoleTitle(role),
                     Title = RoleTitle(role),
-                    IconResource = IconResourceFor(string.Empty, role)
+                    IconResource = IconResourceFor(string.Empty, role),
+                    IsVacant = true
                 };
             }
 
@@ -1037,9 +1174,11 @@ namespace Panoptes.Presentation.ViewModels
             {
                 return new MinisterTabSource
                 {
+                    MinisterId = string.Empty,
                     Name = Clean(minister.name, RoleTitle(role)),
                     Title = RoleTitle(role),
                     IconResource = IconResourceFor(minister.icon_key, role),
+                    IsVacant = false,
                     Attributes = BuildAttributes(
                         minister.ability,
                         minister.loyalty,
@@ -1055,9 +1194,11 @@ namespace Panoptes.Presentation.ViewModels
             {
                 return new MinisterTabSource
                 {
+                    MinisterId = string.Empty,
                     Name = Clean(minister.name, RoleTitle(role)),
                     Title = RoleTitle(role),
                     IconResource = IconResourceFor(minister.icon_key, role),
+                    IsVacant = false,
                     Attributes = BuildAttributes(
                         minister.ability,
                         minister.loyalty,
@@ -1073,17 +1214,19 @@ namespace Panoptes.Presentation.ViewModels
             {
                 return new MinisterTabSource
                 {
-                    Name = Clean(minister.Name, RoleTitle(role)),
+                    MinisterId = minister != null && minister.IsVacant ? string.Empty : Clean(minister?.MinisterId, string.Empty),
+                    Name = minister != null && minister.IsVacant ? "空缺" : Clean(minister?.Name, RoleTitle(role)),
                     Title = RoleTitle(role),
                     IconResource = Clean(iconResource, IconResourceFor(string.Empty, role)),
+                    IsVacant = minister != null && minister.IsVacant,
                     Attributes = BuildAttributes(
-                        minister.Ability,
-                        minister.Loyalty,
-                        minister.Ambition,
-                        minister.Cautiousness,
-                        minister.Decisiveness,
-                        minister.LoyaltyTendency,
-                        minister.AmbitionStyle)
+                        minister?.Ability ?? 0,
+                        minister?.Loyalty ?? 0,
+                        minister?.Ambition ?? 0,
+                        minister?.Cautiousness ?? 0,
+                        minister?.Decisiveness ?? 0,
+                        minister?.LoyaltyTendency ?? 0,
+                        minister?.AmbitionStyle ?? 0)
                 };
             }
 
@@ -1100,9 +1243,11 @@ namespace Panoptes.Presentation.ViewModels
 
                 return new MinisterTabSource
                 {
-                    Name = Clean(minister.Name, Name),
+                    MinisterId = minister != null && minister.IsVacant ? string.Empty : Clean(minister?.MinisterId, MinisterId),
+                    Name = minister != null && minister.IsVacant ? "空缺" : Clean(minister?.Name, Name),
                     Title = Title,
                     IconResource = IconResource,
+                    IsVacant = minister != null && minister.IsVacant,
                     Attributes = HasAuthoritativeProfileAttributes(minister) || !HasAttributes(Attributes)
                         ? profileAttributes
                         : Attributes
@@ -1113,9 +1258,11 @@ namespace Panoptes.Presentation.ViewModels
             {
                 return new MinisterTabSource
                 {
+                    MinisterId = MinisterId,
                     Name = Clean(Name, fallback?.Name),
                     Title = Clean(Title, fallback?.Title),
                     IconResource = Clean(IconResource, fallback?.IconResource),
+                    IsVacant = IsVacant,
                     Attributes = Attributes
                 };
             }
@@ -1145,6 +1292,7 @@ namespace Panoptes.Presentation.ViewModels
             string title,
             string activeRole,
             IReadOnlyList<MinisterTabState> ministers,
+            IReadOnlyList<MinisterTabState> candidateMinisters,
             IReadOnlyList<MinisterChatMessageState> messages,
             IReadOnlyList<MinisterReplyOptionState> options,
             IReadOnlyList<MinisterSkillCardState> skills = null,
@@ -1154,6 +1302,7 @@ namespace Panoptes.Presentation.ViewModels
             ActiveRole = activeRole ?? string.Empty;
             Groups = groups != null ? new List<ManagementPanelGroupState>(groups) : new List<ManagementPanelGroupState>();
             Ministers = ministers != null ? new List<MinisterTabState>(ministers) : new List<MinisterTabState>();
+            CandidateMinisters = candidateMinisters != null ? new List<MinisterTabState>(candidateMinisters) : new List<MinisterTabState>();
             Messages = messages != null ? new List<MinisterChatMessageState>(messages) : new List<MinisterChatMessageState>();
             Options = options != null ? new List<MinisterReplyOptionState>(options) : new List<MinisterReplyOptionState>();
             Skills = skills != null ? new List<MinisterSkillCardState>(skills) : new List<MinisterSkillCardState>();
@@ -1166,6 +1315,7 @@ namespace Panoptes.Presentation.ViewModels
         public bool HasSkills => Skills.Count > 0;
         public IReadOnlyList<MinisterChatMessageState> Messages { get; }
         public IReadOnlyList<MinisterTabState> Ministers { get; }
+        public IReadOnlyList<MinisterTabState> CandidateMinisters { get; }
         public IReadOnlyList<MinisterReplyOptionState> Options { get; }
         public IReadOnlyList<MinisterSkillCardState> Skills { get; }
         public string Title { get; }
@@ -1201,11 +1351,14 @@ namespace Panoptes.Presentation.ViewModels
     {
         public MinisterTabState(
             string role,
+            string ministerId,
             string name,
             string title,
             string iconResource,
             string avatarText,
             bool selected,
+            bool vacant,
+            bool roleVacant = false,
             int affection = 0,
             int affectionPulseSequence = 0,
             int affectionPulseDelta = 0,
@@ -1218,6 +1371,9 @@ namespace Panoptes.Presentation.ViewModels
             AvatarText = avatarText ?? string.Empty;
             IconResource = iconResource ?? string.Empty;
             IsSelected = selected;
+            IsVacant = vacant;
+            RoleVacant = roleVacant || vacant;
+            MinisterId = ministerId ?? string.Empty;
             Name = name ?? string.Empty;
             Role = role ?? string.Empty;
             Title = title ?? string.Empty;
@@ -1228,8 +1384,11 @@ namespace Panoptes.Presentation.ViewModels
         public int AffectionPulseSequence { get; }
         public IReadOnlyList<MinisterAttributeState> Attributes { get; }
         public string AvatarText { get; }
+        public string MinisterId { get; }
         public string IconResource { get; }
         public bool IsSelected { get; }
+        public bool IsVacant { get; }
+        public bool RoleVacant { get; }
         public string Name { get; }
         public string Role { get; }
         public string Title { get; }

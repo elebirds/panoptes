@@ -46,6 +46,7 @@ type TurnRuntime struct {
 // inputs become durable state only after a resolving lock-in event or stage.
 type PlanningInputs struct {
 	BuildOrders         []BuildOrder
+	DemolishOrders      []DemolishOrder
 	RecipeSelections    []RecipeSelectionOrder
 	MinisterBuilds      []BuildOrder
 	MinisterMoves       []MoveOrder
@@ -94,6 +95,9 @@ type PlayerState struct {
 	Institutions          InstitutionState
 	MinisterSkillLoadouts map[string][]string
 	MinisterSkillEffects  map[string]MinisterSkillEffectState
+	MinisterRoster        map[string]staticdata.Minister
+	MinisterCandidates    map[string]staticdata.Minister
+	MinisterCandidateCycle int
 	TokensLeft            int
 	CapitalCityCoreHP     int
 	WarZones              []*WarZone
@@ -122,6 +126,12 @@ type BuildOrder struct {
 	NodeID       string
 	BuildingType string
 	CityID       string
+}
+
+type DemolishOrder struct {
+	PlayerID     string
+	NodeID       string
+	BuildingType string
 }
 
 type RecipeSelectionOrder struct {
@@ -298,6 +308,8 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Institutions:          NewInstitutionState(),
 			MinisterSkillLoadouts: DefaultMinisterSkillLoadouts(staticdata.Default().MinisterSkillCards()),
 			MinisterSkillEffects:  make(map[string]MinisterSkillEffectState),
+			MinisterRoster:        make(map[string]staticdata.Minister),
+			MinisterCandidates:    make(map[string]staticdata.Minister),
 			TokensLeft:            rules.TokensPerTurn,
 			CapitalCityCoreHP:     rules.CityCoreMaxHP,
 			WarZones:              []*WarZone{},
@@ -305,6 +317,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		state.TurnRuntime.Resolving.PointBudgets[playerID] = NewPointBag()
 	}
 
+	state.InitializeMinisterRoster()
 	state.RefreshStructuredModel()
 	return state
 }

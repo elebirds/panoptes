@@ -33,6 +33,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string OptionsName = "minister-report-options";
         public const string SkillButtonName = "minister-skill-menu-button";
         public const string SkillPanelName = "minister-skill-panel";
+        private const string RosterHeaderName = "minister-report-roster-header";
+        private const string CandidateHeaderName = "minister-report-candidate-header";
 
         [SerializeField] private string avatarTextureRoot = "Icons/Ministers";
 
@@ -52,6 +54,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private RectTransform _optionsRoot;
         private RectTransform _panelRoot;
         private RectTransform _skillPanelRoot;
+        private ScrollRect _tabsScrollRect;
         private ScrollRect _scrollRect;
         private TextMeshProUGUI _titleText;
         private RectTransform _tabsContent;
@@ -129,7 +132,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public void Render(MinisterReportState state)
         {
             EnsureCanvas();
-            state ??= new MinisterReportState("大臣汇报", string.Empty, null, null, null);
+            state ??= new MinisterReportState("大臣汇报", string.Empty, null, null, null, null);
             _renderedState = state;
             SetText(_titleText, state.Title);
             RenderTabs(state);
@@ -150,33 +153,69 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _lastTabsSignature = signature;
             ClearChildren(_tabsContent);
             _tabButtons.Clear();
-
-            for (var i = 0; i < state.Ministers.Count; i++)
+            RenderMinisterSection(state.Ministers, RosterHeaderName, "在职大臣", false);
+            RenderMinisterSection(state.CandidateMinisters, CandidateHeaderName, "候选大臣", true);
+            Canvas.ForceUpdateCanvases();
+            if (_tabsScrollRect != null)
             {
-                var minister = state.Ministers[i];
-                var tab = CreateTab(minister);
+                _tabsScrollRect.verticalNormalizedPosition = 1f;
+            }
+        }
+
+        private void RenderMinisterSection(IReadOnlyList<MinisterTabState> ministers, string headerName, string title, bool candidateSection)
+        {
+            if (ministers == null || ministers.Count == 0)
+            {
+                return;
+            }
+
+            var header = CreateText(_tabsContent, headerName, title, 15f, FontStyles.Bold, TextAlignmentOptions.Left);
+            header.color = new Color(0.97f, 0.84f, 0.58f, 1f);
+            var headerLayout = header.gameObject.AddComponent<LayoutElement>();
+            headerLayout.preferredHeight = 22f;
+            headerLayout.minHeight = 22f;
+
+            for (var i = 0; i < ministers.Count; i++)
+            {
+                var minister = ministers[i];
+                var tab = candidateSection
+                    ? CreateCandidateCard(minister)
+                    : CreateMinisterCard(minister);
                 _tabButtons.Add(tab);
             }
         }
 
-        private UguiButton CreateTab(MinisterTabState minister)
+        private UguiButton CreateMinisterCard(MinisterTabState minister)
         {
-            var rect = CreateUiObject("minister-tab-" + SafeName(minister.Role), _tabsContent);
-            rect.sizeDelta = new Vector2(0f, 130f);
+            return CreateMinisterCardInternal(minister, false);
+        }
+
+        private UguiButton CreateCandidateCard(MinisterTabState minister)
+        {
+            return CreateMinisterCardInternal(minister, true);
+        }
+
+        private UguiButton CreateMinisterCardInternal(MinisterTabState minister, bool isCandidate)
+        {
+            var cardHeight = isCandidate ? 172f : 160f;
+            var rect = CreateUiObject("minister-card-" + SafeName(minister.Role) + (isCandidate ? "-candidate" : string.Empty), _tabsContent);
+            rect.sizeDelta = new Vector2(0f, cardHeight);
             var layout = rect.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = 130f;
-            layout.preferredHeight = 130f;
+            layout.minHeight = cardHeight;
+            layout.preferredHeight = cardHeight;
 
             var image = rect.gameObject.AddComponent<UguiImage>();
-            image.color = minister.IsSelected
+            image.color = minister.IsSelected && !isCandidate
                 ? new Color(0.55f, 0.34f, 0.12f, 0.92f)
-                : new Color(1f, 1f, 1f, 0.07f);
+                : isCandidate
+                    ? new Color(0.09f, 0.13f, 0.16f, 0.94f)
+                    : new Color(1f, 1f, 1f, 0.07f);
             var button = rect.gameObject.AddComponent<UguiButton>();
             button.targetGraphic = image;
             button.onClick.AddListener(() => _viewModel?.SelectMinister(minister.Role));
 
             var avatarRect = CreateUiObject("Avatar", rect);
-            AnchorFixed(avatarRect, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(54f, 54f));
+            AnchorFixed(avatarRect, new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(54f, 54f));
             var avatarImage = avatarRect.gameObject.AddComponent<UguiImage>();
             avatarImage.color = new Color(0.26f, 0.28f, 0.32f, 1f);
             var sprite = LoadAvatarSprite(minister.IconResource, minister.Role);
@@ -192,18 +231,63 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             avatarLabel.gameObject.SetActive(sprite == null);
 
             var title = CreateText(rect, "Title", minister.Title, 15f, FontStyles.Bold, TextAlignmentOptions.Left);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -30f), new Vector2(-10f, -8f));
+            title.color = new Color(0.98f, 0.9f, 0.68f, 1f);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -14f), new Vector2(-10f, -36f));
 
             var name = CreateText(rect, "Name", minister.Name, 12.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
-            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -51f), new Vector2(-10f, -31f));
+            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -37f), new Vector2(-10f, -58f));
 
-            CreateAttributeGrid(rect, minister);
+            var status = CreateText(rect, "Status", minister.IsVacant ? "空缺" : (isCandidate ? (minister.RoleVacant ? "当前：空缺" : "当前：在职") : "在职"), 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
+            status.color = new Color(0.74f, 0.79f, 0.84f, 1f);
+            Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -58f), new Vector2(-10f, -76f));
+
+            CreateAttributeGrid(rect, minister, isCandidate);
+
+            if (!isCandidate)
+            {
+                if (!minister.IsVacant)
+                {
+                    CreateMinisterActionButton(rect, "辞退", new Vector2(-10f, 10f), new Vector2(58f, 24f), () => _viewModel?.FireMinister(minister.Role));
+                }
+            }
+            else
+            {
+                var label = minister.RoleVacant ? "雇佣" : "替换";
+                CreateMinisterActionButton(rect, label, new Vector2(-10f, 10f), new Vector2(58f, 24f), () =>
+                {
+                    if (minister.RoleVacant)
+                    {
+                        _viewModel?.HireMinister(minister.Role, minister.MinisterId);
+                    }
+                    else
+                    {
+                        _viewModel?.ReplaceMinister(minister.Role, minister.MinisterId);
+                    }
+                });
+            }
 
             return button;
         }
 
-        private static void CreateAttributeGrid(RectTransform parent, MinisterTabState minister)
+        private static void CreateMinisterActionButton(RectTransform parent, string label, Vector2 anchoredPosition, Vector2 size, Action onClick)
+        {
+            var rect = CreateUiObject("Action", parent);
+            AnchorFixed(rect, new Vector2(1f, 0f), anchoredPosition, size);
+            var image = rect.gameObject.AddComponent<UguiImage>();
+            image.color = new Color(0.45f, 0.25f, 0.12f, 0.95f);
+            var button = rect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = image;
+            if (onClick != null)
+            {
+                button.onClick.AddListener(() => onClick());
+            }
+
+            var text = CreateText(rect, "Label", label, 11.5f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(text.rectTransform, Vector2.zero, Vector2.zero);
+        }
+
+        private static void CreateAttributeGrid(RectTransform parent, MinisterTabState minister, bool isCandidate)
         {
             var hasViewModelAttributes = HasAttributes(minister.Attributes);
             var attributes = hasViewModelAttributes
@@ -216,7 +300,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var grid = CreateUiObject("Attributes", parent);
-            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(68f, 4f), new Vector2(-8f, 72f));
+            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(68f, 4f), new Vector2(-8f, minister.IsVacant ? 90f : (isCandidate ? 84f : 72f)));
             LogAttributeRender(minister.Role, hasViewModelAttributes ? "view-model" : "resource-fallback", attributes);
 
             const float rowHeight = 15f;
@@ -531,7 +615,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             body.color = new Color(0.93f, 0.96f, 0.97f, 1f);
             body.textWrappingMode = TextWrappingModes.Normal;
             body.overflowMode = TextOverflowModes.Overflow;
-            bubbleLayoutElement.preferredWidth = CalculateMessageBubbleWidth(message.Text, message.IsStreaming, header);
+            var bubbleWidth = CalculateMessageBubbleWidth(message.Text, message.IsStreaming, header);
+            var bubbleHeight = CalculateMessageBubbleHeight(body, header, bubbleWidth);
+            bubbleLayoutElement.preferredWidth = bubbleWidth;
+            bubbleLayoutElement.preferredHeight = bubbleHeight;
+            bubbleLayoutElement.minHeight = bubbleHeight;
+            bubbleLayoutElement.flexibleHeight = 0f;
+            rowElement.preferredHeight = bubbleHeight;
+            rowElement.minHeight = bubbleHeight;
+            rowElement.flexibleHeight = 0f;
 
             if (!message.IsPlayer)
             {
@@ -547,6 +639,19 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             var headerWidth = PreferredTextWidth(header);
             var preferredWidth = Mathf.Max(bodyWidth, headerWidth) + MessageBubbleHorizontalPadding;
             return Mathf.Clamp(preferredWidth, MessageBubbleMinWidth, MessageBubbleMaxWidth);
+        }
+
+        private static float CalculateMessageBubbleHeight(TMP_Text body, TMP_Text header, float bubbleWidth)
+        {
+            var contentWidth = Mathf.Max(40f, bubbleWidth - MessageBubbleHorizontalPadding);
+            var bodyHeight = body == null
+                ? 0f
+                : Mathf.Ceil(body.GetPreferredValues(body.text ?? string.Empty, contentWidth, 0f).y);
+            var headerHeight = header == null
+                ? 0f
+                : Mathf.Ceil(header.GetPreferredValues(header.text ?? string.Empty, contentWidth, 0f).y);
+            var spacing = header == null ? 0f : 4f;
+            return Mathf.Clamp(20f + headerHeight + spacing + bodyHeight, 48f, 1200f);
         }
 
         private static float EstimateReadableMessageWidth(string text)
@@ -768,12 +873,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private static string BuildTabsSignature(MinisterReportState state)
         {
-            if (state?.Ministers == null || state.Ministers.Count == 0)
+            if ((state?.Ministers == null || state.Ministers.Count == 0) &&
+                (state?.CandidateMinisters == null || state.CandidateMinisters.Count == 0))
             {
                 return string.Empty;
             }
 
-            var builder = new StringBuilder(state.Ministers.Count * 64);
+            var builder = new StringBuilder(((state?.Ministers?.Count ?? 0) + (state?.CandidateMinisters?.Count ?? 0)) * 72);
             for (var i = 0; i < state.Ministers.Count; i++)
             {
                 var item = state.Ministers[i];
@@ -784,11 +890,14 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 }
 
                 builder.Append(item.Role).Append('|')
+                    .Append(item.MinisterId).Append('|')
                     .Append(item.Name).Append('|')
                     .Append(item.Title).Append('|')
                     .Append(item.IconResource).Append('|')
                     .Append(item.AvatarText).Append('|')
                     .Append(item.IsSelected).Append('|')
+                    .Append(item.IsVacant).Append('|')
+                    .Append(item.RoleVacant).Append('|')
                     .Append(item.Affection).Append('|')
                     .Append(item.AffectionPulseSequence).Append('|')
                     .Append(item.AffectionPulseDelta).Append('|');
@@ -807,6 +916,47 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 }
 
                 builder.Append('\n');
+            }
+
+            if (state.CandidateMinisters != null)
+            {
+                for (var i = 0; i < state.CandidateMinisters.Count; i++)
+                {
+                    var item = state.CandidateMinisters[i];
+                    if (item == null)
+                    {
+                        builder.Append("<candidate-null>|");
+                        continue;
+                    }
+
+                    builder.Append("candidate|")
+                        .Append(item.Role).Append('|')
+                        .Append(item.MinisterId).Append('|')
+                        .Append(item.Name).Append('|')
+                        .Append(item.Title).Append('|')
+                        .Append(item.IconResource).Append('|')
+                        .Append(item.AvatarText).Append('|')
+                        .Append(item.IsVacant).Append('|')
+                        .Append(item.RoleVacant).Append('|')
+                        .Append(item.Affection).Append('|')
+                        .Append(item.AffectionPulseSequence).Append('|')
+                        .Append(item.AffectionPulseDelta).Append('|');
+                    var attributes = HasAttributes(item.Attributes)
+                        ? item.Attributes
+                        : MinisterAttributeResourceFallback.ForRole(item.Role);
+                    if (attributes != null)
+                    {
+                        for (var j = 0; j < attributes.Count; j++)
+                        {
+                            var attribute = attributes[j];
+                            builder.Append(attribute?.Key).Append('=')
+                                .Append(attribute?.Label).Append(':')
+                                .Append(attribute?.Value).Append(';');
+                        }
+                    }
+
+                    builder.Append('\n');
+                }
             }
 
             return builder.ToString();
@@ -992,14 +1142,35 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             Anchor(tabsPanel, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(230f, 0f));
             tabsPanel.gameObject.AddComponent<UguiImage>().color = new Color(1f, 1f, 1f, 0.035f);
 
-            _tabsContent = CreateUiObject("TabsContent", tabsPanel);
-            Stretch(_tabsContent, new Vector2(10f, 10f), new Vector2(-10f, -10f));
+            var tabsScrollRoot = CreateUiObject("minister-report-tabs-scroll", tabsPanel);
+            Stretch(tabsScrollRoot, new Vector2(0f, 0f), new Vector2(0f, 0f));
+
+            var tabsViewport = CreateUiObject("Viewport", tabsScrollRoot);
+            Stretch(tabsViewport, Vector2.zero, Vector2.zero);
+            tabsViewport.gameObject.AddComponent<RectMask2D>();
+            tabsViewport.gameObject.AddComponent<UguiImage>().color = Color.clear;
+
+            _tabsContent = CreateUiObject("TabsContent", tabsViewport);
+            _tabsContent.anchorMin = new Vector2(0f, 1f);
+            _tabsContent.anchorMax = new Vector2(1f, 1f);
+            _tabsContent.pivot = new Vector2(0.5f, 1f);
+            _tabsContent.offsetMin = Vector2.zero;
+            _tabsContent.offsetMax = Vector2.zero;
             var tabsLayout = _tabsContent.gameObject.AddComponent<VerticalLayoutGroup>();
-            tabsLayout.spacing = 10f;
+            tabsLayout.padding = new RectOffset(10, 10, 10, 10);
+            tabsLayout.spacing = 12f;
             tabsLayout.childControlWidth = true;
             tabsLayout.childControlHeight = true;
             tabsLayout.childForceExpandWidth = true;
             tabsLayout.childForceExpandHeight = false;
+            _tabsContent.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            _tabsScrollRect = tabsScrollRoot.gameObject.AddComponent<ScrollRect>();
+            _tabsScrollRect.viewport = tabsViewport;
+            _tabsScrollRect.content = _tabsContent;
+            _tabsScrollRect.horizontal = false;
+            _tabsScrollRect.vertical = true;
+            _tabsScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
             var conversation = CreateUiObject("minister-report-conversation", body);
             Anchor(conversation, new Vector2(0f, 0f), Vector2.one, new Vector2(254f, 0f), Vector2.zero);
