@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using TMPro;
@@ -78,7 +79,7 @@ namespace Panoptes.Presentation.Binders.Ugui
             SetActive(_references.UnitDescriptionText, state.DescriptionVisible);
             SetText(_references.PlanningSummaryText, state.PlanningSummary);
             SetActive(_references.PlanningSummaryText, state.PlanningSummaryVisible);
-            SetIcon(_references.UnitIcon, LoadIconSprite(
+            SetIcon(_references.UnitIcon, UiIconLoader.LoadSprite(
                 state.IconKey,
                 state.UnitType,
                 _references.UnitIconResourcesRoot,
@@ -119,56 +120,6 @@ namespace Panoptes.Presentation.Binders.Ugui
             image.sprite = sprite;
             image.color = sprite == null ? new Color(0.3f, 0.3f, 0.3f, 1f) : Color.white;
             image.enabled = true;
-        }
-
-        private static Sprite LoadIconSprite(string iconKey, string fallbackId, params string[] roots)
-        {
-            var sprite = LoadIconSpriteByKey(iconKey, roots);
-            return sprite != null ? sprite : LoadIconSpriteByKey(fallbackId, roots);
-        }
-
-        private static Sprite LoadIconSpriteByKey(string key, params string[] roots)
-        {
-            key = NormalizeIconKey(key);
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                return null;
-            }
-
-            var direct = Resources.Load<Sprite>(key);
-            if (direct != null)
-            {
-                return direct;
-            }
-
-            if (roots == null)
-            {
-                return null;
-            }
-
-            for (var i = 0; i < roots.Length; i++)
-            {
-                if (string.IsNullOrWhiteSpace(roots[i]))
-                {
-                    continue;
-                }
-
-                var root = roots[i].Trim().TrimEnd('/');
-                var sprite = Resources.Load<Sprite>($"{root}/{key}");
-                if (sprite != null)
-                {
-                    return sprite;
-                }
-            }
-
-            return null;
-        }
-
-        private static string NormalizeIconKey(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? string.Empty
-                : value.Trim().ToLowerInvariant();
         }
 
         public readonly struct References

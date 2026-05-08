@@ -3,7 +3,7 @@
   "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
   "bonus_tokens_per_turn": 1,
-  "max_turns": 30,
+  "max_turns": 100,
   "city_core_max_hp": 100,
   "safe_zone_radius": 4,
   "facility_takeover_turns": 2,

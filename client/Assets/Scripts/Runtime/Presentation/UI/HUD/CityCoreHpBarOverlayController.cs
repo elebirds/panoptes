@@ -9,6 +9,7 @@
 using System.Collections.Generic;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,11 +41,16 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private int fontSize = 18;
 
         [Header("Unit Stack Layout")]
-        [SerializeField] private Vector2 unitStackEntrySize = new Vector2(112f, 18f);
+        [SerializeField] private Vector2 unitStackEntrySize = new Vector2(136f, 20f);
+        [SerializeField] private Vector2 unitStackIconSize = new Vector2(18f, 18f);
         [SerializeField] private Vector2 unitStackBarSize = new Vector2(78f, 8f);
         [SerializeField] private float unitStackCountWidth = 30f;
         [SerializeField] private float unitStackScreenYOffset = -6f;
         [SerializeField] private int unitStackCountFontSize = 14;
+        [SerializeField] private bool showUnitStackNameLabel = false;
+        [SerializeField] private float unitStackNameLabelHeight = 14f;
+        [SerializeField] private int unitStackNameFontSize = 11;
+        [SerializeField] private string unitIconResourcesRoot = "Icons/Units";
 
         [Header("Colors")]
         [SerializeField] private Color neutralOwnerColor = Color.white;
@@ -55,6 +61,8 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Color hpHealthyColor = new Color(0.2f, 0.95f, 0.35f, 1f);
         [SerializeField] private Color hpWoundedColor = new Color(1f, 0.82f, 0.18f, 1f);
         [SerializeField] private Color hpCriticalColor = new Color(1f, 0.24f, 0.18f, 1f);
+        [SerializeField] private Color unitStackIconPlateColor = new Color(0.05f, 0.05f, 0.05f, 0.82f);
+        [SerializeField] private Color unitStackMixedIconPlateColor = new Color(0.32f, 0.24f, 0.48f, 0.92f);
 
         private sealed class Entry
         {
@@ -65,6 +73,10 @@ namespace Panoptes.Presentation.UI.HUD
             public RectTransform Root;
             public Image Plate;
             public TextMeshProUGUI Name;
+            public Image UnitIconPlate;
+            public Image UnitIcon;
+            public TextMeshProUGUI UnitIconFallbackText;
+            public TextMeshProUGUI UnitNameText;
             public Image Fill;
             public TextMeshProUGUI ValueText;
             public TextMeshProUGUI CountText;
@@ -76,13 +88,16 @@ namespace Panoptes.Presentation.UI.HUD
             public int LastCount = int.MinValue;
             public float LastRatio = -1f;
             public string LastOwnerId = string.Empty;
+            public string LastIdentityKey = string.Empty;
         }
 
         private readonly Dictionary<string, Entry> _cityCoreEntries = new Dictionary<string, Entry>();
         private readonly Dictionary<string, Entry> _unitStackEntries = new Dictionary<string, Entry>();
         private readonly List<UnitView> _unitStackScratch = new List<UnitView>(8);
+        private readonly List<UnitView> _combatUnitStackScratch = new List<UnitView>(8);
         private readonly List<string> _staleScratch = new List<string>(16);
         private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);
+        private readonly UnitStackOverlayStateBuilder _unitStackStateBuilder = new UnitStackOverlayStateBuilder();
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
@@ -324,9 +339,7 @@ namespace Panoptes.Presentation.UI.HUD
                     continue;
                 }
 
-                var count = 0;
-                var totalHp = 0;
-                var totalMaxHp = 0;
+                _combatUnitStackScratch.Clear();
                 UnitView trackedUnit = null;
                 for (var i = 0; i < _unitStackScratch.Count; i++)
                 {
@@ -340,14 +353,13 @@ namespace Panoptes.Presentation.UI.HUD
                     {
                         trackedUnit = unit;
                     }
-                    count++;
-                    var maxHp = Mathf.Max(1, unit.MaxHitPoints > 0 ? unit.MaxHitPoints : unit.HitPoints);
-                    totalHp += Mathf.Clamp(unit.HitPoints, 0, maxHp);
-                    totalMaxHp += maxHp;
+                    _combatUnitStackScratch.Add(unit);
                 }
 
-                if (count <= 0 || totalMaxHp <= 0)
+                var unitState = _unitStackStateBuilder.Build(_combatUnitStackScratch, _staticCatalogStore?.Snapshot);
+                if (!unitState.HasUnits)
                 {
+                    _combatUnitStackScratch.Clear();
                     continue;
                 }
 
@@ -359,15 +371,16 @@ namespace Panoptes.Presentation.UI.HUD
                 else
                 {
                     entry.Node = node;
-                    if (entry.LastCount != count)
+                    if (entry.LastCount != unitState.Count)
                     {
-                        entry.WorldHeightOffset = ComputeUnitStackHeightOffset(_unitStackScratch, node);
+                        entry.WorldHeightOffset = ComputeUnitStackHeightOffset(_combatUnitStackScratch, node);
                     }
                 }
 
                 entry.Unit = trackedUnit;
                 entry.SeenVersion = _syncVersion;
-                RefreshUnitStackVisual(entry, totalHp, totalMaxHp, count);
+                RefreshUnitStackVisual(entry, unitState);
+                _combatUnitStackScratch.Clear();
             }
 
             _staleScratch.Clear();
@@ -497,6 +510,46 @@ namespace Panoptes.Presentation.UI.HUD
             root.anchorMax = new Vector2(0.5f, 0.5f);
             root.pivot = new Vector2(0.5f, 0.5f);
 
+            var iconPlateGo = new GameObject("UnitIconPlate", typeof(RectTransform), typeof(Image));
+            var iconPlateRect = iconPlateGo.transform as RectTransform;
+            iconPlateRect.SetParent(root, false);
+            iconPlateRect.anchorMin = new Vector2(0f, 0.5f);
+            iconPlateRect.anchorMax = new Vector2(0f, 0.5f);
+            iconPlateRect.pivot = new Vector2(0f, 0.5f);
+            iconPlateRect.sizeDelta = unitStackIconSize;
+            iconPlateRect.anchoredPosition = Vector2.zero;
+            var iconPlate = iconPlateGo.GetComponent<Image>();
+            iconPlate.sprite = GetDefaultSprite();
+            iconPlate.color = unitStackIconPlateColor;
+
+            var iconGo = new GameObject("UnitIcon", typeof(RectTransform), typeof(Image));
+            var iconRect = iconGo.transform as RectTransform;
+            iconRect.SetParent(iconPlateRect, false);
+            iconRect.anchorMin = Vector2.zero;
+            iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(2f, 2f);
+            iconRect.offsetMax = new Vector2(-2f, -2f);
+            var icon = iconGo.GetComponent<Image>();
+            icon.raycastTarget = false;
+            icon.preserveAspect = true;
+
+            var fallbackGo = new GameObject("UnitIconFallback", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var fallbackRect = fallbackGo.transform as RectTransform;
+            fallbackRect.SetParent(iconPlateRect, false);
+            fallbackRect.anchorMin = Vector2.zero;
+            fallbackRect.anchorMax = Vector2.one;
+            fallbackRect.offsetMin = Vector2.zero;
+            fallbackRect.offsetMax = Vector2.zero;
+            var fallbackText = fallbackGo.GetComponent<TextMeshProUGUI>();
+            fallbackText.fontSize = Mathf.Max(9, unitStackNameFontSize);
+            fallbackText.fontStyle = FontStyles.Bold;
+            fallbackText.alignment = TextAlignmentOptions.Center;
+            fallbackText.textWrappingMode = TextWrappingModes.NoWrap;
+            fallbackText.enableAutoSizing = false;
+            fallbackText.extraPadding = true;
+            fallbackText.color = Color.white;
+            fallbackText.raycastTarget = false;
+
             var barBgGo = new GameObject("HpBarBg", typeof(RectTransform), typeof(Image));
             var barBgRect = barBgGo.transform as RectTransform;
             barBgRect.SetParent(root, false);
@@ -504,7 +557,7 @@ namespace Panoptes.Presentation.UI.HUD
             barBgRect.anchorMax = new Vector2(0f, 0.5f);
             barBgRect.pivot = new Vector2(0f, 0.5f);
             barBgRect.sizeDelta = unitStackBarSize;
-            barBgRect.anchoredPosition = Vector2.zero;
+            barBgRect.anchoredPosition = new Vector2(unitStackIconSize.x + spacing, 0f);
             var barBg = barBgGo.GetComponent<Image>();
             barBg.sprite = GetDefaultSprite();
             barBg.color = hpBarBgColor;
@@ -532,7 +585,7 @@ namespace Panoptes.Presentation.UI.HUD
             countRect.anchorMax = new Vector2(0f, 0.5f);
             countRect.pivot = new Vector2(0f, 0.5f);
             countRect.sizeDelta = new Vector2(Mathf.Max(18f, unitStackCountWidth), Mathf.Max(12f, unitStackEntrySize.y));
-            countRect.anchoredPosition = new Vector2(unitStackBarSize.x + spacing, 0f);
+            countRect.anchoredPosition = new Vector2(unitStackIconSize.x + spacing + unitStackBarSize.x + spacing, 0f);
             var countText = countGo.GetComponent<TextMeshProUGUI>();
             countText.fontSize = Mathf.Max(10, unitStackCountFontSize);
             countText.fontStyle = FontStyles.Bold;
@@ -543,7 +596,32 @@ namespace Panoptes.Presentation.UI.HUD
             countText.color = Color.white;
             countText.raycastTarget = false;
 
-            root.sizeDelta = new Vector2(unitStackBarSize.x + spacing + unitStackCountWidth, Mathf.Max(unitStackEntrySize.y, unitStackBarSize.y));
+            var nameGo = new GameObject("UnitName", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var nameRect = nameGo.transform as RectTransform;
+            nameRect.SetParent(root, false);
+            nameRect.anchorMin = new Vector2(0f, 0.5f);
+            nameRect.anchorMax = new Vector2(0f, 0.5f);
+            nameRect.pivot = new Vector2(0f, 0.5f);
+            var entryWidth = unitStackIconSize.x + spacing + unitStackBarSize.x + spacing + unitStackCountWidth;
+            nameRect.sizeDelta = new Vector2(entryWidth, Mathf.Max(10f, unitStackNameLabelHeight));
+            nameRect.anchoredPosition = new Vector2(0f, -(unitStackIconSize.y + unitStackNameLabelHeight) * 0.5f);
+            var nameText = nameGo.GetComponent<TextMeshProUGUI>();
+            nameText.fontSize = Mathf.Max(9, unitStackNameFontSize);
+            nameText.fontStyle = FontStyles.Bold;
+            nameText.alignment = TextAlignmentOptions.Center;
+            nameText.textWrappingMode = TextWrappingModes.NoWrap;
+            nameText.enableAutoSizing = false;
+            nameText.extraPadding = true;
+            nameText.color = Color.white;
+            nameText.raycastTarget = false;
+            nameGo.SetActive(showUnitStackNameLabel);
+
+            var entryHeight = Mathf.Max(unitStackEntrySize.y, unitStackIconSize.y, unitStackBarSize.y);
+            if (showUnitStackNameLabel)
+            {
+                entryHeight += Mathf.Max(10f, unitStackNameLabelHeight);
+            }
+            root.sizeDelta = new Vector2(entryWidth, entryHeight);
 
             return new Entry
             {
@@ -551,9 +629,13 @@ namespace Panoptes.Presentation.UI.HUD
                 Node = node,
                 Unit = null,
                 Root = root,
+                UnitIconPlate = iconPlate,
+                UnitIcon = icon,
+                UnitIconFallbackText = fallbackText,
+                UnitNameText = nameText,
                 Fill = fill,
                 CountText = countText,
-                WorldHeightOffset = ComputeUnitStackHeightOffset(_unitStackScratch, node),
+                WorldHeightOffset = ComputeUnitStackHeightOffset(_combatUnitStackScratch, node),
                 ScreenYOffset = unitStackScreenYOffset
             };
         }
@@ -597,15 +679,15 @@ namespace Panoptes.Presentation.UI.HUD
             entry.LastHp = hp;
             entry.LastMaxHp = maxHp;
         }
-        private void RefreshUnitStackVisual(Entry entry, int hp, int maxHp, int count)
+        private void RefreshUnitStackVisual(Entry entry, UnitStackOverlayState state)
         {
             if (entry == null)
             {
                 return;
             }
 
-            maxHp = Mathf.Max(1, maxHp);
-            hp = Mathf.Clamp(hp, 0, maxHp);
+            var maxHp = Mathf.Max(1, state.MaxHp);
+            var hp = Mathf.Clamp(state.Hp, 0, maxHp);
             var ratio = Mathf.Clamp01(hp / (float)maxHp);
             if (entry.Fill != null && !Mathf.Approximately(entry.LastRatio, ratio))
             {
@@ -614,14 +696,51 @@ namespace Panoptes.Presentation.UI.HUD
                 entry.LastRatio = ratio;
             }
 
-            if (entry.CountText != null && entry.LastCount != count)
+            if (entry.CountText != null && entry.LastCount != state.Count)
             {
-                entry.CountText.text = $"x{Mathf.Max(1, count)}";
+                entry.CountText.text = $"x{Mathf.Max(1, state.Count)}";
             }
 
+            RefreshUnitStackIdentityVisual(entry, state);
             entry.LastHp = hp;
             entry.LastMaxHp = maxHp;
-            entry.LastCount = count;
+            entry.LastCount = state.Count;
+        }
+
+        private void RefreshUnitStackIdentityVisual(Entry entry, UnitStackOverlayState state)
+        {
+            var identityKey = $"{state.UnitType}|{state.IconKey}|{state.DisplayName}|{state.FallbackText}|{state.IsMixed}|{showUnitStackNameLabel}";
+            if (string.Equals(entry.LastIdentityKey, identityKey, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var icon = UiIconLoader.LoadSprite(state.IconKey, state.UnitType, unitIconResourcesRoot);
+            if (entry.UnitIcon != null)
+            {
+                entry.UnitIcon.sprite = icon;
+                entry.UnitIcon.enabled = icon != null;
+                entry.UnitIcon.color = icon == null ? Color.clear : Color.white;
+            }
+
+            if (entry.UnitIconFallbackText != null)
+            {
+                entry.UnitIconFallbackText.text = icon == null ? state.FallbackText : string.Empty;
+                entry.UnitIconFallbackText.gameObject.SetActive(icon == null);
+            }
+
+            if (entry.UnitIconPlate != null)
+            {
+                entry.UnitIconPlate.color = state.IsMixed ? unitStackMixedIconPlateColor : unitStackIconPlateColor;
+            }
+
+            if (entry.UnitNameText != null)
+            {
+                entry.UnitNameText.text = state.DisplayName;
+                entry.UnitNameText.gameObject.SetActive(showUnitStackNameLabel && !string.IsNullOrWhiteSpace(state.DisplayName));
+            }
+
+            entry.LastIdentityKey = identityKey;
         }
         private void UpdateEntryTransforms()
         {

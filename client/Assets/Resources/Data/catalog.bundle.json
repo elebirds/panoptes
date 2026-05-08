@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "97e4a4fb7439743e9bdb94c6d722084d3b00c8b887a818c45ed8f6b590a0cb11",
+    "bundle_hash": "430b7e56c4caeee75fecb7eb7c22726f9f637b53453bd1bf7ce1e9f26b9e1dde",
     "required_sections": [
       "resources",
       "points",
@@ -57,7 +57,7 @@
       },
       {
         "section_name": "rules",
-        "hash": "62be3faaccd45e2fb80d365b522cdfc0ebd7b0c776df8f9422444f11b48935fd"
+        "hash": "effc1e3b359f6170453e79d5524add3f77e0f0823b16d4daa39c7471e12f6359"
       },
       {
         "section_name": "technologies",
@@ -2496,7 +2496,7 @@
     "turn_time_limit_planning": 35,
     "tokens_per_turn": 3,
     "bonus_tokens_per_turn": 1,
-    "max_turns": 30,
+    "max_turns": 100,
     "city_core_max_hp": 100,
     "safe_zone_radius": 4,
     "facility_takeover_turns": 2,
