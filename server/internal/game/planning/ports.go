@@ -43,6 +43,8 @@ type planningViewPort interface {
 
 type planningModePort interface {
 	IsDevMode() bool
+	IsMinisterStrongMode() bool
+	IsPlayerInMandateMode(playerID string) bool
 	SetPlayerMandateMode(playerID string, enabled bool)
 }
 

@@ -1268,6 +1268,98 @@ func TestSetPolicyQueuesDraftAndSnapshot(t *testing.T) {
 	}
 }
 
+func TestStrongModeBlocksDirectPlanningUntilMandateModeIsEnabled(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+			{ID: "frontier", Layer: "national", ActivationTiming: "same_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-strong-mode", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].TokensLeft = 3
+	session := newPlanningSessionStub(state)
+	session.ministerStrongMode = true
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	result := lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("mandate result = %#v, want invalid_directive", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty", got)
+	}
+
+	session.sent["player-1"] = nil
+	state.Players["player-1"].TokensLeft = 0
+	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "frontier"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() with no tokens error = %v", err)
+	}
+	result = lastMessage[*pb.MsgMandateResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "no_mandate_tokens" || result.GetMessage() != "亲政令牌不足，无法进入亲政模式" {
+		t.Fatalf("mandate result = %#v, want no_mandate_tokens with token guidance", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty after no-token rejection", got)
+	}
+
+	session.sent["player-1"] = nil
+	state.Players["player-1"].TokensLeft = 3
+	session.mandateModeByPlayer["player-1"] = true
+	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	resultPolicy := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if resultPolicy == nil || !resultPolicy.GetSuccess() {
+		t.Fatalf("set policy result = %#v, want success after mandate mode", resultPolicy)
+	}
+}
+
+func TestStrongModeDoesNotBlockAutonomousPlanning(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-strong-mode-bot", []string{"bot-1"}, []string{"bot"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	session.ministerStrongMode = true
+	session.autonomousPlayers = map[string]bool{"bot-1": true}
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "bot-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	resultPolicy := lastMessage[*pb.MsgSetPolicyResult](session.sent["bot-1"])
+	if resultPolicy == nil || !resultPolicy.GetSuccess() {
+		t.Fatalf("set policy result = %#v, want autonomous success in strong mode", resultPolicy)
+	}
+}
+
 func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Policies: []staticdata.PolicyDefinition{
@@ -1390,6 +1482,8 @@ type planningSessionStub struct {
 	state               *domain.GameState
 	sent                map[string][]proto.Message
 	devMode             bool
+	ministerStrongMode  bool
+	autonomousPlayers   map[string]bool
 	submitted           []string
 	memoryEntries       []planningSessionMemoryRecord
 	mandateModeByPlayer map[string]bool
@@ -1503,6 +1597,12 @@ func (s *planningSessionStub) SendToPlayer(_ context.Context, playerID string, m
 }
 
 func (s *planningSessionStub) IsDevMode() bool { return s.devMode }
+
+func (s *planningSessionStub) IsMinisterStrongMode() bool { return s.ministerStrongMode }
+
+func (s *planningSessionStub) IsPlayerInMandateMode(playerID string) bool {
+	return s.mandateModeByPlayer[playerID]
+}
 
 func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 	s.state.TurnRuntime.Planning.UpsertBuildOrder(order)

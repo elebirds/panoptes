@@ -205,6 +205,47 @@ if errCode := economy.ValidateBuildOrder(state, playerID, nodeID, buildingType, 
 }
 ```
 
+### Scenario: Minister Participation Mode Gates Direct Planning
+
+#### 1. Scope / Trigger
+- Trigger: backend changes that alter how players bypass minister suggestions or issue direct planning commands.
+- The mandate-mode flag must be consumed by planning command routing, not just set by the `direct_command` minister directive.
+
+#### 2. Signatures
+- Config field: `Config.MinisterLLMParticipationMode string`
+- Environment key: `MINISTER_LLM_PARTICIPATION_MODE`
+- Default value: `weak`
+- Runtime query: `Runtime.IsMinisterStrongMode() bool`
+- Planning-session queries:
+  - `IsMinisterStrongMode() bool`
+  - `IsPlayerInMandateMode(playerID string) bool`
+
+#### 3. Contracts
+- `weak` mode preserves existing behavior: players may issue normal planning commands directly.
+- `strong` mode requires human players to have mandate-mode authority before direct gameplay intents can mutate planning state.
+- Autonomous participants remain governed by their controller/rulebot flow and are not blocked by the human minister participation gate.
+- `SetMinisterDirectiveIntent`, `SubmitTurnIntent`, and `RevealNodeIntent` remain allowed without mandate mode.
+- The `direct_command` minister directive spends a mandate token and enables mandate mode through `SetPlayerMandateMode`.
+- Direct gameplay commands rejected by strong mode must not mutate planning state.
+
+#### 4. Validation & Error Matrix
+- Weak mode + direct command -> process through the existing handler.
+- Strong mode + player already in mandate mode -> process through the existing handler.
+- Strong mode + no mandate mode + direct gameplay intent -> reject before the command-specific handler runs.
+- Strong mode + no mandate mode + no tokens left -> return `no_mandate_tokens`.
+- Strong mode + no mandate mode + tokens available -> return `invalid_directive` with mandate guidance.
+
+#### 5. Good/Base/Bad Cases
+- Good: player sends `direct_command`, spends one mandate token, then queues a policy/build/unit order through normal validation.
+- Base: weak mode behaves exactly like the pre-existing planning command flow.
+- Bad: `direct_command` sets a runtime flag that no planning path reads, or strong mode bypasses normal command validation.
+
+#### 6. Tests Required
+- Config/env test reads `MINISTER_LLM_PARTICIPATION_MODE`.
+- Runtime test verifies strong-mode detection is trimmed and case-insensitive.
+- Planning test verifies strong mode rejects a direct gameplay intent before state mutation.
+- Planning test verifies the same direct gameplay intent succeeds once mandate mode is enabled.
+
 ---
 
 ## Testing Requirements

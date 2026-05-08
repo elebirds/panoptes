@@ -149,6 +149,10 @@ func (r *GameRoom) IsDevMode() bool {
 	return r != nil && r.runtime != nil && r.runtime.IsDevMode()
 }
 
+func (r *GameRoom) IsMinisterStrongMode() bool {
+	return r != nil && r.runtime != nil && r.runtime.IsMinisterStrongMode()
+}
+
 func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
 	if r == nil || r.runtime == nil {
 		return nil

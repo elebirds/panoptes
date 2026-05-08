@@ -379,6 +379,12 @@ func (h *stubCoordinatorHost) NextChatSequence() int64                  { return
 func (h *stubCoordinatorHost) IsDevMode() bool {
 	return h != nil && h.runtime != nil && h.runtime.IsDevMode()
 }
+func (h *stubCoordinatorHost) IsMinisterStrongMode() bool {
+	return h != nil && h.runtime != nil && h.runtime.IsMinisterStrongMode()
+}
+func (h *stubCoordinatorHost) IsPlayerInMandateMode(playerID string) bool {
+	return h != nil && h.runtime != nil && h.runtime.IsPlayerInMandateMode(playerID)
+}
 func (h *stubCoordinatorHost) QueueBuildOrder(order domain.BuildOrder) {
 	if h.State() != nil {
 		h.State().TurnRuntime.Planning.UpsertBuildOrder(order)

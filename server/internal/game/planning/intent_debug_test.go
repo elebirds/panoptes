@@ -297,5 +297,9 @@ func (s *planningSessionStub) Participant(participantID string) (participant.Par
 	if !ok || playerState == nil {
 		return participant.Participant{}, false
 	}
-	return participant.Participant{ID: participantID, Username: playerState.Username, Kind: participant.KindHuman}, true
+	kind := participant.KindHuman
+	if s.autonomousPlayers[participantID] {
+		kind = participant.KindBot
+	}
+	return participant.Participant{ID: participantID, Username: playerState.Username, Kind: kind}, true
 }

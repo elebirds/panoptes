@@ -308,6 +308,18 @@ func TestRuntimeClearMandateModesResetsDirectCommandAuthority(t *testing.T) {
 	}
 }
 
+func TestRuntimeMinisterStrongModeReadsConfig(t *testing.T) {
+	runtime := NewRuntime("room-1", nil, nil, &config.Config{MinisterLLMParticipationMode: " strong "})
+	if !runtime.IsMinisterStrongMode() {
+		t.Fatalf("minister strong mode not enabled")
+	}
+
+	runtime = NewRuntime("room-1", nil, nil, &config.Config{MinisterLLMParticipationMode: "weak"})
+	if runtime.IsMinisterStrongMode() {
+		t.Fatalf("minister strong mode enabled for weak mode")
+	}
+}
+
 func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "default"},

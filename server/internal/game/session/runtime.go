@@ -9,6 +9,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/elebirds/panoptes/internal/config"
@@ -108,6 +109,13 @@ func (r *Runtime) Cancel() {
 
 func (r *Runtime) IsDevMode() bool {
 	return r != nil && r.cfg != nil && r.cfg.DevMode
+}
+
+func (r *Runtime) IsMinisterStrongMode() bool {
+	if r == nil || r.cfg == nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(r.cfg.MinisterLLMParticipationMode), "strong")
 }
 
 func (r *Runtime) ParticipantIDs() []string {

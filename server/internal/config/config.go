@@ -37,4 +37,7 @@ type Config struct {
 	MinisterLLMModel     string `env:"MINISTER_LLM_MODEL" envDefault:""`
 	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"50000"`
 	MinisterLLMRoles     string `env:"MINISTER_LLM_ENABLED_ROLES" envDefault:"domestic,military"`
+	// weak: players may issue normal planning commands freely.
+	// strong: direct gameplay commands require mandate-mode authority.
+	MinisterLLMParticipationMode string `env:"MINISTER_LLM_PARTICIPATION_MODE" envDefault:"weak"`
 }
