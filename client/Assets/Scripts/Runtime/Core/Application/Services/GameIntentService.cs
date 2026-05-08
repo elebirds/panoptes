@@ -93,6 +93,14 @@ namespace Panoptes.Core.Application.Services
             return true;
         }
 
+        public bool AcknowledgeTurnReport(int turn)
+        {
+            return Send(new MsgAcknowledgeTurnReport
+            {
+                Turn = turn
+            });
+        }
+
         public bool SendChatEmote(GameChatEmoteKind emote)
         {
             return Send(new MsgSendGameChat

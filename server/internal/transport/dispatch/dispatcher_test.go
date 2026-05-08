@@ -23,10 +23,11 @@ func (h *stubLobbyHandler) StartGame(InboundContext, *pb.MsgStartGame) error   {
 func (h *stubLobbyHandler) KickPlayer(InboundContext, *pb.MsgKickPlayer) error { return nil }
 
 type stubGameHandler struct {
-	planning *pb.PlanningCommand
-	syncReq  *pb.MsgStaticCatalogSyncRequest
-	chat     *pb.ChatCommand
-	batch    *pb.MsgGameCommandBatch
+	planning      *pb.PlanningCommand
+	syncReq       *pb.MsgStaticCatalogSyncRequest
+	chat          *pb.ChatCommand
+	batch         *pb.MsgGameCommandBatch
+	turnReportAck *pb.MsgAcknowledgeTurnReport
 }
 
 func (h *stubGameHandler) Planning(_ InboundContext, cmd *pb.PlanningCommand) error {
@@ -46,6 +47,11 @@ func (h *stubGameHandler) Chat(_ InboundContext, cmd *pb.ChatCommand) error {
 
 func (h *stubGameHandler) CommandBatch(_ InboundContext, cmd *pb.MsgGameCommandBatch) error {
 	h.batch = cmd
+	return nil
+}
+
+func (h *stubGameHandler) AcknowledgeTurnReport(_ InboundContext, cmd *pb.MsgAcknowledgeTurnReport) error {
+	h.turnReportAck = cmd
 	return nil
 }
 

@@ -57,6 +57,16 @@ func ProjectGameSyncFromObservation(
 	return msg
 }
 
+func ProjectTurnReport(turn int32, timeoutSeconds int32, nextPhase string) *pb.MsgTurnReport {
+	return &pb.MsgTurnReport{
+		Turn:           turn,
+		Summary:        "本回合战报已生成",
+		TimeoutSeconds: timeoutSeconds,
+		Phase:          domain.PhaseTurnReport.String(),
+		NextPhase:      nextPhase,
+	}
+}
+
 func DomainEventEnvelopes(collector *gameresolution.Collector, turn int32, phase string) []*pb.DomainEventEnvelope {
 	if collector == nil {
 		collector = gameresolution.NewCollector()

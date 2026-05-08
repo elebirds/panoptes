@@ -118,6 +118,10 @@ func (a gameAdapter) CommandBatch(ctx cmddispatch.InboundContext, cmd *pb.MsgGam
 	return a.handle(ctx, &pb.GameCommand{Body: &pb.GameCommand_CommandBatch{CommandBatch: cmd}})
 }
 
+func (a gameAdapter) AcknowledgeTurnReport(ctx cmddispatch.InboundContext, cmd *pb.MsgAcknowledgeTurnReport) error {
+	return a.handle(ctx, &pb.GameCommand{Body: &pb.GameCommand_AcknowledgeTurnReport{AcknowledgeTurnReport: cmd}})
+}
+
 func (a gameAdapter) handle(ctx cmddispatch.InboundContext, cmd *pb.GameCommand) error {
 	if a.handler == nil {
 		return transportproblem.InternalError("game handler is not configured")

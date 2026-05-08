@@ -9,6 +9,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Animation;
@@ -46,9 +47,12 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
         private SettlementStore _settlementStore;
+        private TurnStore _turnStore;
+        private GameIntentService _gameIntentService;
         private MapRenderer _mapRenderer;
         private AnimationQueue _animationQueue;
         private IDisposable _settlementSubscription;
+        private IDisposable _turnSubscription;
         private Coroutine _playbackCoroutine;
         private SettlementPlaybackRunner _runner;
         private UnitView _playbackSelectedUnit;
@@ -59,15 +63,25 @@ namespace Panoptes.Presentation.Map
         private int _lastHandledSettlementSequence;
         private bool _inputLockedForPlayback;
         private bool _isPlayingSettlement;
+        private int _turnReportTurn;
+        private float _turnReportDeadline = -1f;
+        private bool _turnReportPlaybackCompleted;
+        private int _turnReportPlaybackCompletedTurn;
+        private bool _turnReportAckSent;
+        private bool _turnReportActive;
 
         [Inject]
         private void Construct(
             SettlementStore settlementStore,
+            TurnStore turnStore,
+            GameIntentService gameIntentService,
             MapRenderer mapRenderer,
             AnimationQueue animationQueue,
             DamageNumberPopupController injectedDamagePopupController)
         {
             _settlementStore = settlementStore;
+            _turnStore = turnStore;
+            _gameIntentService = gameIntentService;
             _mapRenderer = mapRenderer;
             _animationQueue = animationQueue;
             if (damagePopupController == null)
@@ -85,29 +99,37 @@ namespace Panoptes.Presentation.Map
             EnsureRunner();
             EnsureControlOverlay();
             UpdatePlaybackControls();
+            SubscribeTurn();
             SubscribeSettlement();
         }
 
         private void OnDisable()
         {
+            _turnSubscription?.Dispose();
+            _turnSubscription = null;
+
             _settlementSubscription?.Dispose();
             _settlementSubscription = null;
 
-            SkipPlayback();
+            StopPlayback(false);
+            ResetTurnReportGate();
             _controlOverlay?.Dispose();
             _controlOverlay = null;
         }
 
         private void Update()
         {
-            if (!_isPlayingSettlement)
-            {
-                return;
-            }
-
-            if (WasSkipRequested())
+            if (_isPlayingSettlement && WasSkipRequested())
             {
                 SkipPlayback();
+            }
+
+            if (_turnReportActive &&
+                !_turnReportAckSent &&
+                _turnReportDeadline > 0f &&
+                Time.unscaledTime >= _turnReportDeadline)
+            {
+                HandleTurnReportTimeout();
             }
         }
 
@@ -131,6 +153,11 @@ namespace Panoptes.Presentation.Map
 
         public void SkipPlayback()
         {
+            StopPlayback(true);
+        }
+
+        private void StopPlayback(bool acknowledgeTurnReport)
+        {
             if (_playbackCoroutine != null)
             {
                 StopCoroutine(_playbackCoroutine);
@@ -144,6 +171,10 @@ namespace Panoptes.Presentation.Map
             _cameraPolicy = null;
             _isPlayingSettlement = false;
             UpdatePlaybackControls();
+            if (acknowledgeTurnReport)
+            {
+                MarkTurnReportPlaybackCompleted();
+            }
         }
 
         public bool FocusSettlementEvent(TurnEventDto evt)
@@ -200,6 +231,7 @@ namespace Panoptes.Presentation.Map
             if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
                 UpdatePlaybackControls();
+                MarkTurnReportPlaybackCompleted();
                 return;
             }
 
@@ -213,6 +245,110 @@ namespace Panoptes.Presentation.Map
             _playbackCoroutine = StartCoroutine(PlaySettlement(settlement));
         }
 
+        private void SubscribeTurn()
+        {
+            _turnSubscription?.Dispose();
+            _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.OnTurnChanged(state));
+            OnTurnChanged(_turnStore?.Snapshot);
+        }
+
+        private void OnTurnChanged(TurnState state)
+        {
+            if (state == null)
+            {
+                ResetTurnReportGate();
+                return;
+            }
+
+            if (!string.Equals(state.Phase, GamePhases.TurnReport, StringComparison.Ordinal))
+            {
+                if (_turnReportActive && !_turnReportAckSent && _isPlayingSettlement)
+                {
+                    StopPlayback(false);
+                }
+
+                ResetTurnReportGate();
+                return;
+            }
+
+            var turn = state.Turn;
+            var timeoutSeconds = Mathf.Max(0, state.TimeoutSeconds);
+            var turnChanged = turn != _turnReportTurn;
+            _turnReportTurn = turn;
+            _turnReportActive = true;
+            if (turnChanged)
+            {
+                _turnReportAckSent = false;
+                _turnReportPlaybackCompleted = _turnReportPlaybackCompletedTurn == turn;
+            }
+
+            _turnReportDeadline = timeoutSeconds > 0 ? Time.unscaledTime + timeoutSeconds : -1f;
+            TryAcknowledgeTurnReport();
+        }
+
+        private void HandleTurnReportTimeout()
+        {
+            if (!_turnReportActive || _turnReportAckSent)
+            {
+                return;
+            }
+
+            if (_isPlayingSettlement)
+            {
+                StopPlayback(true);
+                return;
+            }
+
+            MarkTurnReportPlaybackCompleted();
+        }
+
+        private void MarkTurnReportPlaybackCompleted()
+        {
+            if (_turnReportAckSent)
+            {
+                return;
+            }
+
+            _turnReportPlaybackCompleted = true;
+            if (_turnStore?.Snapshot != null && _turnStore.Snapshot.Turn > 0)
+            {
+                _turnReportPlaybackCompletedTurn = _turnStore.Snapshot.Turn;
+            }
+            else if (_turnReportTurn > 0)
+            {
+                _turnReportPlaybackCompletedTurn = _turnReportTurn;
+            }
+            TryAcknowledgeTurnReport();
+        }
+
+        private void TryAcknowledgeTurnReport()
+        {
+            if (!_turnReportActive || _turnReportAckSent || _turnReportTurn <= 0)
+            {
+                return;
+            }
+
+            var deadlineReached = _turnReportDeadline > 0f && Time.unscaledTime >= _turnReportDeadline;
+            if (!_turnReportPlaybackCompleted && !deadlineReached)
+            {
+                return;
+            }
+
+            if (_gameIntentService?.AcknowledgeTurnReport(_turnReportTurn) == true)
+            {
+                _turnReportAckSent = true;
+            }
+        }
+
+        private void ResetTurnReportGate()
+        {
+            _turnReportTurn = 0;
+            _turnReportDeadline = -1f;
+            _turnReportPlaybackCompleted = false;
+            _turnReportAckSent = false;
+            _turnReportActive = false;
+        }
+
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
             BeginPlaybackInputLock();
@@ -221,6 +357,7 @@ namespace Panoptes.Presentation.Map
             _cameraPolicy = SettlementCameraPolicy.Start(playbackMode);
             _animationQueue?.CancelUnitMoves();
             UpdatePlaybackControls();
+            var playbackCompletedNaturally = false;
             try
             {
                 var steps = SettlementPlaybackPlanBuilder.Build(settlement);
@@ -228,25 +365,29 @@ namespace Panoptes.Presentation.Map
                 if (schedule.Windows.Count == 0)
                 {
                     _mapRenderer?.ReconcileUnitsToCurrentState();
-                    yield break;
+                    playbackCompletedNaturally = true;
                 }
-
-                var scheduledSteps = CollectScheduledSteps(schedule.Windows);
-                EnsureSettlementPlaybackImpactUnits(settlement);
-                _mapRenderer?.PrepareSettlementPlaybackUnits(scheduledSteps);
-                PrimeUnitHpBeforePlayback(scheduledSteps);
-                PrimeBuildingHpBeforePlayback(scheduledSteps);
-                if (initialPlaybackDelaySeconds > 0.0001f)
+                else
                 {
-                    yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
-                }
+                    var scheduledSteps = CollectScheduledSteps(schedule.Windows);
+                    EnsureSettlementPlaybackImpactUnits(settlement);
+                    _mapRenderer?.PrepareSettlementPlaybackUnits(scheduledSteps);
+                    PrimeUnitHpBeforePlayback(scheduledSteps);
+                    PrimeBuildingHpBeforePlayback(scheduledSteps);
+                    if (initialPlaybackDelaySeconds > 0.0001f)
+                    {
+                        yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
+                    }
 
-                _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(scheduledSteps, 0, preserveHitPoints: true);
-                PrimeUnitHpBeforePlayback(scheduledSteps);
-                PrimeBuildingHpBeforePlayback(scheduledSteps);
-                for (var windowIndex = 0; windowIndex < schedule.Windows.Count; windowIndex++)
-                {
-                    yield return PlayWindow(schedule.Windows[windowIndex]);
+                    _mapRenderer?.PlaceSettlementPlaybackUnitsAtMoveStarts(scheduledSteps, 0, preserveHitPoints: true);
+                    PrimeUnitHpBeforePlayback(scheduledSteps);
+                    PrimeBuildingHpBeforePlayback(scheduledSteps);
+                    for (var windowIndex = 0; windowIndex < schedule.Windows.Count; windowIndex++)
+                    {
+                        yield return PlayWindow(schedule.Windows[windowIndex]);
+                    }
+
+                    playbackCompletedNaturally = true;
                 }
             }
             finally
@@ -259,6 +400,11 @@ namespace Panoptes.Presentation.Map
                 _cameraPolicy = null;
                 _isPlayingSettlement = false;
                 UpdatePlaybackControls();
+            }
+
+            if (playbackCompletedNaturally)
+            {
+                MarkTurnReportPlaybackCompleted();
             }
         }
 

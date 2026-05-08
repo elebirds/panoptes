@@ -29,6 +29,7 @@ type Config struct {
 
 	// 对局配置
 	DefaultMaxPlayers int `env:"DEFAULT_MAX_PLAYERS" envDefault:"2"`
+	TurnReportTimeoutMs int `env:"TURN_REPORT_TIMEOUT_MS" envDefault:"10000"`
 
 	// Minister LLM 配置
 	MinisterLLMEnabled   bool   `env:"MINISTER_LLM_ENABLED" envDefault:"false"`

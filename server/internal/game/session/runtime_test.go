@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
@@ -246,6 +247,67 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		if _, ok := msg.(*pb.MsgGameChatSync); ok {
 			t.Fatalf("message[%d] unexpectedly sends MsgGameChatSync in current MVP", idx)
 		}
+	}
+}
+
+func TestRuntimeTurnReportLifecycleWaitsForAllHumanAcks(t *testing.T) {
+	runtime := NewRuntime("room-1", []ParticipantBinding{
+		{
+			Participant: participant.Participant{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			Controller:  HumanController{},
+		},
+		{
+			Participant: participant.Participant{ID: "player-2", Username: "bob", Kind: participant.KindHuman},
+			Controller:  HumanController{},
+		},
+		{
+			Participant: participant.Participant{ID: "bot-1", Username: "bot", Kind: participant.KindBot},
+			Controller:  NewAutonomousController(ai.RuleBotProvider{}),
+		},
+	}, nil, &config.Config{TurnReportTimeoutMs: 50})
+	state := domain.NewGameState("room-1", []string{"player-1", "player-2", "bot-1"}, []string{"alice", "bob", "bot"}, &domain.MapData{ID: "default"})
+	runtime.SetState(state)
+
+	runtime.BeginTurnReport(7)
+	if runtime.AcknowledgeTurnReport("player-1", 8) {
+		t.Fatalf("ack should reject mismatched turn")
+	}
+	if runtime.AcknowledgeTurnReport("unknown", 7) {
+		t.Fatalf("ack should reject unknown player")
+	}
+	if runtime.AcknowledgeTurnReport("bot-1", 7) {
+		t.Fatalf("ack should ignore bot participants")
+	}
+	if runtime.WaitTurnReport(context.Background(), 20*time.Millisecond) {
+		t.Fatalf("wait should time out before all human acknowledgements")
+	}
+	if !runtime.AcknowledgeTurnReport("player-1", 7) {
+		t.Fatalf("player-1 ack should be accepted")
+	}
+	if runtime.WaitTurnReport(context.Background(), 20*time.Millisecond) {
+		t.Fatalf("wait should still block until the last human ack arrives")
+	}
+	if !runtime.AcknowledgeTurnReport("player-2", 7) {
+		t.Fatalf("player-2 ack should be accepted")
+	}
+	if !runtime.WaitTurnReport(context.Background(), 100*time.Millisecond) {
+		t.Fatalf("wait should complete after all human acknowledgements")
+	}
+
+	runtime.FinishTurnReport(7)
+	if runtime.AcknowledgeTurnReport("player-1", 7) {
+		t.Fatalf("ack should be ignored after the report gate finishes")
+	}
+}
+
+func TestRuntimeTurnReportTimeoutFallsBackToConfigOrDefault(t *testing.T) {
+	runtime := NewRuntime("room-1", nil, nil, &config.Config{TurnReportTimeoutMs: 2750})
+	if got := runtime.TurnReportTimeout(); got != 2750*time.Millisecond {
+		t.Fatalf("TurnReportTimeout() = %v, want 2750ms", got)
+	}
+
+	if got := NewRuntime("room-2", nil, nil, nil).TurnReportTimeout(); got != 10*time.Second {
+		t.Fatalf("TurnReportTimeout() default = %v, want 10s", got)
 	}
 }
 
