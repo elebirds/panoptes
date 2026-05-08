@@ -73,6 +73,31 @@ func TestParseMinisterResponseSkipsBraceNoiseBeforeJSONObject(t *testing.T) {
 	}
 }
 
+func TestParseMinisterResponsePreservesActionObjects(t *testing.T) {
+	out, err := ParseMinisterResponse(`{
+		"report":"建议尽快批准青铜冶炼。",
+		"metrics":[],
+		"actions":[{"type":"select_candidate","params":{"draft_id":"domestic:research:bronze_working:4"}}],
+		"action_id":"select_research"
+	}`)
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
+	}
+
+	if len(out.Actions) != 1 {
+		t.Fatalf("actions len = %d, want 1", len(out.Actions))
+	}
+	if out.Actions[0].Type != "select_candidate" {
+		t.Fatalf("Action type = %q, want select_candidate", out.Actions[0].Type)
+	}
+	if got, _ := out.Actions[0].Params["draft_id"].(string); got != "domestic:research:bronze_working:4" {
+		t.Fatalf("Action draft_id = %q, want candidate id", got)
+	}
+	if out.ActionID != "select_research" {
+		t.Fatalf("ActionID = %q, want select_research", out.ActionID)
+	}
+}
+
 func TestParseDraftResponseSanitizesObviouslyEnglishPlayerText(t *testing.T) {
 	out, err := ParseDraftResponse(`{
 		"title":"Hold the Line",

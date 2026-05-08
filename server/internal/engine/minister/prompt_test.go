@@ -68,6 +68,11 @@ func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
 	if !strings.Contains(req.SystemPrompt, "输出必须是裸 JSON 对象") {
 		t.Fatalf("SystemPrompt = %q, want bare JSON constraint", req.SystemPrompt)
 	}
+	if !strings.Contains(req.SystemPrompt, "## JSON Response Format") ||
+		!strings.Contains(req.SystemPrompt, `"title": "<简体中文字符串，短标题>"`) ||
+		!strings.Contains(req.SystemPrompt, "只允许这四个字段") {
+		t.Fatalf("SystemPrompt = %q, want exact draft JSON response format", req.SystemPrompt)
+	}
 	if !strings.Contains(req.UserPrompt, "bronze_working") || !strings.Contains(req.UserPrompt, "可见 3 个节点") {
 		t.Fatalf("UserPrompt = %q, want target id and observation summary", req.UserPrompt)
 	}
@@ -79,6 +84,10 @@ func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
 	}
 	if !strings.Contains(req.UserPrompt, "不要 ``` 或 ```json 代码块") || !strings.Contains(req.UserPrompt, "不要任何前缀说明或后缀解释") {
 		t.Fatalf("UserPrompt = %q, want no-fence/no-noise output contract", req.UserPrompt)
+	}
+	if !strings.Contains(req.UserPrompt, "Return exactly this JSON shape and no other fields") ||
+		!strings.Contains(req.UserPrompt, `"risk_note": "<简体中文字符串，风险、盲区或机会成本>"`) {
+		t.Fatalf("UserPrompt = %q, want exact draft JSON shape", req.UserPrompt)
 	}
 }
 
@@ -113,6 +122,12 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	if !strings.Contains(req.SystemPrompt, "metrics 里的玩家可读字符串都必须是简体中文") {
 		t.Fatalf("SystemPrompt = %q, want report field Chinese constraint", req.SystemPrompt)
 	}
+	if !strings.Contains(req.SystemPrompt, "## JSON Response Format") ||
+		!strings.Contains(req.SystemPrompt, "`metrics` 是数值轨") ||
+		!strings.Contains(req.SystemPrompt, `"actions": [`) ||
+		!strings.Contains(req.SystemPrompt, `"type": "select_candidate|build|set_research|set_policy|set_institution_loadout|set_building_recipe"`) {
+		t.Fatalf("SystemPrompt = %q, want exact report JSON response format", req.SystemPrompt)
+	}
 	if !strings.Contains(req.SystemPrompt, "`select_candidate`") || !strings.Contains(req.SystemPrompt, "candidate_id") ||
 		!strings.Contains(req.UserPrompt, "candidate_id=domestic:research:bronze_working:4") {
 		t.Fatalf("Prompt = %q\n%s, want candidate selection contract", req.SystemPrompt, req.UserPrompt)
@@ -142,6 +157,11 @@ func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testin
 	}
 	if !strings.Contains(req.UserPrompt, "不要 ``` 或 ```json 代码块") || !strings.Contains(req.UserPrompt, "不要任何前缀说明或后缀解释") {
 		t.Fatalf("UserPrompt = %q, want no-fence/no-noise output contract", req.UserPrompt)
+	}
+	if !strings.Contains(req.UserPrompt, "## Two-Track Output Contract") ||
+		!strings.Contains(req.UserPrompt, "Return exactly this JSON shape and no other fields") ||
+		!strings.Contains(req.UserPrompt, `"action_id": "<简短英文或数字标识；无动作时可为空字符串>"`) {
+		t.Fatalf("UserPrompt = %q, want exact report JSON shape and two-track contract", req.UserPrompt)
 	}
 }
 

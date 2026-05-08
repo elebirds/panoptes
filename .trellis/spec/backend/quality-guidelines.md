@@ -176,6 +176,7 @@ if err := json.Unmarshal([]byte(normalized), &out); err != nil {
 - Draft targets still come from `ai.RuleBotProvider.BuildPlanningIntents`.
 - LLM draft polish may only replace `Title`, `Summary`, `Rationale`, `RiskNote`, and `Source`.
 - LLM draft polish must not replace `DraftID`, `TargetID`, unit ids, action ids, node ids, recipe ids, policy ids, or command payload fields.
+- Draft polish prompt output must be exactly the four string fields `title`, `summary`, `rationale`, and `risk_note`; no executable fields or extra JSON keys are allowed.
 - Minister reports may include narrative text, metrics, and approval-gated report actions. Report `actions` must follow the "Minister Report Actions Become Approval-Gated Proposals" contract below.
 
 #### 4. Validation & Error Matrix
@@ -240,6 +241,9 @@ if ok {
 - The same observation may produce the same user prompt, but the system prompt must vary by minister profile and style pressure.
 - Low loyalty combined with high ambition should push the report toward self-protective distortion pressure such as softening bad news or claiming credit.
 - High cautiousness should push the report toward risk-boundary and uncertainty language.
+- Report prompt output must be exactly `report`, `metrics`, `actions`, and `action_id`.
+- `report` is the narrative track: a Chinese subjective minister report based only on observed information.
+- `metrics` is the numeric track: an array of items with `label`, `value`, `trend`, `confidence`, and `is_delayed`; labels and values are Chinese player-visible text, while trend/confidence remain bounded enum strings.
 - Minister memory favor starts at 50, is clamped to 0..100, and changes through feedback: accepted +5, rejected -8, stale -3.
 - Low favor must add a prompt hint that the minister has been repeatedly rejected and should become more conservative and risk-focused.
 
@@ -283,6 +287,7 @@ if ok {
   - `set_institution_loadout`: `institution_ids`
   - `set_building_recipe`: `node_id`, `recipe_id`
   - Map/unit decisions: choose a `kind=operation` candidate with `select_candidate`; do not expose `move_units`, `unit_order`, or `issue_unit_order` as minister report actions.
+- Each action JSON item must have exactly `type` and `params`; `params` must be a JSON object.
 
 #### 3. Contracts
 - `MinisterEngine.generateOneReport` must forward non-empty `actions` to the room callback after parsing the report JSON.

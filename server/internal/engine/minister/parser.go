@@ -28,9 +28,34 @@ type DraftOutput struct {
 	RiskNote  string
 }
 
+// MinisterReportResponse is the exact JSON object expected from report prompts.
+type MinisterReportResponse struct {
+	Report   string               `json:"report"`
+	Metrics  []MinisterMetricItem `json:"metrics"`
+	Actions  []MinisterActionItem `json:"actions"`
+	ActionID string               `json:"action_id"`
+}
+
+// MinisterMetricItem is the JSON shape for one report metric item.
+type MinisterMetricItem struct {
+	Label      string `json:"label"`
+	Value      string `json:"value"`
+	Trend      string `json:"trend"`
+	Confidence string `json:"confidence"`
+	IsDelayed  bool   `json:"is_delayed"`
+}
+
 type MinisterActionItem struct {
-	Type   string
-	Params map[string]any
+	Type   string         `json:"type"`
+	Params map[string]any `json:"params"`
+}
+
+// MinisterDraftResponse is the exact JSON object expected from draft polish prompts.
+type MinisterDraftResponse struct {
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	Rationale string `json:"rationale"`
+	RiskNote  string `json:"risk_note"`
 }
 
 const (
@@ -45,21 +70,7 @@ const (
 
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	response = normalizeJSONObjectPayload(response)
-	var raw struct {
-		Report  string `json:"report"`
-		Metrics []struct {
-			Label      string `json:"label"`
-			Value      string `json:"value"`
-			Trend      string `json:"trend"`
-			Confidence string `json:"confidence"`
-			IsDelayed  bool   `json:"is_delayed"`
-		} `json:"metrics"`
-		Actions []struct {
-			Type   string         `json:"type"`
-			Params map[string]any `json:"params"`
-		} `json:"actions"`
-		ActionID string `json:"action_id"`
-	}
+	var raw MinisterReportResponse
 	if err := json.Unmarshal([]byte(response), &raw); err != nil {
 		return nil, err
 	}
@@ -85,12 +96,7 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 
 func ParseDraftResponse(response string) (*DraftOutput, error) {
 	response = normalizeJSONObjectPayload(response)
-	var raw struct {
-		Title     string `json:"title"`
-		Summary   string `json:"summary"`
-		Rationale string `json:"rationale"`
-		RiskNote  string `json:"risk_note"`
-	}
+	var raw MinisterDraftResponse
 	if err := json.Unmarshal([]byte(response), &raw); err != nil {
 		return nil, err
 	}

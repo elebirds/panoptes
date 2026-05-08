@@ -28,10 +28,10 @@ target_label={{ .TargetLabel }}
 
 `title`、`summary`、`rationale`、`risk_note` 必须全部使用简体中文，不得输出英文。
 
-Return exactly this JSON shape:
+Return exactly this JSON shape and no other fields:
 {
-  "title": "",
-  "summary": "",
-  "rationale": "",
-  "risk_note": ""
+  "title": "<简体中文字符串，短标题>",
+  "summary": "<简体中文字符串，一句话建议>",
+  "rationale": "<简体中文字符串，支持该目标的理由>",
+  "risk_note": "<简体中文字符串，风险、盲区或机会成本>"
 }
