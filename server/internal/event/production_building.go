@@ -56,6 +56,37 @@ type BuildSkippedEvent struct {
 	Reason       string
 }
 
+type BuildingDemolishedEvent struct {
+	NodeID       string
+	Owner        string
+	BuildingType string
+	Reason       string
+}
+
+func (e BuildingDemolishedEvent) Apply(world donburi.World, state *domain.GameState) {
+	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
+	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
+		return
+	}
+	for _, component := range []donburi.IComponentType{
+		ecs.BuildingOperationC,
+		ecs.BuildingStateC,
+		ecs.FacilityTakeoverC,
+		ecs.BuildingBindingC,
+		ecs.BuildingC,
+	} {
+		if nodeEntry.HasComponent(component) {
+			nodeEntry.RemoveComponent(component)
+		}
+	}
+}
+
+func (e BuildingDemolishedEvent) Kind() string { return "building_demolished" }
+
+func (e BuildingDemolishedEvent) String() string {
+	return fmt.Sprintf("BuildingDemolishedEvent node=%s owner=%s type=%s", e.NodeID, e.Owner, e.BuildingType)
+}
+
 type BuildingRepairedEvent struct {
 	NodeID string
 	Owner  string
@@ -88,4 +119,19 @@ func (e BuildSkippedEvent) Kind() string { return "building_skipped" }
 
 func (e BuildSkippedEvent) String() string {
 	return fmt.Sprintf("BuildSkippedEvent player=%s node=%s type=%s reason=%s", e.PlayerID, e.NodeID, e.BuildingType, e.Reason)
+}
+
+type DemolishSkippedEvent struct {
+	PlayerID     string
+	NodeID       string
+	BuildingType string
+	Reason       string
+}
+
+func (e DemolishSkippedEvent) Apply(donburi.World, *domain.GameState) {}
+
+func (e DemolishSkippedEvent) Kind() string { return "building_demolish_skipped" }
+
+func (e DemolishSkippedEvent) String() string {
+	return fmt.Sprintf("DemolishSkippedEvent player=%s node=%s type=%s reason=%s", e.PlayerID, e.NodeID, e.BuildingType, e.Reason)
 }

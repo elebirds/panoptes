@@ -92,6 +92,11 @@ namespace Panoptes.Core.Application.Stores
             return CloneList(source, CloneQueuedBuildOrder);
         }
 
+        public static List<QueuedDemolishOrderDto> CloneDemolishOrders(IEnumerable<QueuedDemolishOrderDto> source)
+        {
+            return CloneList(source, CloneQueuedDemolishOrder);
+        }
+
         public static List<QueuedRecipeSelectionDto> CloneRecipeSelections(IEnumerable<QueuedRecipeSelectionDto> source)
         {
             return CloneList(source, CloneQueuedRecipeSelection);
@@ -434,6 +439,15 @@ namespace Panoptes.Core.Application.Stores
             {
                 BuildingTypeId = source.BuildingTypeId,
                 CityId = source.CityId,
+                NodeId = source.NodeId
+            };
+        }
+
+        private static QueuedDemolishOrderDto CloneQueuedDemolishOrder(QueuedDemolishOrderDto source)
+        {
+            return new QueuedDemolishOrderDto
+            {
+                BuildingTypeId = source.BuildingTypeId,
                 NodeId = source.NodeId
             };
         }

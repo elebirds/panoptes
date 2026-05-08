@@ -20,7 +20,7 @@ func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.
 		return ErrPhaseMismatch
 	}
 	switch cmd.Body.(type) {
-	case *pb.GameCommand_StaticCatalogSyncRequest, *pb.GameCommand_Chat:
+	case *pb.GameCommand_StaticCatalogSyncRequest, *pb.GameCommand_Chat, *pb.GameCommand_AcknowledgeTurnReport:
 		return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
 	}
 	if c.runtime.State().Phase != domain.PhasePlanning.String() {
@@ -68,5 +68,13 @@ func (h gameCommandHandler) CommandBatch(ctx cmddispatch.InboundContext, cmd *pb
 			return err
 		}
 	}
+	return nil
+}
+
+func (h gameCommandHandler) AcknowledgeTurnReport(ctx cmddispatch.InboundContext, cmd *pb.MsgAcknowledgeTurnReport) error {
+	if h.coordinator == nil || h.coordinator.runtime == nil || cmd == nil {
+		return ErrPhaseMismatch
+	}
+	_ = h.coordinator.runtime.AcknowledgeTurnReport(ctx.PlayerID, int(cmd.GetTurn()))
 	return nil
 }

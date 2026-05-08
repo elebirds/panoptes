@@ -47,8 +47,16 @@ namespace Panoptes.Presentation.UI.Turn
                 case "building_built":
                     description = $"节点 {Fallback(nodeId, "未知节点")} 完成了 {Fallback(buildingType, "建筑")}。";
                     return true;
+                case "building_demolished":
+                    description = string.IsNullOrWhiteSpace(reasonMessage)
+                        ? $"节点 {Fallback(nodeId, "未知节点")} 的 {Fallback(buildingType, "建筑")} 已拆除。"
+                        : $"节点 {Fallback(nodeId, "未知节点")} 的 {Fallback(buildingType, "建筑")} 已拆除：{reasonMessage}";
+                    return true;
                 case "building_skipped":
                     description = $"节点 {Fallback(nodeId, "未知节点")} 的 {Fallback(buildingType, "建筑")} 未能建造：{Fallback(reasonMessage, "当前不能建造。")}";
+                    return true;
+                case "building_demolish_skipped":
+                    description = $"节点 {Fallback(nodeId, "未知节点")} 的 {Fallback(buildingType, "建筑")} 未能拆除：{Fallback(reasonMessage, "当前不能拆除。")}";
                     return true;
                 case "recipe_skipped":
                     description = $"节点 {Fallback(nodeId, "未知节点")} 的配方 {Fallback(recipeId, "当前配方")} 未推进：{Fallback(reasonMessage, "本回合未生产。")}";

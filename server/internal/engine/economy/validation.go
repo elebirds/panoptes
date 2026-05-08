@@ -29,6 +29,12 @@ type BuildOrderValidation struct {
 	Building  staticdata.BuildingDefinition
 }
 
+type DemolishOrderValidation struct {
+	ValidationResult
+	NodeEntry *donburi.Entry
+	Building  domain.BuildingComp
+}
+
 type RecipeSelectionValidation struct {
 	ValidationResult
 	NodeEntry *donburi.Entry
@@ -85,6 +91,31 @@ func ValidateBuildOrder(state *domain.GameState, playerID string, nodeID string,
 		ValidationResult: ValidationResult{OK: true},
 		NodeEntry:        nodeEntry,
 		Building:         cfg,
+	}
+}
+
+func ValidateDemolishOrder(state *domain.GameState, playerID string, nodeID string) DemolishOrderValidation {
+	if state == nil || strings.TrimSpace(playerID) == "" || strings.TrimSpace(nodeID) == "" {
+		return DemolishOrderValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_request"}}
+	}
+	nodeEntry, ok := state.GetNode(nodeID)
+	if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingC) {
+		return DemolishOrderValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_target"}}
+	}
+	building := ecs.BuildingC.Get(nodeEntry)
+	if building == nil {
+		return DemolishOrderValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_target"}}
+	}
+	if strings.EqualFold(string(building.Type), domain.BuildingScopeCityCore) {
+		return DemolishOrderValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_directive"}}
+	}
+	if normalizeToken(building.Owner) != normalizeToken(playerID) {
+		return DemolishOrderValidation{ValidationResult: ValidationResult{ErrorCode: "unauthorized"}}
+	}
+	return DemolishOrderValidation{
+		ValidationResult: ValidationResult{OK: true},
+		NodeEntry:        nodeEntry,
+		Building:         *building,
 	}
 }
 

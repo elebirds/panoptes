@@ -106,6 +106,25 @@ namespace Panoptes.Presentation.UI.HUD
                    CatalogBuildingHasRecipes(buildingType);
         }
 
+        public bool TryResolveDemolishableBuildingNodeId(UnitView unit, out string nodeId)
+        {
+            nodeId = string.Empty;
+            var state = _gameStateStore?.Snapshot;
+            if (!TryGetNode(unit, state, out var node) || !IsOwnedDemolishableBuildingNode(node, state))
+            {
+                return false;
+            }
+
+            nodeId = node.Id;
+            return !string.IsNullOrWhiteSpace(nodeId);
+        }
+
+        public bool IsOwnedDemolishableBuildingProxy(UnitView unit)
+        {
+            var state = _gameStateStore?.Snapshot;
+            return TryGetNode(unit, state, out var node) && IsOwnedDemolishableBuildingNode(node, state);
+        }
+
         private static bool TryGetNode(UnitView unit, GameStateStoreState state, out NodeDto node)
         {
             node = null;
@@ -187,6 +206,13 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return string.Equals(NormalizeToken(ResolveAuthoritativeNodeOwner(node, state)), localOwner, StringComparison.Ordinal);
+        }
+
+        private bool IsOwnedDemolishableBuildingNode(NodeDto node, GameStateStoreState state)
+        {
+            return node != null &&
+                   IsOwnedBuildingNode(node, state) &&
+                   !IsCityCore(node);
         }
 
         private bool CatalogBuildingHasRecipes(string buildingType)

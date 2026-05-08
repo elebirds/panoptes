@@ -58,6 +58,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
+            dispatcher.Register<MsgTurnReport>("MsgTurnReport", OnTurnReport);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgMandateResult>("MsgMandateResult", OnMandateResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
@@ -67,6 +68,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
             dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
             dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
+            dispatcher.Register<MsgDemolishBuildingResult>("MsgDemolishBuildingResult", HandleDemolishBuildingResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
@@ -89,6 +91,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Unregister<MsgGameSync>("MsgGameSync", OnGameSync);
+            dispatcher.Unregister<MsgTurnReport>("MsgTurnReport", OnTurnReport);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgMandateResult>("MsgMandateResult", OnMandateResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
@@ -98,6 +101,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
             dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
             dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
+            dispatcher.Unregister<MsgDemolishBuildingResult>("MsgDemolishBuildingResult", HandleDemolishBuildingResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
@@ -209,6 +213,17 @@ namespace Panoptes.Core.Application.Handler
                     PanoptesLog.Log($"[Game][SyncEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
                 }
             }
+        }
+
+        private void OnTurnReport(MsgTurnReport msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            _gameStateCache?.ApplyTurnReport(msg);
+            PanoptesLog.Log($"[Game] 战报阶段 turn={msg.Turn} timeout={msg.TimeoutSeconds}s next_phase={msg.NextPhase}");
         }
 
         private void OnTokenResult(MsgTokenResult msg)
@@ -483,6 +498,11 @@ namespace Panoptes.Core.Application.Handler
             PublishBuildStructureResult(_gameStateCache, msg);
         }
 
+        private void HandleDemolishBuildingResult(MsgDemolishBuildingResult msg)
+        {
+            PublishDemolishBuildingResult(_gameStateCache, msg);
+        }
+
         private static void OnBuildStructureResult(MsgBuildStructureResult msg)
         {
             PublishBuildStructureResult(GameStateCache.Instance, msg);
@@ -518,6 +538,37 @@ namespace Panoptes.Core.Application.Handler
             }
 
             PanoptesLog.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
+        }
+
+        private static void PublishDemolishBuildingResult(GameStateCache cache, MsgDemolishBuildingResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            var details = ToDetailMap(msg.FeedbackDetails);
+            var message = ResolveFailureMessage(msg.Success, msg.FeedbackMessage, msg.ErrorCode);
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
+            {
+                CommandType = "demolish",
+                Action = "demolish_building",
+                Success = msg.Success,
+                PrimaryId = msg.NodeId ?? string.Empty,
+                SecondaryId = msg.BuildingTypeId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = message,
+                Details = details
+            });
+
+            if (!msg.Success)
+            {
+                PublishGameError(cache, msg.ErrorCode, message, details);
+                PanoptesLog.Warning($"[Game] 建筑拆除失败 node={msg.NodeId} building={msg.BuildingTypeId} error={msg.ErrorCode}");
+                return;
+            }
+
+            PanoptesLog.Log($"[Game] 建筑拆除草案已记录 node={msg.NodeId} building={msg.BuildingTypeId}");
         }
 
         private void OnMinisterReportChunk(MsgMinisterReportChunk msg)

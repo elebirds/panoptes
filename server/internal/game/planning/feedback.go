@@ -30,6 +30,11 @@ func buildFeedback(state *domain.GameState, playerID string, ctx feedbackContext
 	return buildFeedbackMessage(state, playerID, ctx, code), feedbackDetails(ctx)
 }
 
+func demolishFeedback(state *domain.GameState, playerID string, ctx feedbackContext, code string) (string, []*pb.FeedbackDetail) {
+	ctx = enrichDemolishFeedbackContext(state, ctx)
+	return demolishFeedbackMessage(state, playerID, ctx, code), feedbackDetails(ctx)
+}
+
 func recipeFeedback(state *domain.GameState, playerID string, ctx feedbackContext, code string) (string, []*pb.FeedbackDetail) {
 	ctx = enrichRecipeFeedbackContext(state, ctx)
 	return recipeFeedbackMessage(state, playerID, ctx, code), feedbackDetails(ctx)
@@ -84,6 +89,22 @@ func enrichBuildFeedbackContext(state *domain.GameState, ctx feedbackContext) fe
 	return ctx
 }
 
+func enrichDemolishFeedbackContext(state *domain.GameState, ctx feedbackContext) feedbackContext {
+	ctx.NodeID = strings.TrimSpace(ctx.NodeID)
+	if state == nil || ctx.NodeID == "" {
+		return ctx
+	}
+	entry, ok := state.GetNode(ctx.NodeID)
+	if !ok || entry == nil || !entry.HasComponent(ecs.BuildingC) {
+		return ctx
+	}
+	ctx.BuildingTypeID = strings.TrimSpace(string(ecs.BuildingC.Get(entry).Type))
+	if ctx.CityID == "" {
+		ctx.CityID = strings.TrimSpace(building.ResolveCityID(entry))
+	}
+	return ctx
+}
+
 func enrichRecipeFeedbackContext(state *domain.GameState, ctx feedbackContext) feedbackContext {
 	ctx.NodeID = strings.TrimSpace(ctx.NodeID)
 	ctx.RecipeID = strings.TrimSpace(ctx.RecipeID)
@@ -127,6 +148,21 @@ func buildFeedbackMessage(state *domain.GameState, playerID string, ctx feedback
 		return "资源不足，无法提交这条建造。"
 	case "insufficient_points":
 		return "工业点数不足，无法提交这条建造。"
+	default:
+		return ""
+	}
+}
+
+func demolishFeedbackMessage(state *domain.GameState, playerID string, ctx feedbackContext, code string) string {
+	switch strings.TrimSpace(code) {
+	case "invalid_request":
+		return "拆除指令不完整，请重新选择建筑。"
+	case "invalid_target":
+		return "目标节点无效，无法拆除。"
+	case "unauthorized":
+		return "这座建筑不归你控制，无法拆除。"
+	case "invalid_directive":
+		return describeDemolishDirectiveViolation(state, playerID, ctx.BuildingTypeID)
 	default:
 		return ""
 	}
@@ -217,6 +253,17 @@ func describeRecipeDirectiveViolation(state *domain.GameState, playerID string, 
 		return "该配方不属于这座建筑，无法设置。"
 	}
 	return "当前不能设置这个配方。"
+}
+
+func describeDemolishDirectiveViolation(state *domain.GameState, playerID string, buildingTypeID string) string {
+	buildingTypeID = strings.TrimSpace(buildingTypeID)
+	if buildingTypeID == "" {
+		return "当前不能拆除这座建筑。"
+	}
+	if cfg, ok := staticdata.Default().GetBuilding(buildingTypeID); ok && domain.NormalizeBuildingScope(cfg.BuildingScope) == domain.BuildingScopeCityCore {
+		return "城市核心不能拆除。"
+	}
+	return "当前不能拆除这座建筑。"
 }
 
 func feedbackDetails(ctx feedbackContext) []*pb.FeedbackDetail {

@@ -50,6 +50,13 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
 		}
 		return e.Kind(), data
+	case event.BuildingDemolishedEvent:
+		return e.Kind(), map[string]string{
+			"node_id":       strings.TrimSpace(e.NodeID),
+			"building_type": strings.TrimSpace(e.BuildingType),
+			"owner":         strings.TrimSpace(e.Owner),
+			"reason":        strings.TrimSpace(e.Reason),
+		}
 	case event.BuildingRepairedEvent:
 		return e.Kind(), map[string]string{
 			"node_id": strings.TrimSpace(e.NodeID),
@@ -137,6 +144,17 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			"reason":        strings.TrimSpace(e.Reason),
 		}
 		if reasonMessage := gamefeedback.BuildReasonMessage(e.Reason); reasonMessage != "" {
+			data["reason_message"] = reasonMessage
+		}
+		return e.Kind(), data
+	case event.DemolishSkippedEvent:
+		data := map[string]string{
+			"player_id":     strings.TrimSpace(e.PlayerID),
+			"node_id":       strings.TrimSpace(e.NodeID),
+			"building_type": strings.TrimSpace(e.BuildingType),
+			"reason":        strings.TrimSpace(e.Reason),
+		}
+		if reasonMessage := gamefeedback.RuntimeReasonMessage(e.Reason); reasonMessage != "" {
 			data["reason_message"] = reasonMessage
 		}
 		return e.Kind(), data

@@ -141,6 +141,56 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
+        public void MergeTurnReport_ShouldPopulateTurnGateState()
+        {
+            var current = new TurnState(
+                turn: 5,
+                phase: GamePhases.Resolving,
+                tokensLeft: 2,
+                nextPhase: GamePhases.Planning,
+                isInteractive: true);
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurn(current, new MsgTurnReport
+            {
+                Turn = 5,
+                Phase = GamePhases.TurnReport,
+                TimeoutSeconds = 10,
+                NextPhase = GamePhases.Planning
+            });
+
+            Assert.That(mapped.Turn, Is.EqualTo(5));
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.TurnReport));
+            Assert.That(mapped.TimeoutSeconds, Is.EqualTo(10));
+            Assert.That(mapped.NextPhase, Is.EqualTo(GamePhases.Planning));
+            Assert.That(mapped.IsInteractive, Is.False);
+        }
+
+        [Test]
+        public void MergeTurnReportState_ShouldPreserveReportedPhase()
+        {
+            var current = new GameStateStoreState(
+                gameId: "game-1",
+                activeGameSessionId: "session-1",
+                myPlayerId: "player-1",
+                turn: 4,
+                phase: GamePhases.Resolving,
+                tokensLeft: 3);
+
+            var mapped = StoreHydrationProtocolMapper.MergeTurnReport(current, new MsgTurnReport
+            {
+                Turn = 5,
+                Phase = GamePhases.TurnReport,
+                TimeoutSeconds = 8,
+                NextPhase = GamePhases.Planning
+            });
+
+            Assert.That(mapped.GameId, Is.EqualTo("game-1"));
+            Assert.That(mapped.Turn, Is.EqualTo(5));
+            Assert.That(mapped.Phase, Is.EqualTo(GamePhases.TurnReport));
+            Assert.That(mapped.TokensLeft, Is.EqualTo(3));
+        }
+
+        [Test]
         public void ToPlanningDraft_ShouldMapSnapshotWithoutProtocolTypes()
         {
             var mapped = StoreHydrationProtocolMapper.ToPlanningDraft(new MsgPlanningSnapshot

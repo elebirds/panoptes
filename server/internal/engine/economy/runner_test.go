@@ -6,14 +6,15 @@ func TestNewRunnerExposesCanonicalStageOrder(t *testing.T) {
 	runner := NewRunner()
 
 	stages := runner.Stages()
-	if len(stages) != 6 {
-		t.Fatalf("stage count = %d, want 6", len(stages))
+	if len(stages) != 7 {
+		t.Fatalf("stage count = %d, want 7", len(stages))
 	}
 
 	want := []string{
 		"budget",
 		"research_progress",
 		"research_completion",
+		"demolish",
 		"build",
 		"recipe_selection",
 		"recipe_progress",

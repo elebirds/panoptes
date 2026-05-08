@@ -56,6 +56,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", HandleBuildStructurePreviewResponse);
             _dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Register<MsgGameSync>("MsgGameSync", HandleGameSync);
+            _dispatcher.Register<MsgTurnReport>("MsgTurnReport", HandleTurnReport);
             _dispatcher.Register<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Register<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Register<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
@@ -65,6 +66,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
             _dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
             _dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
+            _dispatcher.Register<MsgDemolishBuildingResult>("MsgDemolishBuildingResult", HandleDemolishBuildingResult);
             _dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             _dispatcher.Register<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Register<MsgGameOver>("MsgGameOver", HandleGameOver);
@@ -91,6 +93,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", HandleBuildStructurePreviewResponse);
             _dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", HandleSetBuildingRecipePreviewResponse);
             _dispatcher.Unregister<MsgGameSync>("MsgGameSync", HandleGameSync);
+            _dispatcher.Unregister<MsgTurnReport>("MsgTurnReport", HandleTurnReport);
             _dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Unregister<MsgMandateResult>("MsgMandateResult", HandleMandateResult);
             _dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
@@ -100,6 +103,7 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
             _dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
             _dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
+            _dispatcher.Unregister<MsgDemolishBuildingResult>("MsgDemolishBuildingResult", HandleDemolishBuildingResult);
             _dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             _dispatcher.Unregister<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Unregister<MsgGameOver>("MsgGameOver", HandleGameOver);
@@ -206,6 +210,17 @@ namespace Panoptes.Core.Application.Stores
             }
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
             _settlementStore.Replace(SettlementMapper.ToDto(msg));
+        }
+
+        public void HandleTurnReport(MsgTurnReport msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeTurnReport(_gameStateStore.Snapshot, msg));
+            _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
         }
 
         public void HandleTokenResult(MsgTokenResult msg)
@@ -334,6 +349,22 @@ namespace Panoptes.Core.Application.Stores
                         ("node_id", msg.NodeId),
                         ("building_type_id", msg.BuildingTypeId),
                         ("city_id", msg.CityId)));
+            }
+        }
+
+        public void HandleDemolishBuildingResult(MsgDemolishBuildingResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback(
+                    "demolish",
+                    msg.ErrorCode,
+                    msg.FeedbackMessage,
+                    false,
+                    MergeDetails(
+                        ToDetailMap(msg.FeedbackDetails),
+                        ("node_id", msg.NodeId),
+                        ("building_type_id", msg.BuildingTypeId)));
             }
         }
 
