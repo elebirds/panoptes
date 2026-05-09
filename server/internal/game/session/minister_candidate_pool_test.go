@@ -96,6 +96,9 @@ func TestBuildMinisterDraftsFromLegalCandidatesEnumeratesVisibleLegalActionSpace
 		if draft.Kind == domain.MinisterDraftKindOperation && len(draft.OperationSteps) == 0 {
 			t.Fatalf("operation draft must contain command steps: %#v", draft)
 		}
+		if draft.MinisterRole == defenseMinisterRole && draft.Kind == domain.MinisterDraftKindOperation {
+			t.Fatalf("defense minister must not fall back to hold/readiness operation candidates: %#v", draft)
+		}
 		switch draft.Kind {
 		case domain.MinisterDraftKindBuild:
 			switch draft.BuildingTypeID {
@@ -206,6 +209,62 @@ func TestBuildMinisterDraftsFromLegalCandidatesOffersOpeningMilitaryRecon(t *tes
 		return
 	}
 	t.Fatalf("drafts = %#v, want opening military recon operation", drafts)
+}
+
+func TestBuildMinisterDraftsFromLegalCandidatesIncludesSafeZoneBuildsWithoutTerritoryOwner(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", Name: "Farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 40, TakeoverMode: "delayed"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"C1": ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"}),
+		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 1, R: 0, Terrain: "plain", IsResourcePoint: true, ResourceType: "food"}),
+	}
+	state := domain.NewGameState("game-safezone-build", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	state.Map.PlayerSpawns = make(map[string]domain.Position)
+	state.Map.PlayerSpawns["player-1"] = domain.Position{Q: 0, R: 0}
+	state.Players["player-1"].CapitalCityID = "C1"
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", world.Entry(nodeIndex["C1"]))
+	ecs.NodeC.Get(world.Entry(nodeIndex["B1"])).TerritoryOwner = ""
+
+	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, &gamequery.ObservationSnapshot{
+		ViewerID: "player-1",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "B1", ControllerPlayerId: "player-1", TerritoryOwnerPlayerId: "", IsResourcePoint: true, ResourceType: "food"},
+		},
+	})
+	for _, draft := range drafts {
+		if draft.Kind == domain.MinisterDraftKindBuild && draft.BuildingTypeID == "farm" && draft.NodeID == "B1" {
+			if draft.MinisterRole != worksMinisterRole {
+				t.Fatalf("safe-zone farm build draft = %#v, want works minister", draft)
+			}
+			return
+		}
+	}
+	t.Fatalf("drafts = %#v, want safe-zone farm build candidate", drafts)
 }
 
 func TestMinisterDraftFromIntentKeepsDraftIDsUniqueForCommandDimensions(t *testing.T) {

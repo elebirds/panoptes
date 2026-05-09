@@ -77,6 +77,10 @@ func (c *Coordinator) Start() {
 		if ctx.Err() != nil {
 			return
 		}
+		c.applyMinisterDefaultPlans(ctx)
+		if ctx.Err() != nil {
+			return
+		}
 		c.runtime.State().Phase = domain.PhaseResolving.String()
 		c.host.RunTurnResolution()
 		if c.runtime.State().IsOver {

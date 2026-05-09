@@ -227,6 +227,44 @@ func TestCoordinatorBeginPlanningExposesHumanMinisterDefaultDraftsBeforeNotify(t
 	}
 }
 
+func TestCoordinatorAppliesMinisterDefaultsWhenPlanningTimesOut(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      0,
+			TokensPerTurn:              3,
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 3},
+		},
+	}))
+
+	runtime := gamesession.NewRuntime("game-1", []gamesession.ParticipantBinding{
+		{
+			Participant: participant.Participant{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			Controller:  gamesession.HumanController{},
+		},
+	}, nil, &config.Config{})
+	runtime.SetState(domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"}))
+	runtime.State().Phase = domain.PhasePlanning.String()
+	runtime.State().Turn = 1
+
+	host := &stubCoordinatorHost{runtime: runtime}
+	coordinator := NewCoordinator(runtime, host)
+
+	coordinator.beginPlanning(context.Background(), false)
+	coordinator.applyMinisterDefaultPlans(context.Background())
+
+	if got := runtime.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
+	}
+}
+
 func newMinisterDefaultCoordinatorState(t *testing.T) *domain.GameState {
 	t.Helper()
 	world := donburi.NewWorld()
