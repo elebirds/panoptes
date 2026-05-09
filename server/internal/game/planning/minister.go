@@ -80,7 +80,7 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 		return acceptedHandleIntentResult(), nil
 	case "accept":
 		draft, _, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
-		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
+		if !ok || ministerroles.Canonical(draft.MinisterRole) != ministerroles.Canonical(intent.MinisterRole) || draft.Turn != state.Turn {
 			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
 		}
 		if !draft.Available {
@@ -89,7 +89,7 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 		return s.acceptMinisterDraft(delivery, room, playerID, draft)
 	case "reject":
 		draft, idx, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
-		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
+		if !ok || ministerroles.Canonical(draft.MinisterRole) != ministerroles.Canonical(intent.MinisterRole) || draft.Turn != state.Turn {
 			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
 		}
 		before := draft.Status
@@ -182,10 +182,10 @@ func (s *Service) acceptMinisterRoleDrafts(delivery commandDelivery, room Sessio
 	if state == nil {
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
 	}
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	applied := 0
 	for _, draft := range state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID) {
-		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || strings.TrimSpace(draft.MinisterRole) != role {
+		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || ministerroles.Canonical(draft.MinisterRole) != role {
 			continue
 		}
 		result, err := s.acceptMinisterDraft(delivery, room, playerID, draft)
@@ -207,13 +207,13 @@ func (s *Service) rejectMinisterRoleDrafts(delivery commandDelivery, room Sessio
 	if state == nil {
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
 	}
-	role = strings.TrimSpace(role)
+	role = ministerroles.Canonical(role)
 	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
 	transitions := make([]ministerDraftTransition, 0)
 	changed := false
 	for idx := range drafts {
 		draft := drafts[idx]
-		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || strings.TrimSpace(draft.MinisterRole) != role {
+		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || ministerroles.Canonical(draft.MinisterRole) != role {
 			continue
 		}
 		before := draft.Status

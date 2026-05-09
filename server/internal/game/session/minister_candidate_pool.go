@@ -252,6 +252,7 @@ func enumerateMinisterOperationDrafts(turn int, playerID string, state *domain.G
 	candidates = append(candidates, engageVisibleEnemyOperations(playerID, state, observation)...)
 	candidates = append(candidates, developResourceOperations(playerID, state, observation)...)
 	candidates = append(candidates, repairInfrastructureOperations(playerID, state, observation)...)
+	candidates = append(candidates, defenseReadinessOperations(playerID, state, observation)...)
 	candidates = append(candidates, scoutPressureOperations(playerID, state, observation)...)
 	if len(candidates) == 0 {
 		return nil
@@ -262,6 +263,7 @@ func enumerateMinisterOperationDrafts(turn int, playerID string, state *domain.G
 		}
 		return candidates[i].score > candidates[j].score
 	})
+	candidates = reserveMinisterOperationUnitsByRole(candidates)
 	limit := ministerOperationCandidateLimit
 	if limit > len(candidates) {
 		limit = len(candidates)
@@ -415,6 +417,48 @@ func repairInfrastructureOperations(playerID string, state *domain.GameState, ob
 	return out
 }
 
+func defenseReadinessOperations(playerID string, state *domain.GameState, observation *gamequery.ObservationSnapshot) []ministerOperationCandidate {
+	intents := make([]planning.IssueUnitOrderIntent, 0)
+	for _, unit := range observation.Units {
+		if unit == nil || strings.TrimSpace(unit.GetFaction()) != playerID || strings.TrimSpace(unit.GetUnitType()) == string(domain.UnitTypeSettler) {
+			continue
+		}
+		unitID := strings.TrimSpace(unit.GetId())
+		if unitID == "" {
+			continue
+		}
+		intent := planning.IssueUnitOrderIntent{UnitID: unitID, Action: string(gameorders.ActionHold)}
+		if validateUnitOrderIntent(state, playerID, intent) != "" {
+			continue
+		}
+		intents = append(intents, intent)
+	}
+	if len(intents) == 0 {
+		return nil
+	}
+	unitIDs := make([]string, 0, len(intents))
+	for _, intent := range intents {
+		unitIDs = append(unitIDs, strings.TrimSpace(intent.UnitID))
+	}
+	sort.Strings(unitIDs)
+	score := 90 + len(intents)*10
+	if visibleEnemyPressureCount(observation) > 0 {
+		score += 60
+	}
+	return []ministerOperationCandidate{{
+		key:         "defense_readiness:" + strings.Join(unitIDs, ","),
+		score:       score,
+		role:        defenseMinisterRole,
+		operationID: "defense_readiness",
+		objective:   "整备可用部队",
+		title:       "防御整备",
+		summary:     "建议让可用部队原地整备，先稳住防线。",
+		rationale:   "当前军备判断以保存兵力和避免误动为先，把可见部队整理为一项可批准命令。",
+		riskNote:    "若你需要主动侦察或进攻，应改采军令部门的机动方案。",
+		intents:     intents,
+	}}
+}
+
 func scoutPressureOperations(playerID string, state *domain.GameState, observation *gamequery.ObservationSnapshot) []ministerOperationCandidate {
 	out := make([]ministerOperationCandidate, 0)
 	for _, node := range observation.VisibleNodes {
@@ -470,6 +514,71 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		})
 	}
 	return out
+}
+
+func reserveMinisterOperationUnitsByRole(candidates []ministerOperationCandidate) []ministerOperationCandidate {
+	if len(candidates) == 0 {
+		return nil
+	}
+	reservedByRole := make(map[string]map[string]struct{})
+	out := make([]ministerOperationCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		role := strings.TrimSpace(candidate.role)
+		if role == "" {
+			role = commandMinisterRole
+		}
+		unitIDs := ministerOperationCandidateUnitIDs(candidate)
+		reserved := reservedByRole[role]
+		if reserved == nil {
+			reserved = make(map[string]struct{})
+			reservedByRole[role] = reserved
+		}
+		conflicts := false
+		for _, unitID := range unitIDs {
+			if _, ok := reserved[unitID]; ok {
+				conflicts = true
+				break
+			}
+		}
+		if conflicts {
+			continue
+		}
+		for _, unitID := range unitIDs {
+			reserved[unitID] = struct{}{}
+		}
+		out = append(out, candidate)
+	}
+	return out
+}
+
+func ministerOperationCandidateUnitIDs(candidate ministerOperationCandidate) []string {
+	seen := make(map[string]struct{}, len(candidate.intents))
+	out := make([]string, 0, len(candidate.intents))
+	for _, intent := range candidate.intents {
+		unitID := strings.TrimSpace(intent.UnitID)
+		if unitID == "" {
+			continue
+		}
+		if _, ok := seen[unitID]; ok {
+			continue
+		}
+		seen[unitID] = struct{}{}
+		out = append(out, unitID)
+	}
+	return out
+}
+
+func visibleEnemyPressureCount(observation *gamequery.ObservationSnapshot) int {
+	if observation == nil {
+		return 0
+	}
+	count := 0
+	for _, node := range observation.VisibleNodes {
+		if node != nil && node.GetEnemyUnitCount() > 0 {
+			count++
+		}
+	}
+	return count
 }
 
 func unitCurrentNodeID(state *domain.GameState, playerID string, unitID string) string {

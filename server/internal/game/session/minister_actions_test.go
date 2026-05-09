@@ -7,6 +7,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -121,6 +122,48 @@ func TestRuntimeApplyMinisterActionsStagesValidatedBuildProposal(t *testing.T) {
 	}
 }
 
+func TestRuntimeApplyMinisterActionsStagesLLMProposalForNextTurn(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{CityCoreMaxHP: 100, BaseResearchOutputPerTurn: 1},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "bronze_working", Name: "Bronze Working", ResearchCost: 2},
+		},
+	}))
+
+	state := domain.NewGameState("game-llm-turn", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Turn = 5
+	state.Phase = domain.PhaseResolving.String()
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-llm-turn", []*capturePlayer{player}, nil)
+	runtime.SetState(state)
+
+	err := runtime.ApplyMinisterActions("player-1", "domestic", []ministerengine.MinisterActionItem{
+		{Type: "set_research", Params: map[string]any{"technology_id": "bronze_working"}},
+	})
+	if err != nil {
+		t.Fatalf("ApplyMinisterActions error = %v", err)
+	}
+
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want 1", drafts)
+	}
+	if drafts[0].Turn != 6 {
+		t.Fatalf("draft turn = %d, want 6 for next planning phase", drafts[0].Turn)
+	}
+	if !strings.HasSuffix(drafts[0].DraftID, ":6") {
+		t.Fatalf("draft id = %q, want next-turn suffix", drafts[0].DraftID)
+	}
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
+		t.Fatalf("pending research target = %q, want empty before approval", got)
+	}
+}
+
 func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T) {
 	previous := staticdata.Default()
 	t.Cleanup(func() {
@@ -231,6 +274,110 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 	}
 	if got := len(query.BuildMinisterProposalViews(state, "player-1")); got != 4 {
 		t.Fatalf("proposal views = %d, want 4", got)
+	}
+}
+
+func TestBuildMinisterDraftsFromLegalCandidatesOffersDefenseReadinessFallback(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"}),
+	}
+	state := domain.NewGameState("game-defense-actions", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	unitEntry := state.World.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
+
+	observation := &query.ObservationSnapshot{
+		ViewerID: "player-1",
+		Units: []*pb.UnitView{
+			{Id: "infantry-1", Faction: "player-1", UnitType: "infantry"},
+		},
+	}
+
+	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
+	defenseOps := make([]domain.MinisterDraft, 0)
+	for _, draft := range drafts {
+		if draft.MinisterRole == defenseMinisterRole && draft.Kind == domain.MinisterDraftKindOperation {
+			defenseOps = append(defenseOps, draft)
+		}
+	}
+	if len(defenseOps) != 1 {
+		t.Fatalf("defense operations = %#v, want 1 readiness proposal", defenseOps)
+	}
+	if len(defenseOps[0].OperationSteps) != 1 || defenseOps[0].OperationSteps[0].Action != string(gameorders.ActionHold) {
+		t.Fatalf("defense operation = %#v, want one hold step", defenseOps[0])
+	}
+}
+
+func TestBuildMinisterDraftsFromLegalCandidatesReservesUnitsAcrossCommandOperations(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"}),
+		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 1, R: 0, Terrain: "plain"}),
+		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", Q: 0, R: 1, Terrain: "plain"}),
+	}
+	state := domain.NewGameState("game-command-reserve", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	unitEntry := state.World.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "u1"
+
+	observation := &query.ObservationSnapshot{
+		ViewerID: "player-1",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "B1", ControllerPlayerId: "enemy-1", TerritoryOwnerPlayerId: "enemy-1", EnemyUnitCount: 1},
+			{Id: "B2", ControllerPlayerId: "enemy-1", TerritoryOwnerPlayerId: "enemy-1", EnemyUnitCount: 1},
+		},
+		Units: []*pb.UnitView{
+			{Id: "u1", Faction: "player-1", UnitType: "infantry"},
+		},
+	}
+
+	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
+	commandOps := make([]domain.MinisterDraft, 0)
+	for _, draft := range drafts {
+		if draft.MinisterRole == commandMinisterRole && draft.Kind == domain.MinisterDraftKindOperation {
+			commandOps = append(commandOps, draft)
+		}
+	}
+	if len(commandOps) != 1 {
+		t.Fatalf("command operations = %#v, want 1 reserved proposal", commandOps)
+	}
+	if len(commandOps[0].OperationSteps) != 1 || commandOps[0].OperationSteps[0].Action != string(gameorders.ActionMove) {
+		t.Fatalf("command operation = %#v, want one move step", commandOps[0])
 	}
 }
 
