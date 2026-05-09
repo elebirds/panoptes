@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "9cd81a3a51a0b52e624d61c4ad168ce4ad72e491aaafd0ebef127ef36601dd64",
+    "bundle_hash": "916dabb9199cdecb7e30020d197bc5099cdca90637dc05095682257662de8e8f",
     "required_sections": [
       "resources",
       "points",
@@ -27,7 +27,7 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "bd329cd7c1e456ffdcf966404ce44da4add3da45481b6596aacbe9e0ba3d1624"
+        "hash": "47ff603cf06a407ddb019984e65830be81eba7d071a69ccbbc56bba99cbb0543"
       },
       {
         "section_name": "emotes",
@@ -59,7 +59,7 @@
       },
       {
         "section_name": "recipes",
-        "hash": "a406deb734de7cecc46b06ed3cf237bcc441d8642f4924de7908b522b52828d8"
+        "hash": "acb91b081a6547c210bb50dc355d4a9b9c1183554e0c100fb88185e38b4c261d"
       },
       {
         "section_name": "resources",
@@ -488,9 +488,9 @@
       "description": "基础粮食产出建筑",
       "icon_key": "building_farm",
       "prefab_key": "Farm",
-      "placement_kind": "resource_node",
+      "placement_kind": "city_territory",
       "building_scope": "out_of_city",
-      "required_resource_type": "food",
+      "required_resource_type": "",
       "resource_costs": {
         "wood": 1
       },
@@ -3358,9 +3358,7 @@
       "icon_key": "recipe_farm_food",
       "building_id": "farm",
       "resource_inputs": {},
-      "point_inputs": {
-        "industry_output": 1
-      },
+      "point_inputs": {},
       "work_amount": 1,
       "base_progress": 1,
       "outputs": {
@@ -3380,9 +3378,7 @@
       "icon_key": "recipe_farm_food",
       "building_id": "farm",
       "resource_inputs": {},
-      "point_inputs": {
-        "industry_output": 1
-      },
+      "point_inputs": {},
       "work_amount": 2,
       "base_progress": 1,
       "outputs": {

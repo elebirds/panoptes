@@ -41,9 +41,9 @@
       "description": "基础粮食产出建筑",
       "icon_key": "building_farm",
       "prefab_key": "Farm",
-      "placement_kind": "resource_node",
+      "placement_kind": "city_territory",
       "building_scope": "out_of_city",
-      "required_resource_type": "food",
+      "required_resource_type": "",
       "resource_costs": {
         "wood": 1
       },

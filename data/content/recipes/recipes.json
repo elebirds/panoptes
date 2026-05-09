@@ -23,7 +23,7 @@
       "id": "farm_food",
       "building_id": "farm",
       "resource_inputs": {},
-      "point_inputs": { "industry_output": 1 },
+      "point_inputs": {},
       "work_amount": 1,
       "base_progress": 1,
       "outputs": { "resources": { "food": 2 } }
@@ -32,7 +32,7 @@
       "id": "farm_harvest",
       "building_id": "farm",
       "resource_inputs": {},
-      "point_inputs": { "industry_output": 1 },
+      "point_inputs": {},
       "work_amount": 2,
       "base_progress": 1,
       "outputs": { "resources": { "food": 5 } }

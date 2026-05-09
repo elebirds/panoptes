@@ -77,6 +77,21 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 		t.Fatalf("city_core modifier_effects = %#v, want flat +1 research_output", cityCore.ModifierEffects)
 	}
 
+	farm, ok := catalog.GetBuilding("farm")
+	if !ok {
+		t.Fatalf("farm missing")
+	}
+	if farm.PlacementKind != "city_territory" || farm.RequiredResourceType != "" {
+		t.Fatalf("farm placement = kind:%q resource:%q, want city_territory with no required resource", farm.PlacementKind, farm.RequiredResourceType)
+	}
+	farmFood, ok := catalog.GetRecipe("farm_food")
+	if !ok {
+		t.Fatalf("farm_food missing")
+	}
+	if farmFood.Outputs.Resources["food"] != 2 || len(farmFood.PointInputs) != 0 {
+		t.Fatalf("farm_food = %#v, want free +2 food per cycle", farmFood)
+	}
+
 	provisionsRecipe, ok := catalog.GetRecipe("city_core_provisions")
 	if !ok {
 		t.Fatalf("city_core_provisions missing")
