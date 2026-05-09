@@ -65,6 +65,7 @@ namespace Panoptes.Presentation.UI.HUD
         private IDisposable _ministerAttentionSubscription;
         private IDisposable _ministerTurnSubscription;
         private GameplayFeedbackStore _feedbackStore;
+        private MinisterReportViewModel _ministerReportViewModel;
         private PlanningDraftStore _planningDraftStore;
         private IDisposable _stateSubscription;
         private TurnStore _turnStore;
@@ -87,6 +88,12 @@ namespace Panoptes.Presentation.UI.HUD
             _planningDraftStore = planningDraftStore;
             SubscribeMinisterAttention();
             UpdateMinisterAttentionBadge();
+        }
+
+        [Inject]
+        private void ConstructMinisterReport(MinisterReportViewModel ministerReportViewModel)
+        {
+            _ministerReportViewModel = ministerReportViewModel;
         }
 
         [Inject]
@@ -446,7 +453,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (!HasCurrentTurnMinisterDrafts(_planningDraftStore?.Snapshot, _turnStore?.Snapshot))
+            if (!HasMinisterAccess())
             {
                 PublishMinisterThinkingFeedback();
                 return;
@@ -570,6 +577,7 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureMinisterAttentionBadge();
             var turn = _turnStore?.Snapshot;
             if (!HasCurrentTurnMinisterDrafts(state, turn) &&
+                !HasMinisterMessages() &&
                 _managementPanelVisibilityStore?.IsVisible(ManagementPanelId.MinisterReport) == true)
             {
                 _managementPanelVisibilityStore.Hide();
@@ -579,6 +587,21 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 _ministerAttentionBadge.SetActive(HasCurrentTurnInteractiveMinisterDrafts(state, turn));
             }
+        }
+
+        private bool HasMinisterAccess()
+        {
+            if (HasCurrentTurnMinisterDrafts(_planningDraftStore?.Snapshot, _turnStore?.Snapshot))
+            {
+                return true;
+            }
+
+            return HasMinisterMessages();
+        }
+
+        private bool HasMinisterMessages()
+        {
+            return _ministerReportViewModel?.HasAnyMessages == true;
         }
 
         private static bool HasCurrentTurnMinisterDrafts(PlanningDraftState state, TurnState turn)

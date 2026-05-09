@@ -78,6 +78,7 @@ namespace Panoptes.Presentation.ViewModels
 
         public MinisterReportState Current => _current;
         public Observable<MinisterReportState> State => _state;
+        public bool HasAnyMessages => _messagesByRole.Any(pair => pair.Value != null && pair.Value.Count > 0);
 
         public void RefreshFromRuntimeSources()
         {
