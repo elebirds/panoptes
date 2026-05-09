@@ -105,11 +105,22 @@ namespace Panoptes.Core.Application.Services
 
         public bool SendChatEmote(GameChatEmoteKind emote)
         {
+            var emoteId = ToEmoteId(emote);
+            if (string.IsNullOrWhiteSpace(emoteId))
+            {
+                return false;
+            }
+
+            return SendChatEmote(emoteId);
+        }
+
+        public bool SendChatEmote(string emoteId)
+        {
             return Send(new MsgSendGameChat
             {
                 Payload = new ChatPayload
                 {
-                    Emote = ToProtocol(emote)
+                    EmoteId = emoteId ?? string.Empty
                 }
             });
         }
@@ -177,6 +188,20 @@ namespace Panoptes.Core.Application.Services
                 GameChatEmoteKind.Warning => ChatEmote.Warning,
                 GameChatEmoteKind.Gg => ChatEmote.Gg,
                 _ => ChatEmote.Unspecified
+            };
+        }
+
+        private static string ToEmoteId(GameChatEmoteKind emote)
+        {
+            return emote switch
+            {
+                GameChatEmoteKind.ThumbsUp => "general.thumbs_up",
+                GameChatEmoteKind.Thinking => "general.thinking",
+                GameChatEmoteKind.Laugh => "general.laugh",
+                GameChatEmoteKind.Angry => "general.angry",
+                GameChatEmoteKind.Warning => "general.warning",
+                GameChatEmoteKind.Gg => "general.gg",
+                _ => string.Empty
             };
         }
     }

@@ -94,6 +94,20 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 		t.Fatalf("terrain forest should be passable")
 	}
 
+	emote, ok := catalog.GetEmote("general.thumbs_up")
+	if !ok {
+		t.Fatalf("GetEmote(general.thumbs_up) missing")
+	}
+	if emote.SeriesID != "general" || emote.DisplayName != "Thumbs Up" {
+		t.Fatalf("emote = %#v", emote)
+	}
+	if len(catalog.EmoteSeries()) != 3 {
+		t.Fatalf("emote series len = %d", len(catalog.EmoteSeries()))
+	}
+	if len(catalog.Emotes()) != 18 {
+		t.Fatalf("emotes len = %d", len(catalog.Emotes()))
+	}
+
 	rules := catalog.Rules()
 	if rules.CityCoreMaxHP != 100 || rules.BaseIndustryOutputPerTurn != 2 || rules.BaseResearchOutputPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
 		t.Fatalf("rules = %#v", rules)
@@ -372,6 +386,34 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
   "points": [
     { "id": "research_output", "name": "科研产出", "description": "推进当前研究目标", "icon_key": "point_research_output", "sort_order": 10, "tags": ["hud"] },
     { "id": "industry_output", "name": "工业产出", "description": "推进建设与生产", "icon_key": "point_industry_output", "sort_order": 20, "tags": ["hud"] }
+  ]
+}`,
+		"data/ui/catalogs/emotes.json": `{
+  "$schema": "../../schema/ui/emotes.schema.json",
+  "series": [
+    { "id": "general", "display_name": "General", "icon_key": "", "sort_order": 10 },
+    { "id": "tactics", "display_name": "Tactics", "icon_key": "", "sort_order": 20 },
+    { "id": "mood", "display_name": "Mood", "icon_key": "", "sort_order": 30 }
+  ],
+  "emotes": [
+    { "id": "general.thumbs_up", "series_id": "general", "display_name": "Thumbs Up", "asset_key": "", "sort_order": 10, "tags": [] },
+    { "id": "general.thinking", "series_id": "general", "display_name": "Thinking", "asset_key": "", "sort_order": 20, "tags": [] },
+    { "id": "general.laugh", "series_id": "general", "display_name": "Laugh", "asset_key": "", "sort_order": 30, "tags": [] },
+    { "id": "general.angry", "series_id": "general", "display_name": "Angry", "asset_key": "", "sort_order": 40, "tags": [] },
+    { "id": "general.warning", "series_id": "general", "display_name": "Warning", "asset_key": "", "sort_order": 50, "tags": [] },
+    { "id": "general.gg", "series_id": "general", "display_name": "GG", "asset_key": "", "sort_order": 60, "tags": [] },
+    { "id": "tactics.attack", "series_id": "tactics", "display_name": "Attack", "asset_key": "", "sort_order": 10, "tags": [] },
+    { "id": "tactics.defend", "series_id": "tactics", "display_name": "Defend", "asset_key": "", "sort_order": 20, "tags": [] },
+    { "id": "tactics.expand", "series_id": "tactics", "display_name": "Expand", "asset_key": "", "sort_order": 30, "tags": [] },
+    { "id": "tactics.wait", "series_id": "tactics", "display_name": "Wait", "asset_key": "", "sort_order": 40, "tags": [] },
+    { "id": "tactics.need_help", "series_id": "tactics", "display_name": "Need Help", "asset_key": "", "sort_order": 50, "tags": [] },
+    { "id": "tactics.ready", "series_id": "tactics", "display_name": "Ready", "asset_key": "", "sort_order": 60, "tags": [] },
+    { "id": "mood.happy", "series_id": "mood", "display_name": "Happy", "asset_key": "", "sort_order": 10, "tags": [] },
+    { "id": "mood.surprised", "series_id": "mood", "display_name": "Surprised", "asset_key": "", "sort_order": 20, "tags": [] },
+    { "id": "mood.sad", "series_id": "mood", "display_name": "Sad", "asset_key": "", "sort_order": 30, "tags": [] },
+    { "id": "mood.confused", "series_id": "mood", "display_name": "Confused", "asset_key": "", "sort_order": 40, "tags": [] },
+    { "id": "mood.proud", "series_id": "mood", "display_name": "Proud", "asset_key": "", "sort_order": 50, "tags": [] },
+    { "id": "mood.panic", "series_id": "mood", "display_name": "Panic", "asset_key": "", "sort_order": 60, "tags": [] }
   ]
 }`,
 		"data/ui/catalogs/units.json": `{

@@ -24,7 +24,9 @@ namespace Panoptes.Core.Application.Stores
                 policies: MapPolicies(snapshot.Policies),
                 institutionCategories: MapInstitutionCategories(snapshot.InstitutionCategories),
                 institutions: MapInstitutions(snapshot.Institutions),
-                units: MapUnits(snapshot.Units));
+                units: MapUnits(snapshot.Units),
+                emoteSeries: MapEmoteSeries(snapshot.EmoteSeries),
+                emotes: MapEmotes(snapshot.Emotes));
         }
 
         private static Dictionary<string, CatalogHudEntryDto> MapResources(IEnumerable<ResourceDescriptor> source)
@@ -157,6 +159,30 @@ namespace Panoptes.Core.Application.Stores
                     CanAttackStructures = entry.CanAttackStructures,
                     CanDestroyRoad = false
                 },
+                Tags = ToList(entry.Tags)
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteSeriesDto> MapEmoteSeries(IEnumerable<EmoteSeriesCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteSeriesDto
+            {
+                Id = entry.Id,
+                DisplayName = entry.DisplayName,
+                IconKey = entry.IconKey,
+                SortOrder = entry.SortOrder
+            });
+        }
+
+        private static Dictionary<string, CatalogEmoteDto> MapEmotes(IEnumerable<EmoteCatalogEntry> source)
+        {
+            return MapCatalog(source, entry => entry?.Id, entry => new CatalogEmoteDto
+            {
+                AssetKey = entry.AssetKey,
+                DisplayName = entry.DisplayName,
+                Id = entry.Id,
+                SeriesId = entry.SeriesId,
+                SortOrder = entry.SortOrder,
                 Tags = ToList(entry.Tags)
             });
         }

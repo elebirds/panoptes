@@ -294,6 +294,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCoreHpBarOverlayController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCorePolicyFocusActionRegistrar>());
+            builder.RegisterBuildCallback(container => container.Resolve<GameChatPanelController>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<GameOverOverlay>());
         }

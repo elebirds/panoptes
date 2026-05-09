@@ -87,7 +87,8 @@ namespace Panoptes.Core.Application.Stores
                 current.Nodes,
                 current.Units,
                 resources,
-                current.ResearchState);
+                current.ResearchState,
+                current.RoomPlayers);
         }
 
         private static bool CanAfford(ResourceDto resources, BuildCostReservation reservation, out string errorCode)

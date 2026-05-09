@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/game/participant"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
 func (r *Runtime) participantIDs() []string {
@@ -47,4 +48,24 @@ func (r *Runtime) findParticipantBinding(participantID string) (ParticipantBindi
 		}
 	}
 	return ParticipantBinding{}, false
+}
+
+func (r *Runtime) roomPlayerSnapshot() []*pb.RoomPlayer {
+	players := make([]*pb.RoomPlayer, 0, len(r.participants))
+	for _, binding := range r.participants {
+		playerID := strings.TrimSpace(binding.Participant.ID)
+		if playerID == "" {
+			continue
+		}
+
+		players = append(players, &pb.RoomPlayer{
+			PlayerId: playerID,
+			Username: binding.Participant.Username,
+			IsReady:  true,
+			IsHost:   false,
+			IsBot:    binding.Participant.IsAutonomous(),
+		})
+	}
+
+	return players
 }

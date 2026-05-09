@@ -166,6 +166,22 @@ message TerrainCatalogEntry {
   repeated string tags = 6;
 }
 
+message EmoteSeriesCatalogEntry {
+  string id = 1;
+  string display_name = 2;
+  string icon_key = 3;
+  int32 sort_order = 4;
+}
+
+message EmoteCatalogEntry {
+  string id = 1;
+  string series_id = 2;
+  string display_name = 3;
+  string asset_key = 4;
+  int32 sort_order = 5;
+  repeated string tags = 6;
+}
+
 message StaticCatalogSnapshot {
   StaticCatalogManifest manifest = 1;
   repeated ResourceDescriptor resources = 2;
@@ -176,8 +192,10 @@ message StaticCatalogSnapshot {
   repeated PolicyCatalogEntry policies = 7;
   repeated RecipeCatalogEntry recipes = 8;
   repeated TerrainCatalogEntry terrains = 9;
-  repeated InstitutionCategoryCatalogEntry institution_categories = 10;
-  repeated InstitutionCatalogEntry institutions = 11;
+  repeated EmoteSeriesCatalogEntry emote_series = 10;
+  repeated EmoteCatalogEntry emotes = 11;
+  repeated InstitutionCategoryCatalogEntry institution_categories = 12;
+  repeated InstitutionCatalogEntry institutions = 13;
 }
 
 message MsgStaticCatalogManifest {

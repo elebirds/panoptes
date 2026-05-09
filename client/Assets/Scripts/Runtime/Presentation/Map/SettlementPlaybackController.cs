@@ -91,6 +91,7 @@ namespace Panoptes.Presentation.Map
             }
             if (isActiveAndEnabled)
             {
+                SubscribeTurn();
                 SubscribeSettlement();
             }
         }
@@ -278,7 +279,10 @@ namespace Panoptes.Presentation.Map
             _turnReportActive = true;
             if (turnChanged)
             {
-                _turnReportAckSent = false;
+                if (!_turnReportAckSent || _turnReportPlaybackCompletedTurn != turn)
+                {
+                    _turnReportAckSent = false;
+                }
                 _turnReportPlaybackCompleted = _turnReportPlaybackCompletedTurn == turn;
             }
 
@@ -323,7 +327,13 @@ namespace Panoptes.Presentation.Map
 
         private void TryAcknowledgeTurnReport()
         {
-            if (!_turnReportActive || _turnReportAckSent || _turnReportTurn <= 0)
+            if (_turnReportAckSent)
+            {
+                return;
+            }
+
+            var turn = _turnReportTurn > 0 ? _turnReportTurn : _turnReportPlaybackCompletedTurn;
+            if (turn <= 0)
             {
                 return;
             }
@@ -334,7 +344,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_gameIntentService?.AcknowledgeTurnReport(_turnReportTurn) == true)
+            if (_gameIntentService?.AcknowledgeTurnReport(turn) == true)
             {
                 _turnReportAckSent = true;
             }

@@ -39,18 +39,28 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 {
                     Kind = GameChatPayloadKind.Emote,
                     Emote = ToCore(payload.Emote),
+                    EmoteId = ToEmoteId(payload.Emote),
+                    Text = string.Empty
+                },
+                ChatPayload.BodyOneofCase.EmoteId => new GameChatPayloadDto
+                {
+                    Kind = GameChatPayloadKind.Emote,
+                    Emote = GameChatEmoteKind.Unspecified,
+                    EmoteId = payload.EmoteId ?? string.Empty,
                     Text = string.Empty
                 },
                 ChatPayload.BodyOneofCase.Text => new GameChatPayloadDto
                 {
                     Kind = GameChatPayloadKind.Text,
                     Emote = GameChatEmoteKind.Unspecified,
+                    EmoteId = string.Empty,
                     Text = payload.Text ?? string.Empty
                 },
                 _ => new GameChatPayloadDto
                 {
                     Kind = GameChatPayloadKind.None,
                     Emote = GameChatEmoteKind.Unspecified,
+                    EmoteId = string.Empty,
                     Text = string.Empty
                 }
             };
@@ -81,6 +91,20 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 ChatEmote.Warning => GameChatEmoteKind.Warning,
                 ChatEmote.Gg => GameChatEmoteKind.Gg,
                 _ => GameChatEmoteKind.Unspecified
+            };
+        }
+
+        public static string ToEmoteId(ChatEmote emote)
+        {
+            return emote switch
+            {
+                ChatEmote.ThumbsUp => "general.thumbs_up",
+                ChatEmote.Thinking => "general.thinking",
+                ChatEmote.Laugh => "general.laugh",
+                ChatEmote.Angry => "general.angry",
+                ChatEmote.Warning => "general.warning",
+                ChatEmote.Gg => "general.gg",
+                _ => string.Empty
             };
         }
     }

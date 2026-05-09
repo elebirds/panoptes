@@ -140,7 +140,7 @@ namespace Panoptes.Tests.EditMode.Core
                     new QueuedRecipeSelectionDto { NodeId = "node-a", RecipeId = "grain" }
                 }));
 
-            store.ApplyRecipeSelection(" node-a ", "  tools ");
+            store.ApplyRecipeSelection(" NODE-A ", "  tools ");
 
             Assert.That(store.Snapshot.SnapshotTurn, Is.EqualTo(3));
             Assert.That(store.Snapshot.SnapshotPhase, Is.EqualTo(GamePhases.Planning));

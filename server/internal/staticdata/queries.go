@@ -233,6 +233,46 @@ func (c *Catalog) GetTerrain(id string) (TerrainDefinition, bool) {
 	return terrain, ok
 }
 
+func (c *Catalog) GetEmote(id string) (EmoteDefinition, bool) {
+	if c == nil {
+		return EmoteDefinition{}, false
+	}
+	emote, ok := c.emotes[id]
+	return emote, ok
+}
+
+func (c *Catalog) EmoteSeries() []EmoteSeriesDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.emoteSeries))
+	for id := range c.emoteSeries {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]EmoteSeriesDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.emoteSeries[id])
+	}
+	return out
+}
+
+func (c *Catalog) Emotes() []EmoteDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.emotes))
+	for id := range c.emotes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]EmoteDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.emotes[id])
+	}
+	return out
+}
+
 func (c *Catalog) Rules() Rules {
 	if c == nil {
 		return Rules{}

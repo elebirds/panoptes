@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/state flow for carrying room roster snapshot through the game scene."}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend layering rules for copying the room roster snapshot into game init."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend architecture and presentation/store conventions for the avatar rail UI change."}

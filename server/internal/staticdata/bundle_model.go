@@ -33,6 +33,8 @@ type CatalogBundle struct {
 	Institutions          []InstitutionDefinition         `json:"institutions"`
 	Recipes               []RecipeDefinition              `json:"recipes"`
 	Terrains              []TerrainDefinition             `json:"terrains"`
+	EmoteSeries           []EmoteSeriesDefinition         `json:"emote_series"`
+	Emotes                []EmoteDefinition               `json:"emotes"`
 	Rules                 Rules                           `json:"rules"`
 	Ministers             []Minister                      `json:"ministers"`
 	MinisterSkillCards    []MinisterSkillCard             `json:"minister_skill_cards"`

@@ -219,14 +219,6 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.BuildCatalog), Is.True);
             Assert.That(buildContextStore.Current.CityCoreNodeId, Is.EqualTo("capital"));
             Assert.That(recipeContextStore.Current.HasContext, Is.False);
-
-            Assert.That(registry.TryResolve("open_policy_focus", unit, out var policyHandler, out _, out var policyVisible), Is.True);
-            Assert.That(policyVisible, Is.True);
-            policyHandler(unit);
-
-            Assert.That(visibilityStore.IsVisible(ManagementPanelId.PolicyFocus), Is.True);
-            Assert.That(buildContextStore.Current.CityCoreNodeId, Is.EqualTo(string.Empty));
-            Assert.That(recipeContextStore.Current.HasContext, Is.False);
         }
 
         private UnitView CreateUnitView(string nodeId)
@@ -258,6 +250,7 @@ namespace Panoptes.Tests.EditMode.Presentation
                     visibilityStore,
                     buildContextStore,
                     recipeContextStore,
+                    null,
                     null,
                     null
                 });

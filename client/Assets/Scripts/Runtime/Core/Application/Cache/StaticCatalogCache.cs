@@ -238,6 +238,26 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class EmoteSeriesEntryJson
+        {
+            public string id;
+            public string display_name;
+            public string icon_key;
+            public int sort_order;
+        }
+
+        [Serializable]
+        public sealed class EmoteEntryJson
+        {
+            public string id;
+            public string series_id;
+            public string display_name;
+            public string asset_key;
+            public int sort_order;
+            public string[] tags;
+        }
+
+        [Serializable]
         public sealed class MapEntryJson
         {
             public string id;
@@ -355,6 +375,7 @@ namespace Panoptes.Core.Application.Cache
             public string[] recipe_order;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class CatalogBundleJson
         {
@@ -369,6 +390,8 @@ namespace Panoptes.Core.Application.Cache
             public InstitutionEntryJson[] institutions;
             public RecipeEntryJson[] recipes;
             public TerrainEntryJson[] terrains;
+            public EmoteSeriesEntryJson[] emote_series;
+            public EmoteEntryJson[] emotes;
             public RulesJson rules;
             public MinisterJson[] ministers;
             public MinisterSkillCardJson[] minister_skill_cards;
@@ -377,6 +400,7 @@ namespace Panoptes.Core.Application.Cache
             public BuildMenuLayoutJson ui_build_menu_layout;
             public RecipeLayoutJson ui_recipe_layout;
         }
+#pragma warning restore CS0649
 
         [Serializable]
         private sealed class ResourcesSectionJson
@@ -431,6 +455,13 @@ namespace Panoptes.Core.Application.Cache
         private sealed class TerrainsSectionJson
         {
             public TerrainEntryJson[] terrains;
+        }
+
+        [Serializable]
+        private sealed class EmotesSectionJson
+        {
+            public EmoteSeriesEntryJson[] series;
+            public EmoteEntryJson[] emotes;
         }
 
         [Serializable]
@@ -520,6 +551,8 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, TerrainEntryJson> _terrainsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, TechnologyEntryJson> _technologiesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, UnitEntryJson> _unitsById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, EmoteSeriesEntryJson> _emoteSeriesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, EmoteEntryJson> _emotesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapRuntimeBundleJson> _mapBundleCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, SectionSyncAccumulator> _pendingSectionSync = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _syncedSectionHashes = new(StringComparer.OrdinalIgnoreCase);
@@ -545,6 +578,8 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
         public IReadOnlyDictionary<string, TechnologyEntryJson> Technologies => _technologiesById;
         public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
+        public IReadOnlyDictionary<string, EmoteSeriesEntryJson> EmoteSeries => _emoteSeriesById;
+        public IReadOnlyDictionary<string, EmoteEntryJson> Emotes => _emotesById;
         public RulesJson Rules => _rules;
         public IReadOnlyList<MinisterJson> Ministers => _ministers;
         public IReadOnlyList<MinisterSkillCardJson> MinisterSkillCards => _ministerSkillCards;
@@ -608,6 +643,8 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_institutionsById, parsed.institutions, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_recipesById, parsed.recipes, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_emoteSeriesById, parsed.emote_series, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_emotesById, parsed.emotes, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
             _rules = parsed.rules;
             _ministers = parsed.ministers ?? Array.Empty<MinisterJson>();
@@ -841,6 +878,8 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_institutionsById, ConvertInstitutions(snapshot.Institutions, oldInstitutions), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_recipesById, ConvertRecipes(snapshot.Recipes, oldRecipes), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, ConvertTerrains(snapshot.Terrains), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_emoteSeriesById, ConvertEmoteSeries(snapshot.EmoteSeries), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_emotesById, ConvertEmotes(snapshot.Emotes), entry => entry != null ? entry.id : string.Empty);
 
             if (logStatus)
             {
@@ -888,6 +927,11 @@ namespace Panoptes.Core.Application.Cache
         public bool TryGetUnit(string unitId, out UnitEntryJson entry)
         {
             return _unitsById.TryGetValue(Normalize(unitId), out entry);
+        }
+
+        public bool TryGetEmote(string emoteId, out EmoteEntryJson entry)
+        {
+            return _emotesById.TryGetValue(Normalize(emoteId), out entry);
         }
 
         public bool TryGetDefaultMap(out MapRuntimeBundleJson bundle)
@@ -955,6 +999,8 @@ namespace Panoptes.Core.Application.Cache
             _unitsById.Clear();
             _buildingsById.Clear();
             _terrainsById.Clear();
+            _emoteSeriesById.Clear();
+            _emotesById.Clear();
             _mapsById.Clear();
             _mapBundleCache.Clear();
             _pendingSectionSync.Clear();
@@ -1045,6 +1091,11 @@ namespace Panoptes.Core.Application.Cache
             }));
             yield return ("recipes", JsonUtility.ToJson(new RecipesSectionJson { recipes = _recipesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
             yield return ("terrains", JsonUtility.ToJson(new TerrainsSectionJson { terrains = _terrainsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("emotes", JsonUtility.ToJson(new EmotesSectionJson
+            {
+                series = _emoteSeriesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray(),
+                emotes = _emotesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray()
+            }));
             yield return ("rules", JsonUtility.ToJson(new RulesSectionJson { rules = _rules ?? new RulesJson() }));
             yield return ("ministers", JsonUtility.ToJson(new MinistersSectionJson { ministers = _ministers ?? Array.Empty<MinisterJson>() }));
             yield return ("minister_skill_cards", JsonUtility.ToJson(new MinisterSkillCardsSectionJson { minister_skill_cards = _ministerSkillCards ?? Array.Empty<MinisterSkillCardJson>() }));
@@ -1173,6 +1224,11 @@ namespace Panoptes.Core.Application.Cache
                         return true;
                     case "terrains":
                         RebuildIndex(_terrainsById, JsonUtility.FromJson<TerrainsSectionJson>(payload)?.terrains, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "emotes":
+                        var emotesSection = JsonUtility.FromJson<EmotesSectionJson>(payload);
+                        RebuildIndex(_emoteSeriesById, emotesSection?.series, entry => entry != null ? entry.id : string.Empty);
+                        RebuildIndex(_emotesById, emotesSection?.emotes, entry => entry != null ? entry.id : string.Empty);
                         return true;
                     case "rules":
                         _rules = JsonUtility.FromJson<RulesSectionJson>(payload)?.rules;
@@ -1516,6 +1572,54 @@ namespace Panoptes.Core.Application.Cache
                     description = item != null ? item.Description : string.Empty,
                     icon_key = item != null ? item.IconKey : string.Empty,
                     material_key = item != null ? item.MaterialKey : string.Empty,
+                    tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
+                };
+            }
+
+            return result;
+        }
+
+        private static EmoteSeriesEntryJson[] ConvertEmoteSeries(System.Collections.Generic.IList<EmoteSeriesCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<EmoteSeriesEntryJson>();
+            }
+
+            var result = new EmoteSeriesEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new EmoteSeriesEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    display_name = item != null ? item.DisplayName : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    sort_order = item != null ? item.SortOrder : 0
+                };
+            }
+
+            return result;
+        }
+
+        private static EmoteEntryJson[] ConvertEmotes(System.Collections.Generic.IList<EmoteCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<EmoteEntryJson>();
+            }
+
+            var result = new EmoteEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new EmoteEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    series_id = item != null ? item.SeriesId : string.Empty,
+                    display_name = item != null ? item.DisplayName : string.Empty,
+                    asset_key = item != null ? item.AssetKey : string.Empty,
+                    sort_order = item != null ? item.SortOrder : 0,
                     tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
                 };
             }

@@ -41,6 +41,8 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 		institutions:          make(map[string]InstitutionDefinition, len(bundle.Institutions)),
 		recipes:               make(map[string]RecipeDefinition, len(bundle.Recipes)),
 		terrains:              make(map[string]TerrainDefinition, len(bundle.Terrains)),
+		emoteSeries:           make(map[string]EmoteSeriesDefinition, len(bundle.EmoteSeries)),
+		emotes:                make(map[string]EmoteDefinition, len(bundle.Emotes)),
 		ministerSkills:        make(map[string]MinisterSkillCard, len(bundle.MinisterSkillCards)),
 		maps:                  make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
 		sectionPayloads:       sectionPayloads,
@@ -75,6 +77,12 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 	for _, terrain := range bundle.Terrains {
 		catalog.terrains[terrain.ID] = terrain
+	}
+	for _, series := range bundle.EmoteSeries {
+		catalog.emoteSeries[series.ID] = series
+	}
+	for _, emote := range bundle.Emotes {
+		catalog.emotes[emote.ID] = emote
 	}
 	for _, skill := range bundle.MinisterSkillCards {
 		catalog.ministerSkills[skill.ID] = skill

@@ -44,6 +44,7 @@ namespace Panoptes.Presentation.Map
             public bool isGhost;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private struct CityZone
         {
@@ -51,6 +52,7 @@ namespace Panoptes.Presentation.Map
             public Vector2Int center;
             public Vector2Int size;
         }
+#pragma warning restore CS0649
 
         // Legacy enum name kept for existing planning action semantics.
         public enum CombatActionMode
@@ -116,8 +118,10 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
         [SerializeField] private bool disallowManualCityCorePlacement = true;
         [SerializeField] private string[] manualPlacementBlockedBuildingTypes = { "city_core" };
+#pragma warning disable CS0414
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
+#pragma warning restore CS0414
         [SerializeField] private CityZone[] cityZones;
 
         [Header("Damage Popup")]
@@ -2457,7 +2461,7 @@ namespace Panoptes.Presentation.Map
                 _playbackInputLockCount++;
                 if (wasUnlocked)
                 {
-                    var controllers = FindObjectsByType<MapPlanningInputController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                    var controllers = FindObjectsByType<MapPlanningInputController>(FindObjectsInactive.Exclude);
                     for (var i = 0; i < controllers.Length; i++)
                     {
                         controllers[i]?.HandlePlaybackInputLocked();

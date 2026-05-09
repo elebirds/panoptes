@@ -184,16 +184,17 @@ func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string,
 	if r == nil || r.state == nil || len(selectedDraftActions) == 0 {
 		return false
 	}
-	turn := r.state.Turn
+	candidateTurn := r.state.Turn
+	proposalTurn := r.ministerProposalTurn()
 	role = strings.TrimSpace(role)
-	r.PrepareMinisterDraftCacheForTurn(turn)
-	candidates := r.preparedMinisterDraftsForPlayer(turn, playerID)
+	r.PrepareMinisterDraftCacheForTurn(candidateTurn)
+	candidates := r.preparedMinisterDraftsForPlayer(candidateTurn, playerID)
 	if len(candidates) == 0 {
 		return false
 	}
 	changed := false
 	for _, draft := range candidates {
-		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != turn {
+		if !draft.Available || draft.Status != domain.MinisterDraftStatusPending || draft.Turn != candidateTurn {
 			continue
 		}
 		if role != "" && strings.TrimSpace(draft.MinisterRole) != role {
@@ -203,6 +204,7 @@ func (r *Runtime) applyMinisterCandidateSelections(playerID string, role string,
 		if !selected {
 			continue
 		}
+		draft = retargetMinisterDraftTurn(draft, proposalTurn)
 		draft.Source = domain.MinisterDraftSourceLLMAction
 		applyMinisterActionProposalText(&draft, role, action)
 		if r.upsertMinisterActionDraft(playerID, draft) {
@@ -216,7 +218,8 @@ func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, 
 	if r == nil || r.state == nil {
 		return false
 	}
-	draft, ok := ministerDraftFromIntent(r.state.Turn, playerID, intent)
+	draftTurn := r.ministerProposalTurn()
+	draft, ok := ministerDraftFromIntent(draftTurn, playerID, intent)
 	if !ok {
 		return false
 	}
@@ -232,11 +235,41 @@ func (r *Runtime) upsertMinisterActionIntentDraft(playerID string, role string, 
 		"report_action",
 		strings.TrimSpace(string(draft.Kind)),
 		safeDraftIDPart(strings.TrimSpace(draft.TargetID)),
-		fmt.Sprint(r.state.Turn),
+		fmt.Sprint(draftTurn),
 	}, ":")
 	draft.Title, draft.Summary, draft.Rationale, draft.RiskNote = ministerDraftText(role, string(draft.Kind), draft.TargetLabel)
 	applyMinisterActionProposalText(&draft, role, action)
 	return r.upsertMinisterActionDraft(playerID, draft)
+}
+
+func (r *Runtime) ministerProposalTurn() int {
+	if r == nil || r.state == nil {
+		return 0
+	}
+	turn := r.state.Turn
+	if strings.TrimSpace(r.state.Phase) == domain.PhaseResolving.String() {
+		turn++
+	}
+	return turn
+}
+
+func retargetMinisterDraftTurn(draft domain.MinisterDraft, turn int) domain.MinisterDraft {
+	if turn <= 0 || draft.Turn == turn {
+		return draft
+	}
+	draft.Turn = turn
+	draft.DraftID = fmt.Sprintf("%s:%s:%s:%d",
+		strings.TrimSpace(draft.MinisterRole),
+		strings.TrimSpace(string(draft.Kind)),
+		safeDraftIDPart(strings.TrimSpace(draft.TargetID)),
+		turn,
+	)
+	for idx := range draft.OperationSteps {
+		draft.OperationSteps[idx].Turn = turn
+		draft.OperationSteps[idx].DraftID = draft.DraftID + ":step_" + fmt.Sprint(idx+1)
+		draft.OperationSteps[idx].MinisterRole = draft.MinisterRole
+	}
+	return draft
 }
 
 func applyMinisterActionProposalText(draft *domain.MinisterDraft, role string, action ministerengine.MinisterActionItem) {

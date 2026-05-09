@@ -11,8 +11,10 @@ namespace Panoptes.Presentation.UI.HUD
     public sealed class CityCorePolicyFocusActionRegistrar : UnitInfoActionProviderBase
     {
         [Header("Unit Info Action")]
+#pragma warning disable CS0414
         [SerializeField] private string policyActionId = "open_policy_focus";
         [SerializeField] private string policyActionLabel = "国策";
+#pragma warning restore CS0414
 
         [Header("Initial Policy Prompt")]
         [SerializeField] private bool showPolicyFocusOnStart = true;

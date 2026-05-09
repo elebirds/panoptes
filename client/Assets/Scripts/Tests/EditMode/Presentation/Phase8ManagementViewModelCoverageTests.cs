@@ -63,6 +63,29 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void RecipeSynthesis_ShouldMatchSelectedRecipeWithUppercaseNodeIds()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            using var contextStore = new RecipeSynthesisContextStore();
+            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore, contextStore, gameStateStore);
+
+            catalogStore.Replace(new StaticCatalogState(recipes: new Dictionary<string, CatalogRecipeDto>
+            {
+                ["grain"] = new CatalogRecipeDto { Id = "grain", Name = "Mill Grain", BuildingId = "mill" }
+            }));
+            draftStore.Replace(new PlanningDraftState(recipeSelections: new[]
+            {
+                new QueuedRecipeSelectionDto { NodeId = "B1", RecipeId = "grain" }
+            }));
+            contextStore.SetContext("B1", "mill", "player-1");
+
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已选择"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("\u53d6\u6d88\u9009\u62e9"));
+        }
+
+        [Test]
         public void RecipeSynthesis_ShouldHideActiveSelectionWhenCancellationIsQueued()
         {
             var catalogStore = new StaticCatalogStore();

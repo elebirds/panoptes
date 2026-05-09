@@ -68,6 +68,28 @@ namespace Panoptes.Tests.EditMode.Core
                         Tags = { "fast" }
                     }
                 },
+                EmoteSeries =
+                {
+                    new EmoteSeriesCatalogEntry
+                    {
+                        Id = "general",
+                        DisplayName = "General",
+                        IconKey = "emote_tab_general",
+                        SortOrder = 10
+                    }
+                },
+                Emotes =
+                {
+                    new EmoteCatalogEntry
+                    {
+                        Id = "general.thumbs_up",
+                        SeriesId = "general",
+                        DisplayName = "Thumbs Up",
+                        AssetKey = "Textures/Emotes/General/general_01",
+                        SortOrder = 10,
+                        Tags = { "positive" }
+                    }
+                },
                 Resources =
                 {
                     new ResourceDescriptor
@@ -108,6 +130,9 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(state.Policies["mobilize"].ActivationTiming, Is.EqualTo("next_turn"));
             Assert.That(state.Units["scout"].Flags.CanAttackStructures, Is.True);
             Assert.That(state.Units["scout"].Tags, Is.EqualTo(new[] { "fast" }));
+            Assert.That(state.EmoteSeries["general"].IconKey, Is.EqualTo("emote_tab_general"));
+            Assert.That(state.Emotes["general.thumbs_up"].AssetKey, Is.EqualTo("Textures/Emotes/General/general_01"));
+            Assert.That(state.Emotes["general.thumbs_up"].Tags, Is.EqualTo(new[] { "positive" }));
         }
     }
 }

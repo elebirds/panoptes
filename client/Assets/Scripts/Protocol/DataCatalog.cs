@@ -65,43 +65,53 @@ namespace Panoptes.Protocol.V1 {
             "E1RlcnJhaW5DYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUY",
             "AiABKAlSBG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0aW9u",
             "EhkKCGljb25fa2V5GAQgASgJUgdpY29uS2V5EiEKDG1hdGVyaWFsX2tleRgF",
-            "IAEoCVILbWF0ZXJpYWxLZXkSEgoEdGFncxgGIAMoCVIEdGFncyKyBgoVU3Rh",
-            "dGljQ2F0YWxvZ1NuYXBzaG90EkQKCG1hbmlmZXN0GAEgASgLMigucGFub3B0",
-            "ZXMucHJvdG8udjEuU3RhdGljQ2F0YWxvZ01hbmlmZXN0UghtYW5pZmVzdBJD",
-            "CglyZXNvdXJjZXMYAiADKAsyJS5wYW5vcHRlcy5wcm90by52MS5SZXNvdXJj",
-            "ZURlc2NyaXB0b3JSCXJlc291cmNlcxI6CgZwb2ludHMYAyADKAsyIi5wYW5v",
-            "cHRlcy5wcm90by52MS5Qb2ludERlc2NyaXB0b3JSBnBvaW50cxI5CgV1bml0",
-            "cxgEIAMoCzIjLnBhbm9wdGVzLnByb3RvLnYxLlVuaXRDYXRhbG9nRW50cnlS",
-            "BXVuaXRzEkUKCWJ1aWxkaW5ncxgFIAMoCzInLnBhbm9wdGVzLnByb3RvLnYx",
-            "LkJ1aWxkaW5nQ2F0YWxvZ0VudHJ5UglidWlsZGluZ3MSTQoMdGVjaG5vbG9n",
-            "aWVzGAYgAygLMikucGFub3B0ZXMucHJvdG8udjEuVGVjaG5vbG9neUNhdGFs",
-            "b2dFbnRyeVIMdGVjaG5vbG9naWVzEkEKCHBvbGljaWVzGAcgAygLMiUucGFu",
-            "b3B0ZXMucHJvdG8udjEuUG9saWN5Q2F0YWxvZ0VudHJ5Ughwb2xpY2llcxI/",
-            "CgdyZWNpcGVzGAggAygLMiUucGFub3B0ZXMucHJvdG8udjEuUmVjaXBlQ2F0",
-            "YWxvZ0VudHJ5UgdyZWNpcGVzEkIKCHRlcnJhaW5zGAkgAygLMiYucGFub3B0",
-            "ZXMucHJvdG8udjEuVGVycmFpbkNhdGFsb2dFbnRyeVIIdGVycmFpbnMSaQoW",
-            "aW5zdGl0dXRpb25fY2F0ZWdvcmllcxgKIAMoCzIyLnBhbm9wdGVzLnByb3Rv",
-            "LnYxLkluc3RpdHV0aW9uQ2F0ZWdvcnlDYXRhbG9nRW50cnlSFWluc3RpdHV0",
-            "aW9uQ2F0ZWdvcmllcxJOCgxpbnN0aXR1dGlvbnMYCyADKAsyKi5wYW5vcHRl",
-            "cy5wcm90by52MS5JbnN0aXR1dGlvbkNhdGFsb2dFbnRyeVIMaW5zdGl0dXRp",
-            "b25zImAKGE1zZ1N0YXRpY0NhdGFsb2dNYW5pZmVzdBJECghtYW5pZmVzdBgB",
-            "IAEoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlN0YXRpY0NhdGFsb2dNYW5pZmVz",
-            "dFIIbWFuaWZlc3QiiwEKG01zZ1N0YXRpY0NhdGFsb2dTeW5jUmVxdWVzdBIf",
-            "CgtidW5kbGVfaGFzaBgBIAEoCVIKYnVuZGxlSGFzaBIjCg1zZWN0aW9uX25h",
-            "bWVzGAIgAygJUgxzZWN0aW9uTmFtZXMSJgoPZm9yY2VfZnVsbF9zeW5jGAMg",
-            "ASgIUg1mb3JjZUZ1bGxTeW5jIuIBChxNc2dTdGF0aWNDYXRhbG9nU2VjdGlv",
-            "bkNodW5rEiEKDHNlY3Rpb25fbmFtZRgBIAEoCVILc2VjdGlvbk5hbWUSIQoM",
-            "c2VjdGlvbl9oYXNoGAIgASgJUgtzZWN0aW9uSGFzaBIfCgtjaHVua19pbmRl",
-            "eBgDIAEoDVIKY2h1bmtJbmRleBIfCgtjaHVua19jb3VudBgEIAEoDVIKY2h1",
-            "bmtDb3VudBIgCgtjb21wcmVzc2lvbhgFIAEoCVILY29tcHJlc3Npb24SGAoH",
-            "cGF5bG9hZBgGIAEoDFIHcGF5bG9hZCJ+ChxNc2dTdGF0aWNDYXRhbG9nU3lu",
-            "Y0NvbXBsZXRlEi4KE2FwcGxpZWRfYnVuZGxlX2hhc2gYASABKAlSEWFwcGxp",
-            "ZWRCdW5kbGVIYXNoEhgKB3N1Y2Nlc3MYAiABKAhSB3N1Y2Nlc3MSFAoFZXJy",
-            "b3IYAyABKAlSBWVycm9yImAKGE1zZ1N0YXRpY0NhdGFsb2dTbmFwc2hvdBJE",
-            "CghzbmFwc2hvdBgBIAEoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlN0YXRpY0Nh",
-            "dGFsb2dTbmFwc2hvdFIIc25hcHNob3RCUFo3Z2l0aHViLmNvbS9lbGViaXJk",
-            "cy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG87cHJvdG92MaoCFFBhbm9w",
-            "dGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "IAEoCVILbWF0ZXJpYWxLZXkSEgoEdGFncxgGIAMoCVIEdGFncyKGAQoXRW1v",
+            "dGVTZXJpZXNDYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEiEKDGRpc3Bs",
+            "YXlfbmFtZRgCIAEoCVILZGlzcGxheU5hbWUSGQoIaWNvbl9rZXkYAyABKAlS",
+            "B2ljb25LZXkSHQoKc29ydF9vcmRlchgEIAEoBVIJc29ydE9yZGVyIrMBChFF",
+            "bW90ZUNhdGFsb2dFbnRyeRIOCgJpZBgBIAEoCVICaWQSGwoJc2VyaWVzX2lk",
+            "GAIgASgJUghzZXJpZXNJZBIhCgxkaXNwbGF5X25hbWUYAyABKAlSC2Rpc3Bs",
+            "YXlOYW1lEhsKCWFzc2V0X2tleRgEIAEoCVIIYXNzZXRLZXkSHQoKc29ydF9v",
+            "cmRlchgFIAEoBVIJc29ydE9yZGVyEhIKBHRhZ3MYBiADKAlSBHRhZ3MivwcK",
+            "FVN0YXRpY0NhdGFsb2dTbmFwc2hvdBJECghtYW5pZmVzdBgBIAEoCzIoLnBh",
+            "bm9wdGVzLnByb3RvLnYxLlN0YXRpY0NhdGFsb2dNYW5pZmVzdFIIbWFuaWZl",
+            "c3QSQwoJcmVzb3VyY2VzGAIgAygLMiUucGFub3B0ZXMucHJvdG8udjEuUmVz",
+            "b3VyY2VEZXNjcmlwdG9yUglyZXNvdXJjZXMSOgoGcG9pbnRzGAMgAygLMiIu",
+            "cGFub3B0ZXMucHJvdG8udjEuUG9pbnREZXNjcmlwdG9yUgZwb2ludHMSOQoF",
+            "dW5pdHMYBCADKAsyIy5wYW5vcHRlcy5wcm90by52MS5Vbml0Q2F0YWxvZ0Vu",
+            "dHJ5UgV1bml0cxJFCglidWlsZGluZ3MYBSADKAsyJy5wYW5vcHRlcy5wcm90",
+            "by52MS5CdWlsZGluZ0NhdGFsb2dFbnRyeVIJYnVpbGRpbmdzEk0KDHRlY2hu",
+            "b2xvZ2llcxgGIAMoCzIpLnBhbm9wdGVzLnByb3RvLnYxLlRlY2hub2xvZ3lD",
+            "YXRhbG9nRW50cnlSDHRlY2hub2xvZ2llcxJBCghwb2xpY2llcxgHIAMoCzIl",
+            "LnBhbm9wdGVzLnByb3RvLnYxLlBvbGljeUNhdGFsb2dFbnRyeVIIcG9saWNp",
+            "ZXMSPwoHcmVjaXBlcxgIIAMoCzIlLnBhbm9wdGVzLnByb3RvLnYxLlJlY2lw",
+            "ZUNhdGFsb2dFbnRyeVIHcmVjaXBlcxJCCgh0ZXJyYWlucxgJIAMoCzImLnBh",
+            "bm9wdGVzLnByb3RvLnYxLlRlcnJhaW5DYXRhbG9nRW50cnlSCHRlcnJhaW5z",
+            "Ek0KDGVtb3RlX3NlcmllcxgKIAMoCzIqLnBhbm9wdGVzLnByb3RvLnYxLkVt",
+            "b3RlU2VyaWVzQ2F0YWxvZ0VudHJ5UgtlbW90ZVNlcmllcxI8CgZlbW90ZXMY",
+            "CyADKAsyJC5wYW5vcHRlcy5wcm90by52MS5FbW90ZUNhdGFsb2dFbnRyeVIG",
+            "ZW1vdGVzEmkKFmluc3RpdHV0aW9uX2NhdGVnb3JpZXMYDCADKAsyMi5wYW5v",
+            "cHRlcy5wcm90by52MS5JbnN0aXR1dGlvbkNhdGVnb3J5Q2F0YWxvZ0VudHJ5",
+            "UhVpbnN0aXR1dGlvbkNhdGVnb3JpZXMSTgoMaW5zdGl0dXRpb25zGA0gAygL",
+            "MioucGFub3B0ZXMucHJvdG8udjEuSW5zdGl0dXRpb25DYXRhbG9nRW50cnlS",
+            "DGluc3RpdHV0aW9ucyJgChhNc2dTdGF0aWNDYXRhbG9nTWFuaWZlc3QSRAoI",
+            "bWFuaWZlc3QYASABKAsyKC5wYW5vcHRlcy5wcm90by52MS5TdGF0aWNDYXRh",
+            "bG9nTWFuaWZlc3RSCG1hbmlmZXN0IosBChtNc2dTdGF0aWNDYXRhbG9nU3lu",
+            "Y1JlcXVlc3QSHwoLYnVuZGxlX2hhc2gYASABKAlSCmJ1bmRsZUhhc2gSIwoN",
+            "c2VjdGlvbl9uYW1lcxgCIAMoCVIMc2VjdGlvbk5hbWVzEiYKD2ZvcmNlX2Z1",
+            "bGxfc3luYxgDIAEoCFINZm9yY2VGdWxsU3luYyLiAQocTXNnU3RhdGljQ2F0",
+            "YWxvZ1NlY3Rpb25DaHVuaxIhCgxzZWN0aW9uX25hbWUYASABKAlSC3NlY3Rp",
+            "b25OYW1lEiEKDHNlY3Rpb25faGFzaBgCIAEoCVILc2VjdGlvbkhhc2gSHwoL",
+            "Y2h1bmtfaW5kZXgYAyABKA1SCmNodW5rSW5kZXgSHwoLY2h1bmtfY291bnQY",
+            "BCABKA1SCmNodW5rQ291bnQSIAoLY29tcHJlc3Npb24YBSABKAlSC2NvbXBy",
+            "ZXNzaW9uEhgKB3BheWxvYWQYBiABKAxSB3BheWxvYWQifgocTXNnU3RhdGlj",
+            "Q2F0YWxvZ1N5bmNDb21wbGV0ZRIuChNhcHBsaWVkX2J1bmRsZV9oYXNoGAEg",
+            "ASgJUhFhcHBsaWVkQnVuZGxlSGFzaBIYCgdzdWNjZXNzGAIgASgIUgdzdWNj",
+            "ZXNzEhQKBWVycm9yGAMgASgJUgVlcnJvciJgChhNc2dTdGF0aWNDYXRhbG9n",
+            "U25hcHNob3QSRAoIc25hcHNob3QYASABKAsyKC5wYW5vcHRlcy5wcm90by52",
+            "MS5TdGF0aWNDYXRhbG9nU25hcHNob3RSCHNuYXBzaG90QlBaN2dpdGh1Yi5j",
+            "b20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvO3Byb3Rv",
+            "djGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -113,7 +123,9 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionCatalogEntry), global::Panoptes.Protocol.V1.InstitutionCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "Category", "ActivationTiming", "Tags" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.RecipeCatalogEntry), global::Panoptes.Protocol.V1.RecipeCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "BuildingId", "WorkAmount", "BaseProgress", "Tags" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.TerrainCatalogEntry), global::Panoptes.Protocol.V1.TerrainCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "MaterialKey", "Tags" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogSnapshot), global::Panoptes.Protocol.V1.StaticCatalogSnapshot.Parser, new[]{ "Manifest", "Resources", "Points", "Units", "Buildings", "Technologies", "Policies", "Recipes", "Terrains", "InstitutionCategories", "Institutions" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry), global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry.Parser, new[]{ "Id", "DisplayName", "IconKey", "SortOrder" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.EmoteCatalogEntry), global::Panoptes.Protocol.V1.EmoteCatalogEntry.Parser, new[]{ "Id", "SeriesId", "DisplayName", "AssetKey", "SortOrder", "Tags" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogSnapshot), global::Panoptes.Protocol.V1.StaticCatalogSnapshot.Parser, new[]{ "Manifest", "Resources", "Points", "Units", "Buildings", "Technologies", "Policies", "Recipes", "Terrains", "EmoteSeries", "Emotes", "InstitutionCategories", "Institutions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgStaticCatalogManifest), global::Panoptes.Protocol.V1.MsgStaticCatalogManifest.Parser, new[]{ "Manifest" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgStaticCatalogSyncRequest), global::Panoptes.Protocol.V1.MsgStaticCatalogSyncRequest.Parser, new[]{ "BundleHash", "SectionNames", "ForceFullSync" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgStaticCatalogSectionChunk), global::Panoptes.Protocol.V1.MsgStaticCatalogSectionChunk.Parser, new[]{ "SectionName", "SectionHash", "ChunkIndex", "ChunkCount", "Compression", "Payload" }, null, null, null, null),
@@ -444,7 +456,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -487,7 +503,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -932,7 +952,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -987,7 +1011,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1386,7 +1414,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1433,7 +1465,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1795,7 +1831,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1838,7 +1878,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2138,7 +2182,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2173,7 +2221,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2523,7 +2575,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2566,7 +2622,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2953,7 +3013,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3000,7 +3064,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3333,7 +3401,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3372,7 +3444,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3408,6 +3484,687 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class EmoteSeriesCatalogEntry : pb::IMessage<EmoteSeriesCatalogEntry>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<EmoteSeriesCatalogEntry> _parser = new pb::MessageParser<EmoteSeriesCatalogEntry>(() => new EmoteSeriesCatalogEntry());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<EmoteSeriesCatalogEntry> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[8]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteSeriesCatalogEntry() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteSeriesCatalogEntry(EmoteSeriesCatalogEntry other) : this() {
+      id_ = other.id_;
+      displayName_ = other.displayName_;
+      iconKey_ = other.iconKey_;
+      sortOrder_ = other.sortOrder_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteSeriesCatalogEntry Clone() {
+      return new EmoteSeriesCatalogEntry(this);
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "display_name" field.</summary>
+    public const int DisplayNameFieldNumber = 2;
+    private string displayName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string DisplayName {
+      get { return displayName_; }
+      set {
+        displayName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "icon_key" field.</summary>
+    public const int IconKeyFieldNumber = 3;
+    private string iconKey_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string IconKey {
+      get { return iconKey_; }
+      set {
+        iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "sort_order" field.</summary>
+    public const int SortOrderFieldNumber = 4;
+    private int sortOrder_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int SortOrder {
+      get { return sortOrder_; }
+      set {
+        sortOrder_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as EmoteSeriesCatalogEntry);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(EmoteSeriesCatalogEntry other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Id != other.Id) return false;
+      if (DisplayName != other.DisplayName) return false;
+      if (IconKey != other.IconKey) return false;
+      if (SortOrder != other.SortOrder) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
+      if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+      if (SortOrder != 0) hash ^= SortOrder.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DisplayName);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(IconKey);
+      }
+      if (SortOrder != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(SortOrder);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DisplayName);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(IconKey);
+      }
+      if (SortOrder != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(SortOrder);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (DisplayName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(DisplayName);
+      }
+      if (IconKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+      }
+      if (SortOrder != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(SortOrder);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(EmoteSeriesCatalogEntry other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.DisplayName.Length != 0) {
+        DisplayName = other.DisplayName;
+      }
+      if (other.IconKey.Length != 0) {
+        IconKey = other.IconKey;
+      }
+      if (other.SortOrder != 0) {
+        SortOrder = other.SortOrder;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            DisplayName = input.ReadString();
+            break;
+          }
+          case 26: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 32: {
+            SortOrder = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            DisplayName = input.ReadString();
+            break;
+          }
+          case 26: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 32: {
+            SortOrder = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class EmoteCatalogEntry : pb::IMessage<EmoteCatalogEntry>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<EmoteCatalogEntry> _parser = new pb::MessageParser<EmoteCatalogEntry>(() => new EmoteCatalogEntry());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<EmoteCatalogEntry> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteCatalogEntry() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteCatalogEntry(EmoteCatalogEntry other) : this() {
+      id_ = other.id_;
+      seriesId_ = other.seriesId_;
+      displayName_ = other.displayName_;
+      assetKey_ = other.assetKey_;
+      sortOrder_ = other.sortOrder_;
+      tags_ = other.tags_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public EmoteCatalogEntry Clone() {
+      return new EmoteCatalogEntry(this);
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "series_id" field.</summary>
+    public const int SeriesIdFieldNumber = 2;
+    private string seriesId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SeriesId {
+      get { return seriesId_; }
+      set {
+        seriesId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "display_name" field.</summary>
+    public const int DisplayNameFieldNumber = 3;
+    private string displayName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string DisplayName {
+      get { return displayName_; }
+      set {
+        displayName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "asset_key" field.</summary>
+    public const int AssetKeyFieldNumber = 4;
+    private string assetKey_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string AssetKey {
+      get { return assetKey_; }
+      set {
+        assetKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "sort_order" field.</summary>
+    public const int SortOrderFieldNumber = 5;
+    private int sortOrder_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int SortOrder {
+      get { return sortOrder_; }
+      set {
+        sortOrder_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "tags" field.</summary>
+    public const int TagsFieldNumber = 6;
+    private static readonly pb::FieldCodec<string> _repeated_tags_codec
+        = pb::FieldCodec.ForString(50);
+    private readonly pbc::RepeatedField<string> tags_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> Tags {
+      get { return tags_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as EmoteCatalogEntry);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(EmoteCatalogEntry other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Id != other.Id) return false;
+      if (SeriesId != other.SeriesId) return false;
+      if (DisplayName != other.DisplayName) return false;
+      if (AssetKey != other.AssetKey) return false;
+      if (SortOrder != other.SortOrder) return false;
+      if(!tags_.Equals(other.tags_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (SeriesId.Length != 0) hash ^= SeriesId.GetHashCode();
+      if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
+      if (AssetKey.Length != 0) hash ^= AssetKey.GetHashCode();
+      if (SortOrder != 0) hash ^= SortOrder.GetHashCode();
+      hash ^= tags_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (SeriesId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(SeriesId);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(DisplayName);
+      }
+      if (AssetKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(AssetKey);
+      }
+      if (SortOrder != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(SortOrder);
+      }
+      tags_.WriteTo(output, _repeated_tags_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (SeriesId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(SeriesId);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(DisplayName);
+      }
+      if (AssetKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(AssetKey);
+      }
+      if (SortOrder != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(SortOrder);
+      }
+      tags_.WriteTo(ref output, _repeated_tags_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (SeriesId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SeriesId);
+      }
+      if (DisplayName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(DisplayName);
+      }
+      if (AssetKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(AssetKey);
+      }
+      if (SortOrder != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(SortOrder);
+      }
+      size += tags_.CalculateSize(_repeated_tags_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(EmoteCatalogEntry other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.SeriesId.Length != 0) {
+        SeriesId = other.SeriesId;
+      }
+      if (other.DisplayName.Length != 0) {
+        DisplayName = other.DisplayName;
+      }
+      if (other.AssetKey.Length != 0) {
+        AssetKey = other.AssetKey;
+      }
+      if (other.SortOrder != 0) {
+        SortOrder = other.SortOrder;
+      }
+      tags_.Add(other.tags_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            SeriesId = input.ReadString();
+            break;
+          }
+          case 26: {
+            DisplayName = input.ReadString();
+            break;
+          }
+          case 34: {
+            AssetKey = input.ReadString();
+            break;
+          }
+          case 40: {
+            SortOrder = input.ReadInt32();
+            break;
+          }
+          case 50: {
+            tags_.AddEntriesFrom(input, _repeated_tags_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            SeriesId = input.ReadString();
+            break;
+          }
+          case 26: {
+            DisplayName = input.ReadString();
+            break;
+          }
+          case 34: {
+            AssetKey = input.ReadString();
+            break;
+          }
+          case 40: {
+            SortOrder = input.ReadInt32();
+            break;
+          }
+          case 50: {
+            tags_.AddEntriesFrom(ref input, _repeated_tags_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class StaticCatalogSnapshot : pb::IMessage<StaticCatalogSnapshot>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3422,7 +4179,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3451,6 +4208,8 @@ namespace Panoptes.Protocol.V1 {
       policies_ = other.policies_.Clone();
       recipes_ = other.recipes_.Clone();
       terrains_ = other.terrains_.Clone();
+      emoteSeries_ = other.emoteSeries_.Clone();
+      emotes_ = other.emotes_.Clone();
       institutionCategories_ = other.institutionCategories_.Clone();
       institutions_ = other.institutions_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -3562,10 +4321,32 @@ namespace Panoptes.Protocol.V1 {
       get { return terrains_; }
     }
 
+    /// <summary>Field number for the "emote_series" field.</summary>
+    public const int EmoteSeriesFieldNumber = 10;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry> _repeated_emoteSeries_codec
+        = pb::FieldCodec.ForMessage(82, global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry> emoteSeries_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteSeriesCatalogEntry> EmoteSeries {
+      get { return emoteSeries_; }
+    }
+
+    /// <summary>Field number for the "emotes" field.</summary>
+    public const int EmotesFieldNumber = 11;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.EmoteCatalogEntry> _repeated_emotes_codec
+        = pb::FieldCodec.ForMessage(90, global::Panoptes.Protocol.V1.EmoteCatalogEntry.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteCatalogEntry> emotes_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteCatalogEntry>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.EmoteCatalogEntry> Emotes {
+      get { return emotes_; }
+    }
+
     /// <summary>Field number for the "institution_categories" field.</summary>
-    public const int InstitutionCategoriesFieldNumber = 10;
+    public const int InstitutionCategoriesFieldNumber = 12;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.InstitutionCategoryCatalogEntry> _repeated_institutionCategories_codec
-        = pb::FieldCodec.ForMessage(82, global::Panoptes.Protocol.V1.InstitutionCategoryCatalogEntry.Parser);
+        = pb::FieldCodec.ForMessage(98, global::Panoptes.Protocol.V1.InstitutionCategoryCatalogEntry.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.InstitutionCategoryCatalogEntry> institutionCategories_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.InstitutionCategoryCatalogEntry>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -3574,9 +4355,9 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "institutions" field.</summary>
-    public const int InstitutionsFieldNumber = 11;
+    public const int InstitutionsFieldNumber = 13;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.InstitutionCatalogEntry> _repeated_institutions_codec
-        = pb::FieldCodec.ForMessage(90, global::Panoptes.Protocol.V1.InstitutionCatalogEntry.Parser);
+        = pb::FieldCodec.ForMessage(106, global::Panoptes.Protocol.V1.InstitutionCatalogEntry.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.InstitutionCatalogEntry> institutions_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.InstitutionCatalogEntry>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -3608,6 +4389,8 @@ namespace Panoptes.Protocol.V1 {
       if(!policies_.Equals(other.policies_)) return false;
       if(!recipes_.Equals(other.recipes_)) return false;
       if(!terrains_.Equals(other.terrains_)) return false;
+      if(!emoteSeries_.Equals(other.emoteSeries_)) return false;
+      if(!emotes_.Equals(other.emotes_)) return false;
       if(!institutionCategories_.Equals(other.institutionCategories_)) return false;
       if(!institutions_.Equals(other.institutions_)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -3626,6 +4409,8 @@ namespace Panoptes.Protocol.V1 {
       hash ^= policies_.GetHashCode();
       hash ^= recipes_.GetHashCode();
       hash ^= terrains_.GetHashCode();
+      hash ^= emoteSeries_.GetHashCode();
+      hash ^= emotes_.GetHashCode();
       hash ^= institutionCategories_.GetHashCode();
       hash ^= institutions_.GetHashCode();
       if (_unknownFields != null) {
@@ -3658,6 +4443,8 @@ namespace Panoptes.Protocol.V1 {
       policies_.WriteTo(output, _repeated_policies_codec);
       recipes_.WriteTo(output, _repeated_recipes_codec);
       terrains_.WriteTo(output, _repeated_terrains_codec);
+      emoteSeries_.WriteTo(output, _repeated_emoteSeries_codec);
+      emotes_.WriteTo(output, _repeated_emotes_codec);
       institutionCategories_.WriteTo(output, _repeated_institutionCategories_codec);
       institutions_.WriteTo(output, _repeated_institutions_codec);
       if (_unknownFields != null) {
@@ -3682,6 +4469,8 @@ namespace Panoptes.Protocol.V1 {
       policies_.WriteTo(ref output, _repeated_policies_codec);
       recipes_.WriteTo(ref output, _repeated_recipes_codec);
       terrains_.WriteTo(ref output, _repeated_terrains_codec);
+      emoteSeries_.WriteTo(ref output, _repeated_emoteSeries_codec);
+      emotes_.WriteTo(ref output, _repeated_emotes_codec);
       institutionCategories_.WriteTo(ref output, _repeated_institutionCategories_codec);
       institutions_.WriteTo(ref output, _repeated_institutions_codec);
       if (_unknownFields != null) {
@@ -3705,6 +4494,8 @@ namespace Panoptes.Protocol.V1 {
       size += policies_.CalculateSize(_repeated_policies_codec);
       size += recipes_.CalculateSize(_repeated_recipes_codec);
       size += terrains_.CalculateSize(_repeated_terrains_codec);
+      size += emoteSeries_.CalculateSize(_repeated_emoteSeries_codec);
+      size += emotes_.CalculateSize(_repeated_emotes_codec);
       size += institutionCategories_.CalculateSize(_repeated_institutionCategories_codec);
       size += institutions_.CalculateSize(_repeated_institutions_codec);
       if (_unknownFields != null) {
@@ -3733,6 +4524,8 @@ namespace Panoptes.Protocol.V1 {
       policies_.Add(other.policies_);
       recipes_.Add(other.recipes_);
       terrains_.Add(other.terrains_);
+      emoteSeries_.Add(other.emoteSeries_);
+      emotes_.Add(other.emotes_);
       institutionCategories_.Add(other.institutionCategories_);
       institutions_.Add(other.institutions_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
@@ -3746,7 +4539,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3790,10 +4587,18 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 82: {
-            institutionCategories_.AddEntriesFrom(input, _repeated_institutionCategories_codec);
+            emoteSeries_.AddEntriesFrom(input, _repeated_emoteSeries_codec);
             break;
           }
           case 90: {
+            emotes_.AddEntriesFrom(input, _repeated_emotes_codec);
+            break;
+          }
+          case 98: {
+            institutionCategories_.AddEntriesFrom(input, _repeated_institutionCategories_codec);
+            break;
+          }
+          case 106: {
             institutions_.AddEntriesFrom(input, _repeated_institutions_codec);
             break;
           }
@@ -3808,7 +4613,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3852,10 +4661,18 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 82: {
-            institutionCategories_.AddEntriesFrom(ref input, _repeated_institutionCategories_codec);
+            emoteSeries_.AddEntriesFrom(ref input, _repeated_emoteSeries_codec);
             break;
           }
           case 90: {
+            emotes_.AddEntriesFrom(ref input, _repeated_emotes_codec);
+            break;
+          }
+          case 98: {
+            institutionCategories_.AddEntriesFrom(ref input, _repeated_institutionCategories_codec);
+            break;
+          }
+          case 106: {
             institutions_.AddEntriesFrom(ref input, _repeated_institutions_codec);
             break;
           }
@@ -3881,7 +4698,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4025,7 +4842,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4047,7 +4868,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4080,7 +4905,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4268,7 +5093,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4295,7 +5124,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4333,7 +5166,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4619,7 +5452,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4658,7 +5495,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4708,7 +5549,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4907,7 +5748,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4934,7 +5779,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4972,7 +5821,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5116,7 +5965,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5138,7 +5991,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

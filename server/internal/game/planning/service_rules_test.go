@@ -897,6 +897,50 @@ func TestSetMinisterDirectiveIntentAcceptsPolicyDraft(t *testing.T) {
 	}
 }
 
+func TestSetMinisterDirectiveAcceptRoleAcceptsFutureTurnLLMDrafts(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.Turn = 6
+	state.Phase = domain.PhasePlanning.String()
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-llm-research-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "agrarian_foundations",
+			TargetLabel:  "Agrarian Foundations",
+			Title:        "建议优先农业基础",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         6,
+			Source:       domain.MinisterDraftSourceLLMAction,
+		},
+	})
+
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		Intent: SetMinisterDirectiveIntent{
+			MinisterRole:  "domestic",
+			DirectiveType: "accept_role",
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleIntent() error = %v", err)
+	}
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want one draft", drafts)
+	}
+	if drafts[0].Status != domain.MinisterDraftStatusAccepted || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want accepted and available", drafts[0])
+	}
+}
+
 func TestSetMinisterDirectiveAcceptsOperationDraftAsBatch(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)

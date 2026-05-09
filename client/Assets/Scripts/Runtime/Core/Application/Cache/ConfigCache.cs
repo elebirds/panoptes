@@ -15,6 +15,7 @@ namespace Panoptes.Core.Application.Cache
 {
     public sealed class ConfigCache : MonoBehaviour
     {
+#pragma warning disable CS0649
         [Serializable]
         private sealed class ConfigPushPayload
         {
@@ -40,6 +41,7 @@ namespace Panoptes.Core.Application.Cache
             public string mapconfig;
             public string map;
         }
+#pragma warning restore CS0649
 
         public static ConfigCache Instance { get; private set; }
 

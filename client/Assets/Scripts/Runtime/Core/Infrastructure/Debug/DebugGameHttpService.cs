@@ -38,11 +38,13 @@ namespace Panoptes.DebugTools
             public bool full_map;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class DebugErrorBody
         {
             public string error;
         }
+#pragma warning restore CS0649
 
         public DebugGameHttpService(string baseUrl = null)
         {

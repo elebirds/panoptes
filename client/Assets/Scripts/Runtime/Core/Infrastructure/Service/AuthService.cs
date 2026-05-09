@@ -27,6 +27,7 @@ namespace Panoptes.Core.Infrastructure.Service
             public string password;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class AuthSuccessBody
         {
@@ -40,6 +41,7 @@ namespace Panoptes.Core.Infrastructure.Service
         {
             public string error;
         }
+#pragma warning restore CS0649
 
         public AuthService(string baseUrl = null)
         {

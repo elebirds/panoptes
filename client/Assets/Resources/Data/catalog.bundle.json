@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "f1070d922d801bd1d7e877c0e6e2fa2bfe1b63d51aba4395b2e8879af55f4fe6",
+    "bundle_hash": "e725f0cdb20f579754b018a48ceaab6e3882702e06968a1274cbacc6032ba8cc",
     "required_sections": [
       "resources",
       "points",
@@ -15,6 +15,7 @@
       "institutions",
       "recipes",
       "terrains",
+      "emotes",
       "rules",
       "ministers",
       "minister_skill_cards",
@@ -27,6 +28,10 @@
       {
         "section_name": "buildings",
         "hash": "bd329cd7c1e456ffdcf966404ce44da4add3da45481b6596aacbe9e0ba3d1624"
+      },
+      {
+        "section_name": "emotes",
+        "hash": "de7382d296583d691cfeaa7999f996d3c243e0a1dd7fd23f07b77abf0e4008e6"
       },
       {
         "section_name": "institutions",
@@ -3897,6 +3902,196 @@
       "tags": [
         "ground"
       ]
+    }
+  ],
+  "emote_series": [
+    {
+      "id": "general",
+      "display_name": "General",
+      "icon_key": "Textures/Emotes/General/general_01",
+      "sort_order": 10
+    },
+    {
+      "id": "tactics",
+      "display_name": "Tactics",
+      "icon_key": "",
+      "sort_order": 20
+    },
+    {
+      "id": "mood",
+      "display_name": "Mood",
+      "icon_key": "",
+      "sort_order": 30
+    }
+  ],
+  "emotes": [
+    {
+      "id": "general.thumbs_up",
+      "series_id": "general",
+      "display_name": "Thumbs Up",
+      "asset_key": "Textures/Emotes/General/general_01",
+      "sort_order": 10
+    },
+    {
+      "id": "general.thinking",
+      "series_id": "general",
+      "display_name": "Thinking",
+      "asset_key": "Textures/Emotes/General/general_02",
+      "sort_order": 20
+    },
+    {
+      "id": "general.laugh",
+      "series_id": "general",
+      "display_name": "Laugh",
+      "asset_key": "Textures/Emotes/General/general_03",
+      "sort_order": 30
+    },
+    {
+      "id": "general.angry",
+      "series_id": "general",
+      "display_name": "Angry",
+      "asset_key": "Textures/Emotes/General/general_04",
+      "sort_order": 40
+    },
+    {
+      "id": "general.warning",
+      "series_id": "general",
+      "display_name": "Warning",
+      "asset_key": "Textures/Emotes/General/general_05",
+      "sort_order": 50
+    },
+    {
+      "id": "general.gg",
+      "series_id": "general",
+      "display_name": "GG",
+      "asset_key": "Textures/Emotes/General/general_06",
+      "sort_order": 60
+    },
+    {
+      "id": "general.extra_07",
+      "series_id": "general",
+      "display_name": "Extra 07",
+      "asset_key": "Textures/Emotes/General/general_07",
+      "sort_order": 70
+    },
+    {
+      "id": "general.extra_08",
+      "series_id": "general",
+      "display_name": "Extra 08",
+      "asset_key": "Textures/Emotes/General/general_08",
+      "sort_order": 80
+    },
+    {
+      "id": "general.extra_09",
+      "series_id": "general",
+      "display_name": "Extra 09",
+      "asset_key": "Textures/Emotes/General/general_09",
+      "sort_order": 90
+    },
+    {
+      "id": "general.extra_10",
+      "series_id": "general",
+      "display_name": "Extra 10",
+      "asset_key": "Textures/Emotes/General/general_10",
+      "sort_order": 100
+    },
+    {
+      "id": "general.extra_11",
+      "series_id": "general",
+      "display_name": "Extra 11",
+      "asset_key": "Textures/Emotes/General/general_11",
+      "sort_order": 110
+    },
+    {
+      "id": "general.extra_12",
+      "series_id": "general",
+      "display_name": "Extra 12",
+      "asset_key": "Textures/Emotes/General/general_12",
+      "sort_order": 120
+    },
+    {
+      "id": "tactics.attack",
+      "series_id": "tactics",
+      "display_name": "Attack",
+      "asset_key": "",
+      "sort_order": 10
+    },
+    {
+      "id": "tactics.defend",
+      "series_id": "tactics",
+      "display_name": "Defend",
+      "asset_key": "",
+      "sort_order": 20
+    },
+    {
+      "id": "tactics.expand",
+      "series_id": "tactics",
+      "display_name": "Expand",
+      "asset_key": "",
+      "sort_order": 30
+    },
+    {
+      "id": "tactics.wait",
+      "series_id": "tactics",
+      "display_name": "Wait",
+      "asset_key": "",
+      "sort_order": 40
+    },
+    {
+      "id": "tactics.need_help",
+      "series_id": "tactics",
+      "display_name": "Need Help",
+      "asset_key": "",
+      "sort_order": 50
+    },
+    {
+      "id": "tactics.ready",
+      "series_id": "tactics",
+      "display_name": "Ready",
+      "asset_key": "",
+      "sort_order": 60
+    },
+    {
+      "id": "mood.happy",
+      "series_id": "mood",
+      "display_name": "Happy",
+      "asset_key": "",
+      "sort_order": 10
+    },
+    {
+      "id": "mood.surprised",
+      "series_id": "mood",
+      "display_name": "Surprised",
+      "asset_key": "",
+      "sort_order": 20
+    },
+    {
+      "id": "mood.sad",
+      "series_id": "mood",
+      "display_name": "Sad",
+      "asset_key": "",
+      "sort_order": 30
+    },
+    {
+      "id": "mood.confused",
+      "series_id": "mood",
+      "display_name": "Confused",
+      "asset_key": "",
+      "sort_order": 40
+    },
+    {
+      "id": "mood.proud",
+      "series_id": "mood",
+      "display_name": "Proud",
+      "asset_key": "",
+      "sort_order": 50
+    },
+    {
+      "id": "mood.panic",
+      "series_id": "mood",
+      "display_name": "Panic",
+      "asset_key": "",
+      "sort_order": 60
     }
   ],
   "rules": {

@@ -18,12 +18,14 @@ namespace Panoptes.Presentation.Map
     /// </summary>
     public sealed class NodeView : MonoBehaviour
     {
+#pragma warning disable CS0649
         [System.Serializable]
         private struct BuildingPrefabEntry
         {
             public string buildingType;
             public BuildingView prefab;
         }
+#pragma warning restore CS0649
 
         [Header("Core References")]
         [SerializeField] private Renderer groundRenderer;

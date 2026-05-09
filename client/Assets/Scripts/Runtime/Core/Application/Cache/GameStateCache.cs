@@ -29,6 +29,8 @@ namespace Panoptes.Core.Application.Cache
         public int MapWidth { get; private set; }
         public int MapHeight { get; private set; }
         public bool IsGameOver { get; private set; }
+        private readonly List<RoomPlayerDto> _roomPlayers = new();
+        public IReadOnlyList<RoomPlayerDto> RoomPlayers => _roomPlayers;
 
         private readonly Dictionary<string, NodeDto> _nodes = new();
         public IReadOnlyDictionary<string, NodeDto> Nodes => _nodes;
@@ -134,6 +136,26 @@ namespace Panoptes.Core.Application.Cache
 
             MyPlayer = msg.MyPlayer?.Clone();
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : 0;
+            _roomPlayers.Clear();
+            if (msg.RoomPlayers != null)
+            {
+                foreach (var player in msg.RoomPlayers)
+                {
+                    if (player == null || string.IsNullOrWhiteSpace(player.PlayerId))
+                    {
+                        continue;
+                    }
+
+                    _roomPlayers.Add(new RoomPlayerDto
+                    {
+                        PlayerId = player.PlayerId,
+                        Username = player.Username,
+                        IsHost = player.IsHost,
+                        IsReady = player.IsReady,
+                        IsBot = player.IsBot
+                    });
+                }
+            }
 
             SyncMinisterViews(msg.Ministers, msg.MyPlayer?.MinisterCandidates);
 
@@ -531,6 +553,7 @@ namespace Panoptes.Core.Application.Cache
             _buildingsByNodeId.Clear();
             _lastPlanningStartEvents.Clear();
             _ministers.Clear();
+            _roomPlayers.Clear();
             MyPlayer = null;
             TokensLeft = 0;
             EnemyCityCoreHP = 0;

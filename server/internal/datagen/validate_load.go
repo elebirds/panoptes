@@ -69,6 +69,7 @@ type authoredData struct {
 	InstitutionUI    jsonDocument[staticdata.InstitutionCatalogUIFile]
 	RecipeUI         jsonDocument[staticdata.RecipeCatalogUIFile]
 	TerrainUI        jsonDocument[staticdata.TerrainCatalogUIFile]
+	EmoteUI          jsonDocument[staticdata.EmoteCatalogFile]
 	MapDefs          map[string]jsonDocument[staticdata.MapDefinition]
 	MapUI            map[string]jsonDocument[staticdata.MapUICatalog]
 	MapIDs           []string
@@ -190,6 +191,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	emoteUI, err := readJSONDocument[staticdata.EmoteCatalogFile](filepath.Join(repoRoot, "data/ui/catalogs/emotes.json"))
+	if err != nil {
+		return nil, err
+	}
 	mapDefs, mapUI, mapIDs, err := loadMapDocuments(repoRoot)
 	if err != nil {
 		return nil, err
@@ -219,6 +224,7 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 		InstitutionUI:      institutionUI,
 		RecipeUI:           recipeUI,
 		TerrainUI:          terrainUI,
+		EmoteUI:            emoteUI,
 		MapDefs:            mapDefs,
 		MapUI:              mapUI,
 		MapIDs:             mapIDs,

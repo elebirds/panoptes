@@ -81,6 +81,8 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 		Institutions:          authored.Institutions.Value.Institutions,
 		Recipes:               authored.Recipes.Value.Recipes,
 		Terrains:              authored.Terrains.Value.Terrains,
+		EmoteSeries:           authored.EmoteUI.Value.Series,
+		Emotes:                authored.EmoteUI.Value.Emotes,
 		Rules:                 authored.Rules.Value,
 		Ministers:             authored.Ministers.Value.Pool,
 		MinisterSkillCards:    authored.MinisterSkillCards.Value.MinisterSkillCards,

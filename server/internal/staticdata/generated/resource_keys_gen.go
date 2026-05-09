@@ -1,7 +1,7 @@
 package generated
 
 const (
-	ResourceOre = "ore"
+	ResourceOre  = "ore"
 	ResourceWood = "wood"
 	ResourceFood = "food"
 )

@@ -16,13 +16,17 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string buildActionId = "action_3";
         [SerializeField] private string demolishActionId = "action_4";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
+#pragma warning disable CS0414
         [SerializeField] private string policyActionId = "open_policy_focus";
+#pragma warning restore CS0414
 
         [Header("Labels")]
         [SerializeField] private string buildActionLabel = "Build";
         [SerializeField] private string demolishActionLabel = "Demolish";
         [SerializeField] private string recipeActionLabel = "Synthesis";
+#pragma warning disable CS0414
         [SerializeField] private string policyActionLabel = "Policy";
+#pragma warning restore CS0414
 
         [Header("References")]
         [SerializeField] private MapPlanningInputController mapPlanningInputController;

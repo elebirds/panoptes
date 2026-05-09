@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using Panoptes.Core.Events;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
@@ -176,7 +177,19 @@ namespace Panoptes.Tests.EditMode.Presentation
             var hud = _root.AddComponent<ResourceHUD>();
             using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
             using var visibilityStore = new ManagementPanelVisibilityStore();
+            using var draftStore = new PlanningDraftStore();
             InjectDependencies(hud, viewModel, visibilityStore);
+            InjectMinisterAttention(hud, draftStore);
+            draftStore.Replace(new PlanningDraftState(ministerDrafts: new[]
+            {
+                new MinisterDraftDto
+                {
+                    DraftId = "draft-1",
+                    MinisterRole = "domestic",
+                    Available = true,
+                    Status = "pending"
+                }
+            }));
 
             var button = ministerButtonObject.GetComponent<Button>();
             button.onClick.Invoke();
@@ -184,6 +197,43 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             button.onClick.Invoke();
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.False);
+        }
+
+        [Test]
+        public void MinisterButton_ShouldOpenWhenMinisterReportMessagesAlreadyArrived()
+        {
+            _root = new GameObject("ResourceHudMinisterMessageTest", typeof(RectTransform));
+            var listObject = new GameObject("ResourceList", typeof(RectTransform));
+            listObject.transform.SetParent(_root.transform, false);
+            var techButtonObject = new GameObject("TechBtn", typeof(RectTransform), typeof(Button));
+            techButtonObject.transform.SetParent(_root.transform, false);
+            var ministerButtonObject = new GameObject("MinisterBtn", typeof(RectTransform), typeof(Button));
+            ministerButtonObject.transform.SetParent(_root.transform, false);
+
+            var hud = _root.AddComponent<ResourceHUD>();
+            using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+            using var draftStore = new PlanningDraftStore();
+            using var ministerReportViewModel = new MinisterReportViewModel(draftStore);
+            InjectDependencies(hud, viewModel, visibilityStore);
+            InjectMinisterAttention(hud, draftStore);
+            InjectMinisterReport(hud, ministerReportViewModel);
+
+            var chunkMethod = typeof(MinisterReportViewModel).GetMethod("OnMinisterChunk", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(chunkMethod, Is.Not.Null);
+            chunkMethod!.Invoke(ministerReportViewModel, new object[]
+            {
+                new MinisterChunkEvent
+                {
+                    MinisterRole = "domestic",
+                    Chunk = "局势稳定。",
+                    IsFinal = true
+                }
+            });
+
+            var button = ministerButtonObject.GetComponent<Button>();
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.True);
         }
 
         [Test]
@@ -292,6 +342,13 @@ namespace Panoptes.Tests.EditMode.Presentation
             var method = typeof(ResourceHUD).GetMethod("ConstructMinisterAttention", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(hud, new object[] { draftStore });
+        }
+
+        private static void InjectMinisterReport(ResourceHUD hud, MinisterReportViewModel ministerReportViewModel)
+        {
+            var method = typeof(ResourceHUD).GetMethod("ConstructMinisterReport", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(hud, new object[] { ministerReportViewModel });
         }
 
         private static void CreateResourceItem(Transform parent)
