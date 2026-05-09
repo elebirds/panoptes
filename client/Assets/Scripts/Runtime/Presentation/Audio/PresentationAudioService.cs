@@ -38,6 +38,11 @@ namespace Panoptes.Presentation.Audio
             PlayBgm(PresentationAudioAssetIds.MainMenuBgm);
         }
 
+        public void PlayMinisterRecruitmentBgm()
+        {
+            PlayBgm(PresentationAudioAssetIds.MinisterRecruitmentBgm);
+        }
+
         public void PlayTurnBgm(int turn)
         {
             PlayBgm(turn > 15

@@ -6195,6 +6195,7 @@ GameObject:
   - component: {fileID: 807419407}
   - component: {fileID: 807419406}
   - component: {fileID: 807419412}
+  - component: {fileID: 807419413}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -6346,6 +6347,19 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
+--- !u!114 &807419413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807419405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bf10d0dd96acfe42a1a964258833db6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.MainMenu.MainMenuMinisterRecruitmentPanel
+  previewOpenOnStart: 1
 --- !u!1 &810352580
 GameObject:
   m_ObjectHideFlags: 0

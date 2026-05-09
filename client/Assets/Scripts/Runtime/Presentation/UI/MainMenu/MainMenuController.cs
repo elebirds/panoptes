@@ -38,11 +38,13 @@ namespace Panoptes.Presentation.UI.MainMenu
         private void Construct(PresentationAudioService audioService)
         {
             _audioService = audioService;
+            ConfigureMinisterRecruitmentAudio();
         }
 
         private void Awake()
         {
             EnsureTitleFlameEffect();
+            ConfigureMinisterRecruitmentAudio();
 
             if (!IsLoggedIn())
             {
@@ -227,6 +229,15 @@ namespace Panoptes.Presentation.UI.MainMenu
             if (panel != null)
             {
                 panel.SetActive(active);
+            }
+        }
+
+        private void ConfigureMinisterRecruitmentAudio()
+        {
+            var recruitmentPanel = GetComponent<MainMenuMinisterRecruitmentPanel>();
+            if (recruitmentPanel != null)
+            {
+                recruitmentPanel.UseAudioService(_audioService);
             }
         }
 

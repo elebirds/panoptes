@@ -21,6 +21,9 @@ client/Assets/Art/Audio/Resources/Audio/
 The MVP catalog generates:
 
 - 3 loop-oriented BGM WAVs in `client/Assets/Art/Audio/Resources/Audio/BGM/`
+  (`bg1.wav`, `bg2.wav`, `bg3.wav`)
+- 1 user-provided gacha screen BGM in `client/Assets/Art/Audio/Resources/Audio/BGM/`
+  (`choukabg.wav`)
 - 4 UI click WAVs in `client/Assets/Art/Audio/Resources/Audio/SFX/UI/`
 - 4 attack SFX WAVs in `client/Assets/Art/Audio/Resources/Audio/SFX/Attack/`
 - `client/Assets/Art/Audio/manifest.json`

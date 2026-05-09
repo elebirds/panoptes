@@ -2,9 +2,10 @@ namespace Panoptes.Presentation.Audio
 {
     public static class PresentationAudioAssetIds
     {
-        public const string MainMenuBgm = "Audio/BGM/main_menu_countryside_loop";
-        public const string FirstFifteenTurnsBgm = "Audio/BGM/first_fifteen_turns_loop";
-        public const string LaterFifteenTurnsBgm = "Audio/BGM/later_fifteen_turns_loop";
+        public const string MainMenuBgm = "Audio/BGM/bg1";
+        public const string FirstFifteenTurnsBgm = "Audio/BGM/bg2";
+        public const string LaterFifteenTurnsBgm = "Audio/BGM/bg3";
+        public const string MinisterRecruitmentBgm = "Audio/BGM/choukabg";
 
         public const string UiClickSoft = "Audio/SFX/UI/click_soft";
         public const string UiClickConfirm = "Audio/SFX/UI/click_confirm";

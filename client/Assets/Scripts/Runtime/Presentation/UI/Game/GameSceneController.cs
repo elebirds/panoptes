@@ -43,6 +43,7 @@ namespace Panoptes.Presentation.UI.Game
             GameOverStore gameOverStore,
             GameplayFeedbackStore feedbackStore,
             StaticCatalogStore staticCatalogStore,
+            TurnStore turnStore,
             ErrorToast errorToast,
             PresentationAudioService audioService)
         {
