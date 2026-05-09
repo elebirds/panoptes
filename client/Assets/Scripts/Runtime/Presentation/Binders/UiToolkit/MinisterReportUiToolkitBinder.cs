@@ -350,7 +350,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             label.enableAutoSizing = true;
             label.fontSizeMin = 7f;
             label.fontSizeMax = 9.2f;
-            label.enableWordWrapping = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
             label.overflowMode = TextOverflowModes.Ellipsis;
             Anchor(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-24f, 0f));
 
@@ -365,7 +365,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             value.enableAutoSizing = true;
             value.fontSizeMin = 7.5f;
             value.fontSizeMax = 9.8f;
-            value.enableWordWrapping = false;
+            value.textWrappingMode = TextWrappingModes.NoWrap;
             value.overflowMode = TextOverflowModes.Overflow;
             Anchor(value.rectTransform, new Vector2(1f, 0f), Vector2.one, new Vector2(-24f, 0f), Vector2.zero);
 
@@ -495,6 +495,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class ResourceMinistersSection
         {
@@ -513,6 +514,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             public int loyalty_tendency;
             public int ambition_style;
         }
+#pragma warning restore CS0649
 
         private void RenderMessages(MinisterReportState state)
         {

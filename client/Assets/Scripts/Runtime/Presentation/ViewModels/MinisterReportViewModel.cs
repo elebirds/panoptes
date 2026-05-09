@@ -1128,6 +1128,7 @@ namespace Panoptes.Presentation.ViewModels
             return s_resourceMinisterProfiles;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class ResourceMinistersSection
         {
@@ -1148,6 +1149,7 @@ namespace Panoptes.Presentation.ViewModels
             public int loyalty_tendency;
             public int ambition_style;
         }
+#pragma warning restore CS0649
 
         private sealed class MinisterTabSource
         {

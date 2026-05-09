@@ -176,7 +176,19 @@ namespace Panoptes.Tests.EditMode.Presentation
             var hud = _root.AddComponent<ResourceHUD>();
             using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
             using var visibilityStore = new ManagementPanelVisibilityStore();
+            using var draftStore = new PlanningDraftStore();
             InjectDependencies(hud, viewModel, visibilityStore);
+            InjectMinisterAttention(hud, draftStore);
+            draftStore.Replace(new PlanningDraftState(ministerDrafts: new[]
+            {
+                new MinisterDraftDto
+                {
+                    DraftId = "draft-1",
+                    MinisterRole = "domestic",
+                    Available = true,
+                    Status = "pending"
+                }
+            }));
 
             var button = ministerButtonObject.GetComponent<Button>();
             button.onClick.Invoke();

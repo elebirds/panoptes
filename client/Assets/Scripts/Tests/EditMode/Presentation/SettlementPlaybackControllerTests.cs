@@ -14,7 +14,7 @@ namespace Panoptes.Tests.EditMode.Presentation
     public sealed class SettlementPlaybackControllerTests
     {
         [Test]
-        public void TurnReportGate_ShouldAcknowledgeWhenPlaybackIsAlreadyComplete()
+        public void TurnReportGate_ShouldAcknowledgeWhenPlaybackCompletesWhileGateIsActive()
         {
             var sender = new CaptureMessageSender();
             var turnStore = new TurnStore();
@@ -31,13 +31,17 @@ namespace Panoptes.Tests.EditMode.Presentation
                     phase: GamePhases.Resolving,
                     timeoutSeconds: 0,
                     nextPhase: GamePhases.TurnReport));
-                PublishEmptySettlement(settlementStore);
                 PublishTurnState(turnStore, new TurnState(
                     turn: 7,
                     phase: GamePhases.TurnReport,
                     timeoutSeconds: 5,
                     nextPhase: GamePhases.Planning));
+                PublishEmptySettlement(settlementStore);
 
+                Assert.That(GetPrivateInt(controller, "_turnReportTurn"), Is.EqualTo(7));
+                Assert.That(GetPrivateInt(controller, "_turnReportPlaybackCompletedTurn"), Is.EqualTo(7));
+                Assert.That(GetPrivateBool(controller, "_turnReportPlaybackCompleted"), Is.True);
+                Assert.That(GetPrivateBool(controller, "_turnReportAckSent"), Is.True);
                 Assert.That(sender.Messages, Has.Count.EqualTo(1));
                 var ack = sender.Messages[0] as MsgAcknowledgeTurnReport;
                 Assert.That(ack, Is.Not.Null);
@@ -87,6 +91,24 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(replace, Is.Not.Null);
             replace.Invoke(turnStore, new object[] { state });
+        }
+
+        private static int GetPrivateInt(SettlementPlaybackController controller, string fieldName)
+        {
+            var field = typeof(SettlementPlaybackController).GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null);
+            return (int)field!.GetValue(controller);
+        }
+
+        private static bool GetPrivateBool(SettlementPlaybackController controller, string fieldName)
+        {
+            var field = typeof(SettlementPlaybackController).GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null);
+            return (bool)field!.GetValue(controller);
         }
 
         private sealed class CaptureMessageSender : IClientMessageSender

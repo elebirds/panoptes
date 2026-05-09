@@ -536,7 +536,7 @@ namespace Panoptes.Presentation.Binders.Ugui
                 _text = textObject.GetComponent<TMP_Text>();
                 _text.alignment = TextAlignmentOptions.TopLeft;
                 _text.color = Color.white;
-                _text.enableWordWrapping = true;
+                _text.textWrappingMode = TextWrappingModes.Normal;
                 _text.fontSize = 18f;
                 _text.raycastTarget = false;
                 _root.gameObject.SetActive(false);

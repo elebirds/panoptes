@@ -7,6 +7,7 @@ namespace Panoptes.Presentation.Map
 {
     internal sealed class MapSourceResolver
     {
+#pragma warning disable CS0649
         [System.Serializable]
         private sealed class MapJsonEnvelope
         {
@@ -57,6 +58,7 @@ namespace Panoptes.Presentation.Map
             public int x;
             public int y;
         }
+#pragma warning restore CS0649
 
         internal struct Options
         {

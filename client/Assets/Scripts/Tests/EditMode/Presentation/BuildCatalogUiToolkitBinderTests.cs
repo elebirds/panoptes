@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Core.Application.Services;
@@ -210,19 +211,27 @@ namespace Panoptes.Tests.EditMode.Presentation
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new BuildCatalogContextStore();
             contextStore.SetCityCoreNode("capital");
+            var disabledControllers = TemporarilyDisableMapPlanningInputControllers();
             InjectServices(
                 binder,
                 planningToolService,
                 visibilityStore,
                 contextStore);
 
-            InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
+            try
+            {
+                InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
 
-            var state = planningToolStore.Snapshot;
-            Assert.That(state.Mode, Is.EqualTo(PlanningToolMode.Build));
-            Assert.That(state.BuildTypeId, Is.EqualTo("workshop"));
-            Assert.That(state.BuildCityId, Is.EqualTo("capital"));
-            Assert.That(state.BuildRule, Is.EqualTo(PlanningBuildPlacementRule.CityOnly));
+                var state = planningToolStore.Snapshot;
+                Assert.That(state.Mode, Is.EqualTo(PlanningToolMode.Build));
+                Assert.That(state.BuildTypeId, Is.EqualTo("workshop"));
+                Assert.That(state.BuildCityId, Is.EqualTo("capital"));
+                Assert.That(state.BuildRule, Is.EqualTo(PlanningBuildPlacementRule.CityOnly));
+            }
+            finally
+            {
+                RestoreMapPlanningInputControllers(disabledControllers);
+            }
 
             contextStore.Dispose();
             visibilityStore.Dispose();
@@ -280,6 +289,47 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null);
             field!.SetValue(binder, controller);
+        }
+
+        private static List<(MapPlanningInputController controller, bool wasActive)> TemporarilyDisableMapPlanningInputControllers()
+        {
+            var controllers = Object.FindObjectsByType<MapPlanningInputController>(FindObjectsInactive.Include);
+            var disabledControllers = new List<(MapPlanningInputController controller, bool wasActive)>(controllers.Length);
+            for (var i = 0; i < controllers.Length; i++)
+            {
+                var controller = controllers[i];
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                var wasActive = controller.gameObject.activeSelf;
+                disabledControllers.Add((controller, wasActive));
+                if (wasActive)
+                {
+                    controller.gameObject.SetActive(false);
+                }
+            }
+
+            return disabledControllers;
+        }
+
+        private static void RestoreMapPlanningInputControllers(
+            List<(MapPlanningInputController controller, bool wasActive)> controllers)
+        {
+            if (controllers == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < controllers.Count; i++)
+            {
+                var (controller, wasActive) = controllers[i];
+                if (controller != null && wasActive)
+                {
+                    controller.gameObject.SetActive(true);
+                }
+            }
         }
     }
 }

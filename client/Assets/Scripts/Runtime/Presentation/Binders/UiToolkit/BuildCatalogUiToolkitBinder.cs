@@ -495,7 +495,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             if (_mapPlanningInputController == null)
             {
-                _mapPlanningInputController = FindFirstObjectByType<MapPlanningInputController>(FindObjectsInactive.Exclude);
+                _mapPlanningInputController = FindAnyObjectByType<MapPlanningInputController>(FindObjectsInactive.Exclude);
             }
 
             return _mapPlanningInputController;

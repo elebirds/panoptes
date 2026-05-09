@@ -230,11 +230,11 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 SecondaryNodeId = payload.secondary_node_id ?? string.Empty,
                 OperationId = payload.operation_id ?? string.Empty,
                 Objective = payload.objective ?? string.Empty,
-                OperationCommands = MapOperationSteps(payload.operation_steps)
-            };
+            OperationCommands = MapOperationSteps(payload.operation_steps)
+        };
         }
 
-        private static List<MinisterOperationCommandDto> MapOperationSteps(IEnumerable<MinisterDraftPayload> steps)
+        private static List<MinisterOperationCommandDto> MapOperationSteps(IEnumerable<MinisterOperationStepPayload> steps)
         {
             var result = new List<MinisterOperationCommandDto>();
             if (steps == null)
@@ -368,6 +368,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             }
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class MinisterDraftPayload
         {
@@ -397,7 +398,26 @@ namespace Panoptes.Core.Infrastructure.Mapper
             public string secondary_node_id;
             public string operation_id;
             public string objective;
-            public MinisterDraftPayload[] operation_steps;
+            public MinisterOperationStepPayload[] operation_steps;
         }
+
+        [Serializable]
+        private sealed class MinisterOperationStepPayload
+        {
+            public string draft_id;
+            public string kind;
+            public string target_label;
+            public string title;
+            public string node_id;
+            public string building_type_id;
+            public string city_id;
+            public string recipe_id;
+            public string unit_id;
+            public string action;
+            public string target_node_id;
+            public string target_unit_id;
+            public string secondary_node_id;
+        }
+#pragma warning restore CS0649
     }
 }

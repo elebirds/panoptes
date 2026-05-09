@@ -375,6 +375,7 @@ namespace Panoptes.Core.Application.Cache
             public string[] recipe_order;
         }
 
+#pragma warning disable CS0649
         [Serializable]
         private sealed class CatalogBundleJson
         {
@@ -399,6 +400,7 @@ namespace Panoptes.Core.Application.Cache
             public BuildMenuLayoutJson ui_build_menu_layout;
             public RecipeLayoutJson ui_recipe_layout;
         }
+#pragma warning restore CS0649
 
         [Serializable]
         private sealed class ResourcesSectionJson
