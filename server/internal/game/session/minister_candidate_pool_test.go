@@ -211,6 +211,69 @@ func TestBuildMinisterDraftsFromLegalCandidatesOffersOpeningMilitaryRecon(t *tes
 	t.Fatalf("drafts = %#v, want opening military recon operation", drafts)
 }
 
+func TestScoutPressureOperationsBiasOpeningReconTowardOpponentSpawn(t *testing.T) {
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"P1Spawn": ecs.CreateNode(world, ecs.MapNode{ID: "P1Spawn", Q: 0, R: 2, Terrain: "plain"}),
+		"P2Spawn": ecs.CreateNode(world, ecs.MapNode{ID: "P2Spawn", Q: 2, R: 0, Terrain: "plain"}),
+		"P1Back":  ecs.CreateNode(world, ecs.MapNode{ID: "P1Back", Q: -1, R: 3, Terrain: "plain"}),
+		"P2Back":  ecs.CreateNode(world, ecs.MapNode{ID: "P2Back", Q: 3, R: -1, Terrain: "plain"}),
+		"Mid":     ecs.CreateNode(world, ecs.MapNode{ID: "Mid", Q: 1, R: 1, Terrain: "plain"}),
+	}
+	state := domain.NewGameState("game-mirrored-recon", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID: "mirrored-recon",
+		PlayerSpawns: map[string]domain.Position{
+			"player-1": {Q: 0, R: 2},
+			"player-2": {Q: 2, R: 0},
+		},
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+
+	p1Unit := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 2}))
+	p2Unit := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 0}))
+	ecs.UnitStatsC.Get(p1Unit).ID = "p1-infantry"
+	ecs.UnitStatsC.Get(p2Unit).ID = "p2-infantry"
+
+	p1Drafts := enumerateMinisterOperationDrafts(7, "player-1", state, &gamequery.ObservationSnapshot{
+		ViewerID: "player-1",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "P1Back", TerritoryOwnerPlayerId: "player-1"},
+			{Id: "Mid", TerritoryOwnerPlayerId: "player-1"},
+		},
+		Units: []*pb.UnitView{{Id: "p1-infantry", Faction: "player-1", UnitType: "infantry"}},
+	})
+	if got := firstOperationDraftTargetNodeID(p1Drafts); got != "Mid" {
+		t.Fatalf("player-1 recon target = %q, want Mid toward upper-right opponent; drafts=%#v", got, p1Drafts)
+	}
+
+	p2Drafts := enumerateMinisterOperationDrafts(7, "player-2", state, &gamequery.ObservationSnapshot{
+		ViewerID: "player-2",
+		VisibleNodes: []*pb.NodeView{
+			{Id: "P2Back", TerritoryOwnerPlayerId: "player-2"},
+			{Id: "Mid", TerritoryOwnerPlayerId: "player-2"},
+		},
+		Units: []*pb.UnitView{{Id: "p2-infantry", Faction: "player-2", UnitType: "infantry"}},
+	})
+	if got := firstOperationDraftTargetNodeID(p2Drafts); got != "Mid" {
+		t.Fatalf("player-2 recon target = %q, want Mid toward lower-left opponent; drafts=%#v", got, p2Drafts)
+	}
+}
+
 func TestBuildMinisterDraftsFromLegalCandidatesIncludesSafeZoneBuildsWithoutTerritoryOwner(t *testing.T) {
 	previous := staticdata.Default()
 	t.Cleanup(func() {
@@ -409,4 +472,11 @@ func newMinisterCandidatePoolState(t *testing.T) *domain.GameState {
 	ecs.UnitStatsC.Get(unitEntry).ID = "u1"
 
 	return state
+}
+
+func firstOperationDraftTargetNodeID(drafts []domain.MinisterDraft) string {
+	if len(drafts) == 0 || len(drafts[0].OperationSteps) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(drafts[0].OperationSteps[0].TargetNodeID)
 }

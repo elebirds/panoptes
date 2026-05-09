@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/economy"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
@@ -436,6 +437,7 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		case territoryOwner == playerID:
 			score += 20
 		}
+		score += opponentApproachBonus(state, playerID, strings.TrimSpace(node.GetId()))
 		if score == 0 {
 			continue
 		}
@@ -471,6 +473,109 @@ func scoutPressureOperations(playerID string, state *domain.GameState, observati
 		})
 	}
 	return out
+}
+
+func opponentApproachBonus(state *domain.GameState, playerID string, nodeID string) int {
+	origin, target, ok := playerApproachVector(state, playerID, nodeID)
+	if !ok {
+		return 0
+	}
+	nodePos, ok := nodePositionByID(state, nodeID)
+	if !ok {
+		return 0
+	}
+	originDistance := origin.DistanceTo(target)
+	if originDistance <= 0 {
+		return 0
+	}
+	delta := originDistance - nodePos.DistanceTo(target)
+	switch {
+	case delta > 0:
+		return min(delta, 4) * 35
+	case delta < 0:
+		return -min(-delta, 3) * 25
+	default:
+		return 0
+	}
+}
+
+func playerApproachVector(state *domain.GameState, playerID string, nodeID string) (domain.Position, domain.Position, bool) {
+	if state == nil || state.Map == nil {
+		return domain.Position{}, domain.Position{}, false
+	}
+	origin, ok := playerApproachOrigin(state, playerID)
+	if !ok {
+		return domain.Position{}, domain.Position{}, false
+	}
+	target, ok := nearestOpponentApproachTarget(state, playerID, origin)
+	if !ok {
+		return domain.Position{}, domain.Position{}, false
+	}
+	if strings.TrimSpace(nodeID) == "" {
+		return domain.Position{}, domain.Position{}, false
+	}
+	return origin, target, true
+}
+
+func playerApproachOrigin(state *domain.GameState, playerID string) (domain.Position, bool) {
+	if state == nil {
+		return domain.Position{}, false
+	}
+	if state.Map != nil && state.Map.PlayerSpawns != nil {
+		if pos, ok := state.Map.PlayerSpawns[strings.TrimSpace(playerID)]; ok {
+			return pos, true
+		}
+	}
+	player := state.Players[strings.TrimSpace(playerID)]
+	if player == nil {
+		return domain.Position{}, false
+	}
+	return nodePositionByID(state, player.CapitalCityID)
+}
+
+func nearestOpponentApproachTarget(state *domain.GameState, playerID string, origin domain.Position) (domain.Position, bool) {
+	if state == nil {
+		return domain.Position{}, false
+	}
+	type candidate struct {
+		playerID string
+		pos      domain.Position
+	}
+	candidates := make([]candidate, 0)
+	if state.Map != nil && state.Map.PlayerSpawns != nil {
+		for opponentID, pos := range state.Map.PlayerSpawns {
+			opponentID = strings.TrimSpace(opponentID)
+			if opponentID == "" || opponentID == strings.TrimSpace(playerID) {
+				continue
+			}
+			candidates = append(candidates, candidate{playerID: opponentID, pos: pos})
+		}
+	}
+	if len(candidates) == 0 {
+		for opponentID, player := range state.Players {
+			opponentID = strings.TrimSpace(opponentID)
+			if opponentID == "" || opponentID == strings.TrimSpace(playerID) || player == nil {
+				continue
+			}
+			pos, ok := nodePositionByID(state, player.CapitalCityID)
+			if !ok {
+				continue
+			}
+			candidates = append(candidates, candidate{playerID: opponentID, pos: pos})
+		}
+	}
+	if len(candidates) == 0 {
+		return domain.Position{}, false
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		leftDistance := origin.DistanceTo(candidates[i].pos)
+		rightDistance := origin.DistanceTo(candidates[j].pos)
+		if leftDistance == rightDistance {
+			return candidates[i].playerID < candidates[j].playerID
+		}
+		return leftDistance < rightDistance
+	})
+	return candidates[0].pos, true
 }
 
 func reserveMinisterOperationUnitsByRole(candidates []ministerOperationCandidate) []ministerOperationCandidate {
@@ -609,6 +714,18 @@ func nodeIDForProtoPosition(state *domain.GameState, pos *pb.Position) string {
 		return ""
 	}
 	return strings.TrimSpace(domain.NodeC.Get(entry).ID)
+}
+
+func nodePositionByID(state *domain.GameState, nodeID string) (domain.Position, bool) {
+	if state == nil {
+		return domain.Position{}, false
+	}
+	entry, ok := state.GetNode(strings.TrimSpace(nodeID))
+	if !ok || entry == nil {
+		return domain.Position{}, false
+	}
+	pos := ecs.PositionC.Get(entry)
+	return domain.Position{Q: pos.Q, R: pos.R}, true
 }
 
 func resourceOperationBonus(node *pb.NodeView) int {
