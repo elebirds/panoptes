@@ -59,7 +59,34 @@ namespace Panoptes.Tests.EditMode.Presentation
             contextStore.SetContext(" n1 ", " mill ", "player-1");
 
             Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已选择"));
-            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("选择"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("\u53d6\u6d88\u9009\u62e9"));
+        }
+
+        [Test]
+        public void RecipeSynthesis_ShouldHideActiveSelectionWhenCancellationIsQueued()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            using var contextStore = new RecipeSynthesisContextStore();
+            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore, contextStore, gameStateStore);
+
+            catalogStore.Replace(new StaticCatalogState(recipes: new Dictionary<string, CatalogRecipeDto>
+            {
+                ["grain"] = new CatalogRecipeDto { Id = "grain", Name = "Mill Grain", BuildingId = "mill" }
+            }));
+            gameStateStore.Replace(new GameStateStoreState(nodes: new Dictionary<string, NodeDto>
+            {
+                ["n1"] = new NodeDto { Id = "n1", OperationSelectedRecipeId = "grain" }
+            }));
+            draftStore.Replace(new PlanningDraftState(recipeSelections: new[]
+            {
+                new QueuedRecipeSelectionDto { NodeId = "n1", RecipeId = string.Empty }
+            }));
+            contextStore.SetContext("n1", "mill", "player-1");
+
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo(string.Empty));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("\u9009\u62e9"));
         }
 
         [Test]

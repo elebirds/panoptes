@@ -88,7 +88,16 @@ func (s *Service) handleCancelBuildingRecipe(delivery commandDelivery, room Sess
 		return rejectedHandleIntentResult(errCode), transportproblem.New(errCode, message)
 	}
 	if nodeID != "" {
+		plannedRecipeID := plannedRecipeSelection(room.State(), playerID, nodeID)
+		activeRecipeID := activeRecipeSelection(room.State(), nodeID)
 		room.CancelRecipeSelection(playerID, nodeID)
+		if activeRecipeID != "" && (plannedRecipeID == "" || plannedRecipeID == activeRecipeID) {
+			room.QueueRecipeSelection(domain.RecipeSelectionOrder{
+				PlayerID: playerID,
+				NodeID:   nodeID,
+				RecipeID: "",
+			})
+		}
 	}
 	delivery.snapshot()
 	return acceptedHandleIntentResult(), nil
@@ -107,4 +116,28 @@ func validateRecipeCancel(state *domain.GameState, playerID string, nodeID strin
 		return "unauthorized"
 	}
 	return ""
+}
+
+func plannedRecipeSelection(state *domain.GameState, playerID string, nodeID string) string {
+	if state == nil {
+		return ""
+	}
+	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
+		if strings.TrimSpace(selection.PlayerID) == strings.TrimSpace(playerID) &&
+			strings.TrimSpace(selection.NodeID) == strings.TrimSpace(nodeID) {
+			return strings.TrimSpace(selection.RecipeID)
+		}
+	}
+	return ""
+}
+
+func activeRecipeSelection(state *domain.GameState, nodeID string) string {
+	if state == nil {
+		return ""
+	}
+	nodeEntry, ok := state.GetNode(strings.TrimSpace(nodeID))
+	if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingOperationC) {
+		return ""
+	}
+	return strings.TrimSpace(ecs.BuildingOperationC.Get(nodeEntry).SelectedRecipeID)
 }

@@ -42,6 +42,12 @@ type RecipeSelectionValidation struct {
 	Recipe    staticdata.RecipeDefinition
 }
 
+type RecipeCancellationValidation struct {
+	ValidationResult
+	NodeEntry *donburi.Entry
+	Building  ecs.BuildingComp
+}
+
 func ValidateResearchTarget(state *domain.GameState, playerID string, technologyID string) ResearchTargetValidation {
 	if state == nil || strings.TrimSpace(playerID) == "" || strings.TrimSpace(technologyID) == "" {
 		return ResearchTargetValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_request"}}
@@ -124,7 +130,7 @@ func ValidateRecipeSelection(state *domain.GameState, playerID string, nodeID st
 		return RecipeSelectionValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_request"}}
 	}
 	nodeEntry, ok := state.GetNode(nodeID)
-	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
+	if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingC) {
 		return RecipeSelectionValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_target"}}
 	}
 	recipe, ok := staticdata.Default().GetRecipe(recipeID)
@@ -161,6 +167,25 @@ func ValidateRecipeSelection(state *domain.GameState, playerID string, nodeID st
 		NodeEntry:        nodeEntry,
 		Building:         *building,
 		Recipe:           recipe,
+	}
+}
+
+func ValidateRecipeCancellation(state *domain.GameState, playerID string, nodeID string) RecipeCancellationValidation {
+	if state == nil || strings.TrimSpace(playerID) == "" || strings.TrimSpace(nodeID) == "" {
+		return RecipeCancellationValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_request"}}
+	}
+	nodeEntry, ok := state.GetNode(nodeID)
+	if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingC) {
+		return RecipeCancellationValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_target"}}
+	}
+	building := ecs.BuildingC.Get(nodeEntry)
+	if normalizeToken(building.Owner) != normalizeToken(playerID) {
+		return RecipeCancellationValidation{ValidationResult: ValidationResult{ErrorCode: "unauthorized"}}
+	}
+	return RecipeCancellationValidation{
+		ValidationResult: ValidationResult{OK: true},
+		NodeEntry:        nodeEntry,
+		Building:         *building,
 	}
 }
 

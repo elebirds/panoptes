@@ -41,7 +41,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float nearDistance = 6.2f;
         [SerializeField] private float farDistance = 36f;
         [SerializeField] private float distanceSmoothTime = 0.06f;
-        [SerializeField] private float scrollDistanceStep = 3.5f;
+        [SerializeField] private float scrollDistanceStep = 8.75f;
         [SerializeField] private float inputSystemScrollScale = 0.01f;
         [SerializeField] private bool invertScrollDirection = false;
 

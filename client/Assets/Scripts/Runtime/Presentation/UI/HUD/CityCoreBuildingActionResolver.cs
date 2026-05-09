@@ -57,7 +57,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             var buildingType = NormalizeToken(node.BuildingType);
             if (string.IsNullOrWhiteSpace(buildingType) ||
-                string.Equals(buildingType, CityCoreBuildingType, StringComparison.Ordinal) ||
                 !CatalogBuildingHasRecipes(buildingType))
             {
                 return false;
@@ -102,7 +101,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             var buildingType = NormalizeToken(node.BuildingType);
             return !string.IsNullOrWhiteSpace(buildingType) &&
-                   !string.Equals(buildingType, CityCoreBuildingType, StringComparison.Ordinal) &&
                    CatalogBuildingHasRecipes(buildingType);
         }
 

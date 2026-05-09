@@ -477,11 +477,6 @@ namespace Panoptes.Core.Application.Stores
 
         private static string ResolveGameSyncPhase(MsgGameSync msg)
         {
-            if (msg?.Events != null && msg.Events.Count > 0)
-            {
-                return GamePhases.Resolving;
-            }
-
             return string.IsNullOrWhiteSpace(msg?.Phase) ? GamePhases.Resolving : msg.Phase;
         }
 

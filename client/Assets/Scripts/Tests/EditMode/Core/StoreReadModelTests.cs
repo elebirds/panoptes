@@ -128,6 +128,36 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
+        public void PlanningDraftStore_ShouldApplyRecipeSelectionOptimistically()
+        {
+            var store = new PlanningDraftStore();
+            store.Replace(new PlanningDraftState(
+                snapshotTurn: 3,
+                snapshotPhase: GamePhases.Planning,
+                recipeSelections: new[]
+                {
+                    new QueuedRecipeSelectionDto { NodeId = "old-node", RecipeId = "ore" },
+                    new QueuedRecipeSelectionDto { NodeId = "node-a", RecipeId = "grain" }
+                }));
+
+            store.ApplyRecipeSelection(" node-a ", "  tools ");
+
+            Assert.That(store.Snapshot.SnapshotTurn, Is.EqualTo(3));
+            Assert.That(store.Snapshot.SnapshotPhase, Is.EqualTo(GamePhases.Planning));
+            Assert.That(store.Snapshot.RecipeSelections, Has.Count.EqualTo(2));
+            Assert.That(store.Snapshot.RecipeSelections[0].NodeId, Is.EqualTo("old-node"));
+            Assert.That(store.Snapshot.RecipeSelections[0].RecipeId, Is.EqualTo("ore"));
+            Assert.That(store.Snapshot.RecipeSelections[1].NodeId, Is.EqualTo("node-a"));
+            Assert.That(store.Snapshot.RecipeSelections[1].RecipeId, Is.EqualTo("tools"));
+
+            store.ApplyRecipeSelection("node-a", string.Empty);
+
+            Assert.That(store.Snapshot.RecipeSelections, Has.Count.EqualTo(2));
+            Assert.That(store.Snapshot.RecipeSelections[1].NodeId, Is.EqualTo("node-a"));
+            Assert.That(store.Snapshot.RecipeSelections[1].RecipeId, Is.Empty);
+        }
+
+        [Test]
         public void StaticCatalogStore_ShouldCloneNestedCatalogArrays()
         {
             var building = new CatalogBuildingDto

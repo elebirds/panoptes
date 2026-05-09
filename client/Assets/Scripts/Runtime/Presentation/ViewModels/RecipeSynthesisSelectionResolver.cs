@@ -7,18 +7,25 @@ namespace Panoptes.Presentation.ViewModels
     {
         public static string ResolveSelectedRecipeId(PlanningDraftState draft, GameStateStoreState game, string contextNodeId)
         {
-            var plannedRecipeId = ResolvePlannedRecipeId(draft, contextNodeId);
-            return !string.IsNullOrEmpty(plannedRecipeId)
+            return TryResolvePlannedRecipeId(draft, contextNodeId, out var plannedRecipeId)
                 ? plannedRecipeId
                 : ResolveActiveRecipeId(game, contextNodeId);
         }
 
         public static string ResolvePlannedRecipeId(PlanningDraftState draft, string contextNodeId)
         {
+            return TryResolvePlannedRecipeId(draft, contextNodeId, out var plannedRecipeId)
+                ? plannedRecipeId
+                : string.Empty;
+        }
+
+        public static bool TryResolvePlannedRecipeId(PlanningDraftState draft, string contextNodeId, out string recipeId)
+        {
             var selections = draft?.RecipeSelections;
             if (selections == null || string.IsNullOrWhiteSpace(contextNodeId))
             {
-                return string.Empty;
+                recipeId = string.Empty;
+                return false;
             }
 
             for (var i = 0; i < selections.Count; i++)
@@ -28,14 +35,12 @@ namespace Panoptes.Presentation.ViewModels
                     continue;
                 }
 
-                var recipeId = Normalize(selections[i]?.RecipeId);
-                if (!string.IsNullOrEmpty(recipeId))
-                {
-                    return recipeId;
-                }
+                recipeId = Normalize(selections[i]?.RecipeId);
+                return true;
             }
 
-            return string.Empty;
+            recipeId = string.Empty;
+            return false;
         }
 
         public static string ResolveActiveRecipeId(GameStateStoreState game, string contextNodeId)

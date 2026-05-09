@@ -463,7 +463,8 @@ namespace Panoptes.Tests.EditMode.Presentation
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new RecipeSynthesisContextStore();
             var draftStore = new PlanningDraftStore();
-            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
+            var gameStateStore = new GameStateStore();
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
 
             var document = _root.GetComponent<UIDocument>();
             var rootElement = document.rootVisualElement;
@@ -478,6 +479,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             visibilityStore.Dispose();
             contextStore.Dispose();
+            gameStateStore.Dispose();
             draftStore.Dispose();
         }
 
@@ -491,8 +493,10 @@ namespace Panoptes.Tests.EditMode.Presentation
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new RecipeSynthesisContextStore();
             var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            gameStateStore.Replace(new GameStateStoreState(phase: GamePhases.Planning));
             contextStore.SetContext("node-a", "mill", "player-1");
-            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
 
             RequestRecipeSelection(binder, "grain");
 
@@ -500,9 +504,40 @@ namespace Panoptes.Tests.EditMode.Presentation
             var message = (MsgSetBuildingRecipe)sender.LastMessage;
             Assert.That(message.NodeId, Is.EqualTo("node-a"));
             Assert.That(message.RecipeId, Is.EqualTo("grain"));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Has.Count.EqualTo(1));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].NodeId, Is.EqualTo("node-a"));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.EqualTo("grain"));
 
             visibilityStore.Dispose();
             contextStore.Dispose();
+            draftStore.Dispose();
+            gameStateStore.Dispose();
+        }
+
+        [Test]
+        public void RecipeSynthesisBinder_ShouldIgnoreSelectionOutsidePlanning()
+        {
+            ActionLock.Release();
+            _root = new GameObject("RecipeSynthesisPhaseGuardTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            gameStateStore.Replace(new GameStateStoreState(phase: GamePhases.TurnReport));
+            contextStore.SetContext("node-a", "mill", "player-1");
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
+
+            RequestRecipeSelection(binder, "grain");
+
+            Assert.That(sender.LastMessage, Is.Null);
+            Assert.That(draftStore.Snapshot.RecipeSelections, Is.Empty);
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+            draftStore.Dispose();
+            gameStateStore.Dispose();
         }
 
         [Test]
@@ -515,22 +550,61 @@ namespace Panoptes.Tests.EditMode.Presentation
             var visibilityStore = new ManagementPanelVisibilityStore();
             var contextStore = new RecipeSynthesisContextStore();
             var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            gameStateStore.Replace(new GameStateStoreState(phase: GamePhases.Planning));
             contextStore.SetContext("node-a", "mill", "player-1");
             draftStore.Replace(new PlanningDraftState(recipeSelections: new[]
             {
                 new QueuedRecipeSelectionDto { NodeId = "node-a", RecipeId = "grain" }
             }));
-            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore);
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
 
             RequestRecipeSelection(binder, "grain");
 
             Assert.That(sender.LastMessage, Is.TypeOf<MsgCancelBuildingRecipe>());
             var message = (MsgCancelBuildingRecipe)sender.LastMessage;
             Assert.That(message.NodeId, Is.EqualTo("node-a"));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Has.Count.EqualTo(1));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].NodeId, Is.EqualTo("node-a"));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.Empty);
 
             visibilityStore.Dispose();
             contextStore.Dispose();
             draftStore.Dispose();
+            gameStateStore.Dispose();
+        }
+
+        [Test]
+        public void RecipeSynthesisBinder_ShouldCancelActiveRecipeWhenClickingCurrentSelection()
+        {
+            ActionLock.Release();
+            _root = new GameObject("RecipeSynthesisActiveCancelTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            contextStore.SetContext("node-a", "mill", "player-1");
+            gameStateStore.Replace(new GameStateStoreState(phase: GamePhases.Planning, nodes: new Dictionary<string, NodeDto>
+            {
+                ["node-a"] = new NodeDto { Id = "node-a", OperationSelectedRecipeId = "grain" }
+            }));
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
+
+            RequestRecipeSelection(binder, "grain");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgCancelBuildingRecipe>());
+            var message = (MsgCancelBuildingRecipe)sender.LastMessage;
+            Assert.That(message.NodeId, Is.EqualTo("node-a"));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Has.Count.EqualTo(1));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].NodeId, Is.EqualTo("node-a"));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.Empty);
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+            draftStore.Dispose();
+            gameStateStore.Dispose();
         }
 
         private static void InjectTechTreeFlow(
@@ -671,13 +745,14 @@ namespace Panoptes.Tests.EditMode.Presentation
             PlanningIntentService planningIntentService,
             ManagementPanelVisibilityStore visibilityStore,
             RecipeSynthesisContextStore contextStore,
-            PlanningDraftStore draftStore)
+            PlanningDraftStore draftStore,
+            GameStateStore gameStateStore)
         {
             var method = typeof(RecipeSynthesisUiToolkitBinder).GetMethod(
                 "ConstructRecipeFlow",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
-            method!.Invoke(binder, new object[] { planningIntentService, visibilityStore, contextStore, draftStore });
+            method!.Invoke(binder, new object[] { planningIntentService, visibilityStore, contextStore, draftStore, gameStateStore });
         }
 
         private static void RequestRecipeSelection(RecipeSynthesisUiToolkitBinder binder, string recipeId)

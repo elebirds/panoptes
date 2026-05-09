@@ -2,22 +2,7 @@
   "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
     {
-      "id": "m001",
-      "name": "李猛",
-      "role": "military",
-      "icon_key": "military",
-      "ability": 8,
-      "personality": "aggressive",
-      "personality_desc": "果敢激进",
-      "loyalty": 7,
-      "ambition": 6,
-      "cautiousness": 35,
-      "decisiveness": 82,
-      "loyalty_tendency": 68,
-      "ambition_style": 65
-    },
-    {
-      "id": "m002",
+      "id": "m-domestic",
       "name": "沈衡",
       "role": "domestic",
       "icon_key": "domestic",
@@ -30,6 +15,66 @@
       "decisiveness": 58,
       "loyalty_tendency": 84,
       "ambition_style": 32
+    },
+    {
+      "id": "m-works",
+      "name": "许衡",
+      "role": "works",
+      "icon_key": "works",
+      "ability": 7,
+      "personality": "pragmatic",
+      "personality_desc": "务实精算",
+      "loyalty": 7,
+      "ambition": 5,
+      "cautiousness": 64,
+      "decisiveness": 63,
+      "loyalty_tendency": 76,
+      "ambition_style": 41
+    },
+    {
+      "id": "m-defense",
+      "name": "韩戎",
+      "role": "defense",
+      "icon_key": "defense",
+      "ability": 8,
+      "personality": "disciplined",
+      "personality_desc": "严整强硬",
+      "loyalty": 8,
+      "ambition": 6,
+      "cautiousness": 58,
+      "decisiveness": 78,
+      "loyalty_tendency": 72,
+      "ambition_style": 54
+    },
+    {
+      "id": "m-command",
+      "name": "李猛",
+      "role": "command",
+      "icon_key": "command",
+      "ability": 8,
+      "personality": "aggressive",
+      "personality_desc": "果敢激进",
+      "loyalty": 7,
+      "ambition": 6,
+      "cautiousness": 35,
+      "decisiveness": 82,
+      "loyalty_tendency": 68,
+      "ambition_style": 65
+    },
+    {
+      "id": "m-frontier",
+      "name": "林远",
+      "role": "frontier",
+      "icon_key": "frontier",
+      "ability": 7,
+      "personality": "opportunistic",
+      "personality_desc": "善于开边",
+      "loyalty": 6,
+      "ambition": 7,
+      "cautiousness": 61,
+      "decisiveness": 66,
+      "loyalty_tendency": 66,
+      "ambition_style": 58
     }
   ]
 }

@@ -271,7 +271,7 @@ namespace Panoptes.Presentation.Map
                 inputCamera = Camera.main;
             }
 
-            if (inputCamera == null || !HasMouse() || IsPlaybackInputLocked)
+            if (inputCamera == null || !HasMouse() || IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -288,7 +288,7 @@ namespace Panoptes.Presentation.Map
 
         public void EnterBuildPlacementAny(string buildingType, string cityId)
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -298,7 +298,7 @@ namespace Panoptes.Presentation.Map
 
         public void EnterBuildPlacementResource(string buildingType, string cityId)
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -308,7 +308,7 @@ namespace Panoptes.Presentation.Map
 
         public void EnterBuildPlacementCity(string buildingType, string cityId)
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -318,7 +318,7 @@ namespace Panoptes.Presentation.Map
 
         public void CancelCurrentMode()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -330,7 +330,7 @@ namespace Panoptes.Presentation.Map
 
         public void BeginMoveSelection()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -349,7 +349,7 @@ namespace Panoptes.Presentation.Map
 
         public void BeginAttackSelection()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -369,7 +369,7 @@ namespace Panoptes.Presentation.Map
 
         public void BeginChargeSelection()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -389,7 +389,7 @@ namespace Panoptes.Presentation.Map
 
         public void IssueHoldOrder()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return;
             }
@@ -421,7 +421,7 @@ namespace Panoptes.Presentation.Map
 
         public bool RequestExpandTerritoryForSelectedUnit()
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return false;
             }
@@ -448,7 +448,7 @@ namespace Panoptes.Presentation.Map
 
         public bool RequestExpandTerritory(string unitId, string centerNodeId = null)
         {
-            if (IsPlaybackInputLocked)
+            if (IsPlaybackInputLocked || !IsPlanningInteractive())
             {
                 return false;
             }
@@ -497,7 +497,7 @@ namespace Panoptes.Presentation.Map
 
             RemoveMovePreview(unitId);
 
-            if (IsPlaybackInputLocked || GamePhases.IsResolving(_latestGameState?.Phase) ||
+            if (IsPlaybackInputLocked || GamePhases.IsAuthoritativePlayback(_latestGameState?.Phase) ||
                 (_mapRenderer != null && _mapRenderer.IsResolvingAuthoritativeState))
             {
                 return;
@@ -2130,7 +2130,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (GamePhases.IsResolving(current?.Phase))
+            if (GamePhases.IsAuthoritativePlayback(current?.Phase))
             {
                 SyncUnitDamagePopupBaselines(previousUnits, currentUnits);
                 return;
@@ -2696,6 +2696,14 @@ namespace Panoptes.Presentation.Map
         private bool IsTerritoryExpansionUnitType(string unitType)
         {
             return TerritoryDeployInputMode.IsTerritoryExpansionUnitType(unitType, territoryExpansionUnitTypes);
+        }
+
+        private bool IsPlanningInteractive()
+        {
+            var state = _latestGameState;
+            return state == null ||
+                   string.IsNullOrWhiteSpace(state.Phase) ||
+                   (!state.IsGameOver && GamePhases.IsPlanning(state.Phase));
         }
 
         private void ShowUserError(string message)

@@ -1087,11 +1087,6 @@ namespace Panoptes.Core.Application.Cache
 
         private static string ResolveGameSyncPhase(MsgGameSync msg)
         {
-            if (msg?.Events != null && msg.Events.Count > 0)
-            {
-                return GamePhases.Resolving;
-            }
-
             return NormalizePhase(msg?.Phase, GamePhases.Resolving);
         }
 

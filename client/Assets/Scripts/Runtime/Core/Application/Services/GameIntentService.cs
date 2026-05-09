@@ -12,6 +12,7 @@ namespace Panoptes.Core.Application.Services
     public sealed class GameIntentService : IDisposable
     {
         private readonly IClientMessageSender _sender;
+        private readonly TurnStore _turnStore;
         private readonly IDisposable _turnSubscription;
         private readonly IDisposable _gameOverSubscription;
 
@@ -21,6 +22,7 @@ namespace Panoptes.Core.Application.Services
             GameOverStore gameOverStore = null)
         {
             _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+            _turnStore = turnStore;
 
             _turnSubscription = turnStore?.State.Subscribe(static state => ReleaseActionLockIfInteractive(state));
             _gameOverSubscription = gameOverStore?.State.Subscribe(static state => ReleaseActionLockIfGameOver(state));
@@ -78,7 +80,7 @@ namespace Panoptes.Core.Application.Services
 
         public bool SubmitTurn()
         {
-            if (ActionLock.IsLocked)
+            if (ActionLock.IsLocked || !IsPlanningInteractive())
             {
                 return false;
             }
@@ -129,7 +131,16 @@ namespace Panoptes.Core.Application.Services
 
         private bool SendIfUnlocked(IMessage message)
         {
-            return !ActionLock.IsLocked && Send(message);
+            return !ActionLock.IsLocked && IsPlanningInteractive() && Send(message);
+        }
+
+        private bool IsPlanningInteractive()
+        {
+            var state = _turnStore?.Snapshot;
+            return state == null ||
+                   string.IsNullOrWhiteSpace(state.Phase) ||
+                   (state.IsInteractive && !state.IsGameOver) ||
+                   (GamePhases.IsPlanning(state.Phase) && !state.IsGameOver);
         }
 
         private bool Send(IMessage message)

@@ -25,7 +25,7 @@ namespace Panoptes.Presentation.UI.HUD
         private const string MinisterAttentionBadgeName = "MinisterAttentionBadge";
         private const string InstitutionAttentionBadgeName = "InstitutionAttentionBadge";
         private const string MinisterThinkingFeedbackCode = "minister_thinking";
-        private const string MinisterThinkingFeedbackMessage = "大臣正在思考中";
+        private const string MinisterThinkingFeedbackMessage = "大臣正在分析战场情况中...";
 
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;

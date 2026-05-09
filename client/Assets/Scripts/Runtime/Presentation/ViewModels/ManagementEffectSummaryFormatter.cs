@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 
@@ -26,7 +27,7 @@ namespace Panoptes.Presentation.ViewModels
                 }
             }
 
-            return values.Count > 0 ? string.Join("；", values) : fallback ?? string.Empty;
+            return values.Count > 0 ? string.Join("，", values) : fallback ?? string.Empty;
         }
 
         private static string FormatModifierEffect(CatalogPolicyModifierEffectDto effect, StaticCatalogState catalog)
@@ -36,20 +37,40 @@ namespace Panoptes.Presentation.ViewModels
                 return string.Empty;
             }
 
-            var value = FormatSigned(effect.Value);
+            var value = FormatValue(effect.Value, effect.ModifierType);
             var target = CatalogDisplayNameResolver.ResolveEffectTargetName(effect.TargetId, catalog);
             var trigger = Normalize(effect.Trigger);
             switch (trigger)
             {
-                case "recipe.work_amount":
-                    return string.IsNullOrWhiteSpace(target) ? $"工时 {value}" : $"{target} 工时 {value}";
-                case "recipe.resource_output":
-                    var resource = CatalogDisplayNameResolver.ResolveResourceName(effect.ResourceKey);
+                case "building.max_hp":
+                    return string.IsNullOrWhiteSpace(target) ? $"建筑耐久 {value}" : $"{target}耐久 {value}";
+                case "building.point_cost":
+                    var costPoint = CatalogDisplayNameResolver.ResolvePointName(effect.PointKey);
+                    return string.IsNullOrWhiteSpace(costPoint)
+                        ? $"建筑点数消耗 {value}"
+                        : $"建筑{costPoint}消耗 {value}";
+                case "recipe.resource_input":
+                    var inputResource = CatalogDisplayNameResolver.ResolveResourceName(effect.ResourceKey);
+                    var inputLabel = string.IsNullOrWhiteSpace(inputResource) ? "资源" : inputResource;
                     return string.IsNullOrWhiteSpace(target)
-                        ? $"{resource}产出 {value}"
-                        : $"{target} {resource}产出 {value}";
+                        ? $"配方{inputLabel}消耗 {value}"
+                        : $"{target}{inputLabel}消耗 {value}";
+                case "recipe.work_amount":
+                    return string.IsNullOrWhiteSpace(target) ? $"配方工时 {value}" : $"{target}工时 {value}";
+                case "recipe.resource_output":
+                    var outputResource = CatalogDisplayNameResolver.ResolveResourceName(effect.ResourceKey);
+                    var outputLabel = string.IsNullOrWhiteSpace(outputResource) ? "资源" : outputResource;
+                    return string.IsNullOrWhiteSpace(target)
+                        ? $"{outputLabel}产出 {value}"
+                        : $"{target}{outputLabel}产出 {value}";
                 case "recipe.base_progress":
-                    return string.IsNullOrWhiteSpace(target) ? $"基础进度 {value}" : $"{target} 基础进度 {value}";
+                    return string.IsNullOrWhiteSpace(target) ? $"配方基础进度 {value}" : $"{target}基础进度 {value}";
+                case "unit.attack":
+                    return string.IsNullOrWhiteSpace(target) ? $"单位攻击 {value}" : $"{target}攻击 {value}";
+                case "unit.move_range":
+                    return string.IsNullOrWhiteSpace(target) ? $"单位移动力 {value}" : $"{target}移动力 {value}";
+                case "unit.siege_multiplier":
+                    return string.IsNullOrWhiteSpace(target) ? $"单位攻城倍率 {value}" : $"{target}攻城倍率 {value}";
                 case "point.output":
                     var point = CatalogDisplayNameResolver.ResolvePointName(effect.PointKey);
                     return string.IsNullOrWhiteSpace(point) ? $"点数产出 {value}" : $"{point} {value}";
@@ -60,21 +81,54 @@ namespace Panoptes.Presentation.ViewModels
             }
         }
 
-        private static string FormatSigned(int value)
+        private static string FormatValue(float value, string modifierType)
         {
-            return value > 0 ? "+" + value : value.ToString();
+            var normalizedType = Normalize(modifierType);
+            if (normalizedType == "percent")
+            {
+                return FormatSignedNumber(value * 100f) + "%";
+            }
+
+            if (normalizedType == "multiplier")
+            {
+                return "x" + FormatNumber(value);
+            }
+
+            return FormatSignedNumber(value);
+        }
+
+        private static string FormatSignedNumber(float value)
+        {
+            return value > 0f ? "+" + FormatNumber(value) : FormatNumber(value);
+        }
+
+        private static string FormatNumber(float value)
+        {
+            return value.ToString("0.##", CultureInfo.InvariantCulture);
         }
 
         private static string FormatTrigger(string trigger)
         {
             switch (Normalize(trigger))
             {
+                case "building.max_hp":
+                    return "建筑耐久";
+                case "building.point_cost":
+                    return "建筑点数消耗";
+                case "recipe.resource_input":
+                    return "配方资源消耗";
                 case "recipe.work_amount":
                     return "配方工时";
                 case "recipe.resource_output":
                     return "配方资源产出";
                 case "recipe.base_progress":
                     return "配方基础进度";
+                case "unit.attack":
+                    return "单位攻击";
+                case "unit.move_range":
+                    return "单位移动力";
+                case "unit.siege_multiplier":
+                    return "单位攻城倍率";
                 case "point.output":
                     return "点数产出";
                 case "logistics.road_capacity":

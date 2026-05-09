@@ -43,9 +43,76 @@ namespace Panoptes.Core.Application.Stores
                 current.PlannedInstitutionIds));
         }
 
+        public void ApplyRecipeSelection(string nodeId, string recipeId)
+        {
+            nodeId = Normalize(nodeId);
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return;
+            }
+
+            var current = Snapshot ?? new PlanningDraftState();
+            var selections = new List<QueuedRecipeSelectionDto>();
+            var replaced = false;
+            var normalizedRecipeId = Normalize(recipeId);
+            var currentSelections = current.RecipeSelections;
+            for (var i = 0; i < (currentSelections?.Count ?? 0); i++)
+            {
+                var selection = currentSelections[i];
+                if (selection == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(Normalize(selection.NodeId), nodeId, StringComparison.Ordinal))
+                {
+                    if (!replaced)
+                    {
+                        selections.Add(new QueuedRecipeSelectionDto { NodeId = nodeId, RecipeId = normalizedRecipeId });
+                        replaced = true;
+                    }
+
+                    continue;
+                }
+
+                selections.Add(new QueuedRecipeSelectionDto
+                {
+                    NodeId = selection.NodeId,
+                    RecipeId = selection.RecipeId
+                });
+            }
+
+            if (!replaced)
+            {
+                selections.Add(new QueuedRecipeSelectionDto { NodeId = nodeId, RecipeId = normalizedRecipeId });
+            }
+
+            Replace(new PlanningDraftState(
+                current.SnapshotTurn,
+                current.SnapshotPhase,
+                current.UnitOrders,
+                current.BuildOrders,
+                current.DemolishOrders,
+                selections,
+                current.WarZoneDirectives,
+                current.WarZones,
+                current.MinisterDrafts,
+                current.CurrentPreview,
+                current.CurrentBuildPreview,
+                current.CurrentRecipePreview,
+                current.PlannedResearchTargetTechnologyId,
+                current.PlannedNationalPolicyId,
+                current.PlannedInstitutionIds));
+        }
+
         protected override PlanningDraftState CloneState(PlanningDraftState state)
         {
             return state == null ? new PlanningDraftState() : state.Clone();
+        }
+
+        private static string Normalize(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
         private static bool StateEquals(PlanningDraftState left, PlanningDraftState right)

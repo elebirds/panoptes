@@ -66,6 +66,44 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void IsOwnedRecipeBuildingProxy_ShouldAllowCityCoreWhenCatalogHasRecipes()
+        {
+            var gameStateStore = new GameStateStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var resolver = new CityCoreBuildingActionResolver(gameStateStore, staticCatalogStore);
+            var unit = CreateUnitView("capital");
+
+            gameStateStore.Replace(new GameStateStoreState(
+                myPlayerId: "player_a",
+                nodes: new Dictionary<string, NodeDto>
+                {
+                    ["capital"] = new NodeDto
+                    {
+                        Id = "capital",
+                        Owner = "player_a",
+                        BuildingType = "city_core",
+                        CityId = "capital",
+                        IsCityCore = true
+                    }
+                }));
+            staticCatalogStore.Replace(new StaticCatalogState(buildings: new Dictionary<string, CatalogBuildingDto>
+            {
+                ["city_core"] = new CatalogBuildingDto
+                {
+                    Id = "city_core",
+                    RecipeIds = new List<string> { "city_core_provisions" },
+                    DefaultRecipeId = "city_core_provisions"
+                }
+            }));
+
+            Assert.That(resolver.IsOwnedRecipeBuildingProxy(unit), Is.True);
+            Assert.That(resolver.TryResolveRecipeBuilding(unit, out var context), Is.True);
+            Assert.That(context.NodeId, Is.EqualTo("capital"));
+            Assert.That(context.BuildingTypeId, Is.EqualTo("city_core"));
+            Assert.That(context.OwnerId, Is.EqualTo("player_a"));
+        }
+
+        [Test]
         public void IsOwnedRecipeBuildingProxy_ShouldRejectOtherCityOwnerFallback()
         {
             var gameStateStore = new GameStateStore();
@@ -115,6 +153,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             gameStateStore.Replace(new GameStateStoreState(
                 myPlayerId: "player_a",
+                phase: GamePhases.Planning,
                 nodes: new Dictionary<string, NodeDto>
                 {
                     ["capital"] = new NodeDto

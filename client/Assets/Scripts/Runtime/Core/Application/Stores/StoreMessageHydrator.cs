@@ -9,6 +9,8 @@ namespace Panoptes.Core.Application.Stores
 {
     public sealed class StoreMessageHydrator : IDisposable
     {
+        private const string PresentationPhaseMismatchMessage = "大臣正在分析战场情况中...";
+
         private readonly MessageDispatcher _dispatcher;
         private readonly StoreHydrationHelper _helper;
         private readonly GameStateStore _gameStateStore;
@@ -283,7 +285,26 @@ namespace Panoptes.Core.Application.Stores
                 return;
             }
 
-            _feedbackStore.PublishFeedback("problem", msg.Code, msg.Message, false, ToDetailMap(msg.Details));
+            _feedbackStore.PublishFeedback("problem", msg.Code, ResolveProblemMessage(msg), false, ToDetailMap(msg.Details));
+        }
+
+        private string ResolveProblemMessage(Problem msg)
+        {
+            if (msg != null &&
+                string.Equals(msg.Code, "phase_mismatch", StringComparison.OrdinalIgnoreCase) &&
+                IsPresentationOverlayPhase(_turnStore?.Snapshot?.Phase))
+            {
+                return PresentationPhaseMismatchMessage;
+            }
+
+            return msg?.Message ?? string.Empty;
+        }
+
+        private static bool IsPresentationOverlayPhase(string phase)
+        {
+            return GamePhases.IsResolving(phase) ||
+                   GamePhases.IsPresentation(phase) ||
+                   string.Equals((phase ?? string.Empty).Trim(), GamePhases.TurnReport, StringComparison.OrdinalIgnoreCase);
         }
 
         public void HandleIssueUnitOrderResult(MsgIssueUnitOrderResult msg)

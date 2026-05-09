@@ -521,7 +521,8 @@ namespace Panoptes.Presentation.ViewModels
                     AffectionFor(pair.Key),
                     AffectionPulseSequenceFor(pair.Key),
                     AffectionPulseDeltaFor(pair.Key),
-                    pair.Value.Attributes))
+                    pair.Value.Attributes,
+                    pair.Value.PersonalityText))
                 .ToList();
         }
 
@@ -572,7 +573,8 @@ namespace Panoptes.Presentation.ViewModels
                         AffectionFor(role),
                         AffectionPulseSequenceFor(role),
                         AffectionPulseDeltaFor(role),
-                        source.Attributes);
+                        source.Attributes,
+                        source.PersonalityText);
                 })
                 .ToList();
         }
@@ -1008,6 +1010,54 @@ namespace Panoptes.Presentation.ViewModels
             return string.IsNullOrWhiteSpace(key) ? string.Empty : "Icons/Ministers/" + key.Trim();
         }
 
+        private static string ProfileIconResourceFor(MinisterProfileDto minister, string role, string iconResource)
+        {
+            if (minister == null)
+            {
+                return Clean(iconResource, IconResourceFor(string.Empty, role));
+            }
+
+            var normalizedRole = NormalizeRole(role);
+            var rawIconKey = minister.IconKey ?? string.Empty;
+            if (IsGeneratedMinister(minister) && IconKeyFallsBackToRole(rawIconKey, normalizedRole))
+            {
+                return IconResourceFor(CandidateAvatarKey(minister.MinisterId), normalizedRole);
+            }
+
+            return Clean(iconResource, IconResourceFor(rawIconKey, normalizedRole));
+        }
+
+        private static bool IsGeneratedMinister(MinisterProfileDto minister)
+        {
+            return minister != null &&
+                   !string.IsNullOrWhiteSpace(minister.MinisterId) &&
+                   minister.MinisterId.Trim().StartsWith("cand:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IconKeyFallsBackToRole(string iconKey, string role)
+        {
+            var key = Clean(iconKey, role).Trim();
+            return string.IsNullOrWhiteSpace(key) ||
+                   string.Equals(key, role, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(key, "military", StringComparison.OrdinalIgnoreCase) && string.Equals(role, "command", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string CandidateAvatarKey(string ministerId)
+        {
+            unchecked
+            {
+                var hash = 2166136261u;
+                var source = ministerId ?? string.Empty;
+                for (var i = 0; i < source.Length; i++)
+                {
+                    hash ^= source[i];
+                    hash *= 16777619u;
+                }
+
+                return "candidate_" + ((hash % 10u) + 1u).ToString("00");
+            }
+        }
+
         private static string RoleSortKey(string role)
         {
             return NormalizeRole(role) switch
@@ -1033,6 +1083,21 @@ namespace Panoptes.Presentation.ViewModels
         private static string Clean(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? (fallback ?? string.Empty) : value.Trim();
+        }
+
+        private static string BuildPersonalityText(string description, string key, string fallback = "")
+        {
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                return description.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                return key.Trim();
+            }
+
+            return fallback ?? string.Empty;
         }
 
         private static IReadOnlyList<MinisterAttributeState> BuildAttributes(
@@ -1140,6 +1205,8 @@ namespace Panoptes.Presentation.ViewModels
             public string name;
             public string role;
             public string icon_key;
+            public string personality;
+            public string personality_desc;
             public int ability;
             public int loyalty;
             public int ambition;
@@ -1155,6 +1222,7 @@ namespace Panoptes.Presentation.ViewModels
             public string Name;
             public string Title;
             public string IconResource;
+            public string PersonalityText;
             public bool IsVacant;
             public IReadOnlyList<MinisterAttributeState> Attributes = Array.Empty<MinisterAttributeState>();
 
@@ -1166,6 +1234,7 @@ namespace Panoptes.Presentation.ViewModels
                     Name = RoleTitle(role),
                     Title = RoleTitle(role),
                     IconResource = IconResourceFor(string.Empty, role),
+                    PersonalityText = string.Empty,
                     IsVacant = true
                 };
             }
@@ -1178,6 +1247,7 @@ namespace Panoptes.Presentation.ViewModels
                     Name = Clean(minister.name, RoleTitle(role)),
                     Title = RoleTitle(role),
                     IconResource = IconResourceFor(minister.icon_key, role),
+                    PersonalityText = BuildPersonalityText(minister.personality_desc, minister.personality),
                     IsVacant = false,
                     Attributes = BuildAttributes(
                         minister.ability,
@@ -1198,6 +1268,7 @@ namespace Panoptes.Presentation.ViewModels
                     Name = Clean(minister.name, RoleTitle(role)),
                     Title = RoleTitle(role),
                     IconResource = IconResourceFor(minister.icon_key, role),
+                    PersonalityText = BuildPersonalityText(minister.personality_desc, minister.personality),
                     IsVacant = false,
                     Attributes = BuildAttributes(
                         minister.ability,
@@ -1217,7 +1288,10 @@ namespace Panoptes.Presentation.ViewModels
                     MinisterId = minister != null && minister.IsVacant ? string.Empty : Clean(minister?.MinisterId, string.Empty),
                     Name = minister != null && minister.IsVacant ? "空缺" : Clean(minister?.Name, RoleTitle(role)),
                     Title = RoleTitle(role),
-                    IconResource = Clean(iconResource, IconResourceFor(string.Empty, role)),
+                    IconResource = ProfileIconResourceFor(minister, role, iconResource),
+                    PersonalityText = minister != null && minister.IsVacant
+                        ? string.Empty
+                        : BuildPersonalityText(minister?.PersonalityDesc, minister?.Personality),
                     IsVacant = minister != null && minister.IsVacant,
                     Attributes = BuildAttributes(
                         minister?.Ability ?? 0,
@@ -1247,6 +1321,9 @@ namespace Panoptes.Presentation.ViewModels
                     Name = minister != null && minister.IsVacant ? "空缺" : Clean(minister?.Name, Name),
                     Title = Title,
                     IconResource = IconResource,
+                    PersonalityText = minister != null && minister.IsVacant
+                        ? string.Empty
+                        : BuildPersonalityText(minister?.PersonalityDesc, minister?.Personality, PersonalityText),
                     IsVacant = minister != null && minister.IsVacant,
                     Attributes = HasAuthoritativeProfileAttributes(minister) || !HasAttributes(Attributes)
                         ? profileAttributes
@@ -1262,6 +1339,7 @@ namespace Panoptes.Presentation.ViewModels
                     Name = Clean(Name, fallback?.Name),
                     Title = Clean(Title, fallback?.Title),
                     IconResource = Clean(IconResource, fallback?.IconResource),
+                    PersonalityText = Clean(PersonalityText, fallback?.PersonalityText),
                     IsVacant = IsVacant,
                     Attributes = Attributes
                 };
@@ -1362,7 +1440,8 @@ namespace Panoptes.Presentation.ViewModels
             int affection = 0,
             int affectionPulseSequence = 0,
             int affectionPulseDelta = 0,
-            IReadOnlyList<MinisterAttributeState> attributes = null)
+            IReadOnlyList<MinisterAttributeState> attributes = null,
+            string personalityText = "")
         {
             Affection = Math.Clamp(affection, 0, 100);
             AffectionPulseDelta = affectionPulseDelta;
@@ -1375,6 +1454,7 @@ namespace Panoptes.Presentation.ViewModels
             RoleVacant = roleVacant || vacant;
             MinisterId = ministerId ?? string.Empty;
             Name = name ?? string.Empty;
+            PersonalityText = personalityText ?? string.Empty;
             Role = role ?? string.Empty;
             Title = title ?? string.Empty;
         }
@@ -1390,6 +1470,7 @@ namespace Panoptes.Presentation.ViewModels
         public bool IsVacant { get; }
         public bool RoleVacant { get; }
         public string Name { get; }
+        public string PersonalityText { get; }
         public string Role { get; }
         public string Title { get; }
     }

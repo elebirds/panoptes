@@ -7,7 +7,9 @@ namespace Panoptes.Core.Application.Feedback
         public static string ResolveMessage(string serverMessage, string code)
         {
             var server = (serverMessage ?? string.Empty).Trim();
-            if (!string.IsNullOrWhiteSpace(server))
+            var codeText = (code ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(server) &&
+                !string.Equals(server, codeText, StringComparison.OrdinalIgnoreCase))
             {
                 return server;
             }

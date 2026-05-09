@@ -6,6 +6,9 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace Panoptes.DebugTools
 {
@@ -21,7 +24,7 @@ namespace Panoptes.DebugTools
         private IReadOnlyList<IDebugTab> _tabs;
         private DebugPanelContext _context;
         private IClientMessageSender _messageSender;
-        private bool _expanded;
+        private bool _visible;
         private int _selectedTabIndex;
 
         public void UseMessageSender(IClientMessageSender messageSender)
@@ -80,6 +83,14 @@ namespace Panoptes.DebugTools
             }
         }
 
+        private void Update()
+        {
+            if (ShouldDisplay() && WasToggleShortcutPressed())
+            {
+                _visible = !_visible;
+            }
+        }
+
         private void OnGUI()
         {
             if (!ShouldDisplay())
@@ -87,13 +98,8 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            if (!_expanded)
+            if (!_visible)
             {
-                if (GUI.Button(new Rect(PanelSideMargin, PanelTopOffset, 96f, 30f), "[Debug]"))
-                {
-                    _expanded = true;
-                }
-
                 return;
             }
 
@@ -108,12 +114,29 @@ namespace Panoptes.DebugTools
             GUI.Label(new Rect(area.x + 12f, area.y + 10f, 240f, 24f), "Panoptes Debug Workbench");
             if (GUI.Button(new Rect(area.x + area.width - 84f, area.y + 8f, 72f, 24f), "收起"))
             {
-                _expanded = false;
+                _visible = false;
             }
 
             DrawStatusBar(area);
             DrawTabBar(area);
             DrawBody(area);
+        }
+
+        private static bool WasToggleShortcutPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                return keyboard.escapeKey.wasPressedThisFrame;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.Escape);
+#else
+            return false;
+#endif
         }
 
         private static bool ShouldDisplay()

@@ -14,6 +14,8 @@ namespace Panoptes.Presentation.UI.Game
 {
     public sealed class GameSceneController : MonoBehaviour
     {
+        private const string PresentationMessage = "大臣正在分析战场情况中...";
+
         [SerializeField] private TextMeshProUGUI statusText;
         [SerializeField] private bool hideFullscreenBackgroundOnGameScene = true;
         [SerializeField] private string fullscreenBackgroundObjectName = "Background";
@@ -23,11 +25,14 @@ namespace Panoptes.Presentation.UI.Game
         private GameOverStore _gameOverStore;
         private GameplayFeedbackStore _feedbackStore;
         private StaticCatalogStore _staticCatalogStore;
+        private TurnStore _turnStore;
         private ErrorToast _errorToast;
         private IDisposable _gameStateSubscription;
         private IDisposable _settlementSubscription;
         private IDisposable _gameOverSubscription;
         private IDisposable _feedbackSubscription;
+        private IDisposable _turnSubscription;
+        private bool _presentationMessageVisible;
 
         [Inject]
         private void Construct(
@@ -36,6 +41,7 @@ namespace Panoptes.Presentation.UI.Game
             GameOverStore gameOverStore,
             GameplayFeedbackStore feedbackStore,
             StaticCatalogStore staticCatalogStore,
+            TurnStore turnStore,
             ErrorToast errorToast)
         {
             _gameStateStore = gameStateStore;
@@ -43,6 +49,7 @@ namespace Panoptes.Presentation.UI.Game
             _gameOverStore = gameOverStore;
             _feedbackStore = feedbackStore;
             _staticCatalogStore = staticCatalogStore;
+            _turnStore = turnStore;
             _errorToast = errorToast;
         }
 
@@ -61,6 +68,8 @@ namespace Panoptes.Presentation.UI.Game
             _gameOverSubscription = _gameOverStore?.State.Subscribe(this, static (state, self) => self.OnGameOverChanged(state));
             _feedbackSubscription?.Dispose();
             _feedbackSubscription = _feedbackStore?.State.Subscribe(this, static (state, self) => self.OnFeedbackChanged(state));
+            _turnSubscription?.Dispose();
+            _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.OnTurnChanged(state));
         }
 
         private void Start()
@@ -78,6 +87,9 @@ namespace Panoptes.Presentation.UI.Game
             _gameOverSubscription = null;
             _feedbackSubscription?.Dispose();
             _feedbackSubscription = null;
+            _turnSubscription?.Dispose();
+            _turnSubscription = null;
+            _presentationMessageVisible = false;
         }
 
         public void RefreshFromState(GameStateStoreState state)
@@ -115,7 +127,38 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
+            if (_presentationMessageVisible)
+            {
+                ShowPresentationMessage();
+                return;
+            }
+
             ShowToast(GameplayFeedbackText.ResolveMessage(state.Message, state.Code), state.Success);
+        }
+
+        private void OnTurnChanged(TurnState state)
+        {
+            if (IsPresentationOverlayPhase(state?.Phase))
+            {
+                _presentationMessageVisible = true;
+                ShowPresentationMessage();
+                return;
+            }
+
+            if (!_presentationMessageVisible)
+            {
+                return;
+            }
+
+            _presentationMessageVisible = false;
+            _errorToast?.Hide();
+        }
+
+        private static bool IsPresentationOverlayPhase(string phase)
+        {
+            return GamePhases.IsResolving(phase) ||
+                   GamePhases.IsPresentation(phase) ||
+                   string.Equals((phase ?? string.Empty).Trim(), GamePhases.TurnReport, StringComparison.OrdinalIgnoreCase);
         }
 
         private void OnGameOverChanged(GameOverState state)
@@ -282,6 +325,11 @@ namespace Panoptes.Presentation.UI.Game
 
         private void ShowToast(string message, bool success)
         {
+            if (_presentationMessageVisible && !string.Equals(message, PresentationMessage, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             if (_errorToast != null)
             {
                 _errorToast.Show(message, success);
@@ -295,6 +343,17 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             PanoptesLog.Warning($"[GameScene] {message}");
+        }
+
+        private void ShowPresentationMessage()
+        {
+            if (_errorToast != null)
+            {
+                _errorToast.Show(PresentationMessage, false, float.MaxValue);
+                return;
+            }
+
+            PanoptesLog.Warning($"[GameScene] {PresentationMessage}");
         }
     }
 }

@@ -683,7 +683,7 @@ MonoBehaviour:
   nearDistance: 6.2
   farDistance: 36
   distanceSmoothTime: 0.06
-  scrollDistanceStep: 3.5
+  scrollDistanceStep: 8.75
   inputSystemScrollScale: 0.01
   invertScrollDirection: 0
 --- !u!1 &269063928
@@ -2416,7 +2416,7 @@ MonoBehaviour:
   fastFocusPauseSeconds: 0.08
   ambientMoveProxyScale: 0.96
   skipPlaybackKey: 32
-  alternateSkipPlaybackKey: 27
+  alternateSkipPlaybackKey: 0
   enableDamagePopups: 1
   damagePopupController: {fileID: 0}
 --- !u!1 &1693350154

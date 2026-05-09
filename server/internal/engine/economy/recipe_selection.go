@@ -7,6 +7,8 @@
 package economy
 
 import (
+	"strings"
+
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
@@ -24,6 +26,24 @@ func collectRecipeSelectionEvents(world donburi.World, state *domain.GameState) 
 		return events
 	}
 	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
+		if strings.TrimSpace(selection.RecipeID) == "" {
+			validation := ValidateRecipeCancellation(state, selection.PlayerID, selection.NodeID)
+			if !validation.OK {
+				events = append(events, event.RecipeSkippedEvent{
+					NodeID: selection.NodeID,
+					Reason: validation.ErrorCode,
+				})
+				continue
+			}
+			events = append(events, event.RecipeSelectionChangedEvent{
+				NodeID: selection.NodeID,
+			})
+			events = append(events, event.BuildingStatusChangedEvent{
+				NodeID: selection.NodeID,
+				Status: domain.BuildingStatusIdle,
+			})
+			continue
+		}
 		validation := ValidateRecipeSelection(state, selection.PlayerID, selection.NodeID, selection.RecipeID)
 		if !validation.OK {
 			events = append(events, event.RecipeSkippedEvent{

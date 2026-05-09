@@ -567,7 +567,7 @@
       "prerequisites": [
         {
           "type": "technology_unlocked",
-          "target_id": "workshop_methods"
+          "target_id": "organized_labor"
         }
       ],
       "explicit_effects": [],

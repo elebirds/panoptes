@@ -82,7 +82,7 @@ namespace Panoptes.Core.Domain
         public string ResourceKey;
         public string PointKey;
         public string ModifierType;
-        public int Value;
+        public float Value;
     }
 
     public sealed class CatalogInstitutionCategoryDto

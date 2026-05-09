@@ -42,8 +42,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float fastFocusPauseSeconds = 0.08f;
         [SerializeField] private float ambientMoveProxyScale = 0.96f;
         [SerializeField] private KeyCode skipPlaybackKey = KeyCode.Space;
-        [SerializeField] private KeyCode alternateSkipPlaybackKey = KeyCode.Escape;
+        [SerializeField] private KeyCode alternateSkipPlaybackKey = KeyCode.None;
         [SerializeField] private bool enableDamagePopups = true;
+        [SerializeField] private bool showPlaybackControlOverlay;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
         private SettlementStore _settlementStore;
@@ -97,7 +98,6 @@ namespace Panoptes.Presentation.Map
         private void OnEnable()
         {
             EnsureRunner();
-            EnsureControlOverlay();
             UpdatePlaybackControls();
             SubscribeTurn();
             SubscribeSettlement();
@@ -1328,6 +1328,13 @@ namespace Panoptes.Presentation.Map
 
         private void UpdatePlaybackControls()
         {
+            if (!showPlaybackControlOverlay)
+            {
+                _controlOverlay?.Dispose();
+                _controlOverlay = null;
+                return;
+            }
+
             EnsureControlOverlay();
             _controlOverlay?.Refresh(playbackMode, _isPlayingSettlement);
         }

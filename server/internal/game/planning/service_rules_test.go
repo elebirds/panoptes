@@ -652,6 +652,60 @@ func TestCancelBuildingRecipeRemovesQueuedSelection(t *testing.T) {
 	}
 }
 
+func TestCancelBuildingRecipeQueuesClearForActiveRecipe(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", BuildingScope: "in_city", MaxHP: 80, RecipeIDs: []string{"train_infantry"}},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "train_infantry",
+		RequiredTurns:    2,
+	})
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"B1": nodeEntity},
+	})
+	state.World = world
+	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	if err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_CancelBuildingRecipe{
+			CancelBuildingRecipe: &pb.MsgCancelBuildingRecipe{NodeId: "B1"},
+		},
+	}); err != nil {
+		t.Fatalf("CancelBuildingRecipe() error = %v", err)
+	}
+
+	if got := len(state.TurnRuntime.Planning.RecipeSelections); got != 1 {
+		t.Fatalf("recipe selection count = %d, want 1 clear draft", got)
+	}
+	selection := state.TurnRuntime.Planning.RecipeSelections[0]
+	if selection.NodeID != "B1" || selection.RecipeID != "" {
+		t.Fatalf("recipe selection = %#v, want empty recipe clear draft for B1", selection)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetRecipeSelections()) != 1 || snapshot.GetRecipeSelections()[0].GetRecipeId() != "" {
+		t.Fatalf("snapshot recipe selections = %#v, want empty recipe clear draft", snapshot.GetRecipeSelections())
+	}
+}
+
 func TestCancelBuildingRecipeRejectedForInvalidTarget(t *testing.T) {
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	session := newPlanningSessionStub(state)

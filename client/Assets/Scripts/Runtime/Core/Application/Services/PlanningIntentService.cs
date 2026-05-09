@@ -1,6 +1,8 @@
 using System;
 using Google.Protobuf;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Protocol.V1;
 
 namespace Panoptes.Core.Application.Services
@@ -8,10 +10,12 @@ namespace Panoptes.Core.Application.Services
     public sealed class PlanningIntentService
     {
         private readonly IClientMessageSender _sender;
+        private readonly TurnStore _turnStore;
 
-        public PlanningIntentService(IClientMessageSender sender)
+        public PlanningIntentService(IClientMessageSender sender, TurnStore turnStore = null)
         {
             _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+            _turnStore = turnStore;
         }
 
         public bool SetBuildingRecipe(string nodeId, string recipeId)
@@ -153,7 +157,16 @@ namespace Panoptes.Core.Application.Services
 
         private bool SendIfUnlocked(IMessage message)
         {
-            return !ActionLock.IsLocked && _sender.Send(message);
+            return !ActionLock.IsLocked && IsPlanningInteractive() && _sender.Send(message);
+        }
+
+        private bool IsPlanningInteractive()
+        {
+            var state = _turnStore?.Snapshot;
+            return state == null ||
+                   string.IsNullOrWhiteSpace(state.Phase) ||
+                   (state.IsInteractive && !state.IsGameOver) ||
+                   (GamePhases.IsPlanning(state.Phase) && !state.IsGameOver);
         }
     }
 }

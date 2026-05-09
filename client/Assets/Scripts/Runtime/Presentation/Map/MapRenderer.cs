@@ -115,7 +115,7 @@ namespace Panoptes.Presentation.Map
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
         public float TileSize => tileSize;
-        public bool IsResolvingAuthoritativeState => GamePhases.IsResolving(GetGameStateSnapshot().Phase);
+        public bool IsResolvingAuthoritativeState => GamePhases.IsAuthoritativePlayback(GetGameStateSnapshot().Phase);
         public event Action<MapCameraContext> CameraContextReady;
         public event Action StatePresentationRefreshed;
 
@@ -292,8 +292,8 @@ namespace Panoptes.Presentation.Map
         private void OnGameStateChanged(GameStateStoreState state)
         {
             var incomingState = state ?? new GameStateStoreState();
-            var wasResolving = GamePhases.IsResolving(_latestGameState?.Phase);
-            var isResolving = GamePhases.IsResolving(incomingState.Phase);
+            var wasResolving = GamePhases.IsAuthoritativePlayback(_latestGameState?.Phase);
+            var isResolving = GamePhases.IsAuthoritativePlayback(incomingState.Phase);
             if (isResolving && !wasResolving)
             {
                 CaptureSettlementPlaybackUnitSnapshots();
@@ -403,7 +403,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var isResolving = GamePhases.IsResolving(state.Phase) && !forceAuthoritativeVisuals;
+                var isResolving = GamePhases.IsAuthoritativePlayback(state.Phase) && !forceAuthoritativeVisuals;
                 var visualNode = isResolving
                     ? CreateResolvingVisualNode(node, previousNode)
                     : node;
@@ -423,7 +423,7 @@ namespace Panoptes.Presentation.Map
                 RefreshObservationPresentationForChangedNodes(_scratchChangedNodes);
             }
 
-            var unitsChanged = GamePhases.IsResolving(state.Phase) && !forceAuthoritativeVisuals
+            var unitsChanged = GamePhases.IsAuthoritativePlayback(state.Phase) && !forceAuthoritativeVisuals
                 ? false
                 : RefreshUnitsForCurrentSource();
             if (_scratchChangedNodes.Count > 0 || unitsChanged)
@@ -1513,7 +1513,7 @@ namespace Panoptes.Presentation.Map
             RefreshRoadConnections();
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
-            if (!GamePhases.IsResolving(GetGameStateSnapshot().Phase))
+            if (!GamePhases.IsAuthoritativePlayback(GetGameStateSnapshot().Phase))
             {
                 RebuildUnitsForCurrentSource();
             }

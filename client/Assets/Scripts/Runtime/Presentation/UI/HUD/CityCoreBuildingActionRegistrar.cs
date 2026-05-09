@@ -116,7 +116,9 @@ namespace Panoptes.Presentation.UI.HUD
                 string.IsNullOrWhiteSpace(recipeActionLabel) || string.Equals(recipeActionLabel, "Synthesis", StringComparison.Ordinal)
                     ? "配方"
                     : recipeActionLabel,
-                unit => _resolver != null && _resolver.IsOwnedRecipeBuildingProxy(unit));
+                unit => _resolver != null &&
+                        _resolver.IsOwnedRecipeBuildingProxy(unit) &&
+                        GamePhases.IsPlanning(_gameStateStore?.Snapshot?.Phase));
         }
 
         protected override void Awake()

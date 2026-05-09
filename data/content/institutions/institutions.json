@@ -238,7 +238,7 @@
       "category": "economy",
       "activation_timing": "next_turn",
       "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "workshop_methods" }
+        { "type": "technology_unlocked", "target_id": "organized_labor" }
       ],
       "explicit_effects": [],
       "modifier_effects": [

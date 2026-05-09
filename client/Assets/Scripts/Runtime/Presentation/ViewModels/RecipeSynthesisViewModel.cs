@@ -48,7 +48,6 @@ namespace Panoptes.Presentation.ViewModels
             var contextBuildingTypeId = Normalize(context.BuildingTypeId);
             var draft = _planningDraftStore.Snapshot;
             var game = _gameStateStore.Snapshot;
-            var plannedRecipeId = RecipeSynthesisSelectionResolver.ResolvePlannedRecipeId(draft, contextNodeId);
             var selectedRecipeId = RecipeSynthesisSelectionResolver.ResolveSelectedRecipeId(draft, game, contextNodeId);
             var preview = ResolvePreview(draft, contextNodeId);
             var activeTechnologyIds = BuildIdSet(game?.ResearchState?.ActiveTechnologyIds);
@@ -84,7 +83,7 @@ namespace Panoptes.Presentation.ViewModels
                     ResolveRecipeSummary(recipe),
                     recipe.Description,
                     locked ? "科技未解锁" : ResolveStatus(recipeId, selectedRecipeId, preview),
-                    locked ? string.Empty : ResolveActionLabel(recipeId, plannedRecipeId),
+                    locked ? string.Empty : ResolveActionLabel(recipeId, selectedRecipeId),
                     recipe.IconKey,
                     prerequisiteIds: null,
                     costs: BuildRecipeCosts(recipe, catalog),
@@ -169,9 +168,9 @@ namespace Panoptes.Presentation.ViewModels
             return preview;
         }
 
-        private static string ResolveActionLabel(string recipeId, string plannedRecipeId)
+        private static string ResolveActionLabel(string recipeId, string selectedRecipeId)
         {
-            if (string.Equals(recipeId, plannedRecipeId, StringComparison.Ordinal))
+            if (string.Equals(recipeId, selectedRecipeId, StringComparison.Ordinal))
             {
                 return "取消选择";
             }

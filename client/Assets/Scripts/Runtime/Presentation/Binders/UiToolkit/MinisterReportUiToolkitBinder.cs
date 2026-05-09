@@ -23,6 +23,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private const float MessageBubbleMaxWidth = 720f;
         private const float MessageBubbleHorizontalPadding = 24f;
         private const float MessageBubbleReadableWidth = 560f;
+        private const float MinisterListWidth = 310f;
+        private const float ConversationLeftInset = 334f;
         public const string RootName = "minister-report-root";
         public const string TitleName = "minister-report-title";
         public const string CloseButtonName = "minister-report-close";
@@ -49,6 +51,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private readonly List<UguiButton> _optionButtons = new();
         private readonly List<UguiButton> _tabButtons = new();
+        private readonly MinisterAttributeTooltip _attributeTooltip = new();
         private Canvas _canvas;
         private RectTransform _chatContent;
         private RectTransform _optionsRoot;
@@ -67,6 +70,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private string _lastSkillsSignature;
         private string _lastTabsSignature;
         private MinisterReportState _renderedState;
+        private RectTransform _hoveredAttributeItem;
         private bool _skillsPanelVisible;
         private bool _runtimeRefreshInProgress;
 
@@ -98,6 +102,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void OnDisable()
         {
+            HideAttributeTooltip(_hoveredAttributeItem);
             StopStateSubscription();
             StopVisibilitySubscription();
         }
@@ -106,6 +111,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             Unbind();
             StopVisibilitySubscription();
+            _attributeTooltip.Dispose();
         }
 
         public void Bind(MinisterReportViewModel viewModel)
@@ -197,7 +203,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private UguiButton CreateMinisterCardInternal(MinisterTabState minister, bool isCandidate)
         {
-            var cardHeight = isCandidate ? 172f : 160f;
+            var cardHeight = isCandidate ? 214f : 200f;
             var rect = CreateUiObject("minister-card-" + SafeName(minister.Role) + (isCandidate ? "-candidate" : string.Empty), _tabsContent);
             rect.sizeDelta = new Vector2(0f, cardHeight);
             var layout = rect.gameObject.AddComponent<LayoutElement>();
@@ -215,7 +221,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             button.onClick.AddListener(() => _viewModel?.SelectMinister(minister.Role));
 
             var avatarRect = CreateUiObject("Avatar", rect);
-            AnchorFixed(avatarRect, new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(54f, 54f));
+            AnchorFixed(avatarRect, new Vector2(0f, 1f), new Vector2(12f, -12f), new Vector2(62f, 62f));
             var avatarImage = avatarRect.gameObject.AddComponent<UguiImage>();
             avatarImage.color = new Color(0.26f, 0.28f, 0.32f, 1f);
             var sprite = LoadAvatarSprite(minister.IconResource, minister.Role);
@@ -226,21 +232,27 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 avatarImage.preserveAspect = true;
             }
 
-            var avatarLabel = CreateText(avatarRect, "AvatarText", minister.AvatarText, 22f, FontStyles.Bold, TextAlignmentOptions.Center);
+            var avatarLabel = CreateText(avatarRect, "AvatarText", minister.AvatarText, 24f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(avatarLabel.rectTransform, Vector2.zero, Vector2.zero);
             avatarLabel.gameObject.SetActive(sprite == null);
 
-            var title = CreateText(rect, "Title", minister.Title, 15f, FontStyles.Bold, TextAlignmentOptions.Left);
+            var title = CreateText(rect, "Title", minister.Title, 17f, FontStyles.Bold, TextAlignmentOptions.Left);
             title.color = new Color(0.98f, 0.9f, 0.68f, 1f);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -14f), new Vector2(-10f, -36f));
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -14f), new Vector2(-12f, -38f));
 
-            var name = CreateText(rect, "Name", minister.Name, 12.5f, FontStyles.Normal, TextAlignmentOptions.Left);
+            var name = CreateText(rect, "Name", minister.Name, 14f, FontStyles.Normal, TextAlignmentOptions.Left);
             name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
-            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -37f), new Vector2(-10f, -58f));
+            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -39f), new Vector2(-12f, -60f));
 
             var status = CreateText(rect, "Status", minister.IsVacant ? "空缺" : (isCandidate ? (minister.RoleVacant ? "当前：空缺" : "当前：在职") : "在职"), 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             status.color = new Color(0.74f, 0.79f, 0.84f, 1f);
-            Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -58f), new Vector2(-10f, -76f));
+            Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -61f), new Vector2(-12f, -80f));
+
+            var personality = CreateText(rect, "Personality", BuildPersonalityLine(minister), 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
+            personality.color = new Color(0.82f, 0.74f, 0.96f, 1f);
+            personality.overflowMode = TextOverflowModes.Ellipsis;
+            Anchor(personality.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -82f), new Vector2(-12f, -101f));
+            personality.gameObject.SetActive(!string.IsNullOrWhiteSpace(personality.text));
 
             CreateAttributeGrid(rect, minister, isCandidate);
 
@@ -287,7 +299,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             Stretch(text.rectTransform, Vector2.zero, Vector2.zero);
         }
 
-        private static void CreateAttributeGrid(RectTransform parent, MinisterTabState minister, bool isCandidate)
+        private void CreateAttributeGrid(RectTransform parent, MinisterTabState minister, bool isCandidate)
         {
             var hasViewModelAttributes = HasAttributes(minister.Attributes);
             var attributes = hasViewModelAttributes
@@ -300,11 +312,11 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var grid = CreateUiObject("Attributes", parent);
-            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(68f, 4f), new Vector2(-8f, minister.IsVacant ? 90f : (isCandidate ? 84f : 72f)));
+            Anchor(grid, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(14f, 22f), new Vector2(-12f, minister.IsVacant ? 112f : 96f));
             LogAttributeRender(minister.Role, hasViewModelAttributes ? "view-model" : "resource-fallback", attributes);
 
-            const float rowHeight = 15f;
-            const float rowGap = 1f;
+            const float rowHeight = 16f;
+            const float rowGap = 2f;
             for (var i = 0; i < attributes.Count; i++)
             {
                 var row = i / 2;
@@ -334,42 +346,131 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             return string.IsNullOrWhiteSpace(role) ? "domestic" : role.Trim().ToLowerInvariant();
         }
 
-        private static RectTransform CreateAttributeItem(RectTransform parent, MinisterAttributeState attribute)
+        private RectTransform CreateAttributeItem(RectTransform parent, MinisterAttributeState attribute)
         {
             var color = AttributeColor(attribute.Key);
             var item = CreateUiObject("Attribute-" + SafeName(attribute.Key), parent);
+            var hitArea = item.gameObject.AddComponent<UguiImage>();
+            hitArea.color = new Color(1f, 1f, 1f, 0f);
+            hitArea.raycastTarget = true;
 
             var label = CreateText(
                 item,
                 "Label",
                 attribute.Label,
-                9.2f,
+                11.2f,
                 FontStyles.Bold,
                 TextAlignmentOptions.Left);
             label.color = color;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 7f;
-            label.fontSizeMax = 9.2f;
+            label.fontSizeMin = 8.5f;
+            label.fontSizeMax = 11.2f;
             label.enableWordWrapping = false;
             label.overflowMode = TextOverflowModes.Ellipsis;
-            Anchor(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-24f, 0f));
+            Anchor(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, new Vector2(-36f, 0f));
 
             var value = CreateText(
                 item,
                 "Value",
                 attribute.Value.ToString(),
-                9.8f,
+                12f,
                 FontStyles.Bold,
                 TextAlignmentOptions.Right);
             value.color = color;
             value.enableAutoSizing = true;
-            value.fontSizeMin = 7.5f;
-            value.fontSizeMax = 9.8f;
+            value.fontSizeMin = 9f;
+            value.fontSizeMax = 12f;
             value.enableWordWrapping = false;
             value.overflowMode = TextOverflowModes.Overflow;
-            Anchor(value.rectTransform, new Vector2(1f, 0f), Vector2.one, new Vector2(-24f, 0f), Vector2.zero);
+            Anchor(value.rectTransform, new Vector2(1f, 0f), Vector2.one, new Vector2(-34f, 0f), Vector2.zero);
+            ConfigureAttributeTooltip(item, hitArea, attribute);
 
             return item;
+        }
+
+        private void ConfigureAttributeTooltip(RectTransform item, Graphic owner, MinisterAttributeState attribute)
+        {
+            if (item == null || owner == null || attribute == null)
+            {
+                return;
+            }
+
+            var tooltipText = BuildAttributeTooltipText(attribute);
+            if (string.IsNullOrWhiteSpace(tooltipText))
+            {
+                owner.raycastTarget = false;
+                return;
+            }
+
+            var trigger = item.gameObject.GetComponent<EventTrigger>();
+            if (trigger == null)
+            {
+                trigger = item.gameObject.AddComponent<EventTrigger>();
+            }
+
+            trigger.triggers.Clear();
+            AddTooltipEvent(trigger, EventTriggerType.PointerEnter, data =>
+            {
+                _hoveredAttributeItem = item;
+                _attributeTooltip.Show(owner, tooltipText, ((PointerEventData)data).position);
+            });
+            AddTooltipEvent(trigger, EventTriggerType.PointerExit, _ => HideAttributeTooltip(item));
+        }
+
+        private void HideAttributeTooltip(RectTransform item)
+        {
+            if (!ReferenceEquals(_hoveredAttributeItem, item))
+            {
+                return;
+            }
+
+            _hoveredAttributeItem = null;
+            _attributeTooltip.Hide();
+        }
+
+        private static void AddTooltipEvent(
+            EventTrigger trigger,
+            EventTriggerType eventType,
+            UnityEngine.Events.UnityAction<BaseEventData> callback)
+        {
+            var entry = new EventTrigger.Entry { eventID = eventType };
+            entry.callback.AddListener(callback);
+            trigger.triggers.Add(entry);
+        }
+
+        private static string BuildAttributeTooltipText(MinisterAttributeState attribute)
+        {
+            if (attribute == null)
+            {
+                return string.Empty;
+            }
+
+            return attribute.Label + " " + attribute.Value + "\n" + AttributeDescription(attribute.Key);
+        }
+
+        private static string AttributeDescription(string key)
+        {
+            return (key ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "ability" => "影响大臣处理政务、军事与建设方案的整体效率和质量，数值越高越可靠。",
+                "loyalty" => "影响大臣执行君主意图的稳定性和抗动摇程度，数值越高越不容易偏离。",
+                "ambition" => "影响大臣争取权力与主动推动激进方案的倾向，数值越高越可能追求个人收益。",
+                "cautiousness" => "影响风险评估与保守决策倾向，数值越高越偏向稳妥、延后冒险。",
+                "decisiveness" => "影响拍板速度与行动推进力度，数值越高越敢快速执行和承担后果。",
+                "loyalty_tendency" => "影响长期站队和关系变化方向，数值越高越容易维持亲君立场。",
+                "ambition_style" => "影响野心外显程度，数值越高越容易公开争功、扩权或提出高风险目标。",
+                _ => "该属性会影响大臣的行为倾向和决策风格。"
+            };
+        }
+
+        private static string BuildPersonalityLine(MinisterTabState minister)
+        {
+            if (minister == null || string.IsNullOrWhiteSpace(minister.PersonalityText))
+            {
+                return string.Empty;
+            }
+
+            return "人格：" + minister.PersonalityText;
         }
 
         private static void LogAttributeRender(string role, string source, IReadOnlyList<MinisterAttributeState> attributes)
@@ -934,6 +1035,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                         .Append(item.MinisterId).Append('|')
                         .Append(item.Name).Append('|')
                         .Append(item.Title).Append('|')
+                        .Append(item.PersonalityText).Append('|')
                         .Append(item.IconResource).Append('|')
                         .Append(item.AvatarText).Append('|')
                         .Append(item.IsVacant).Append('|')
@@ -1139,7 +1241,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             Anchor(body, Vector2.zero, Vector2.one, new Vector2(28f, 24f), new Vector2(-28f, -102f));
 
             var tabsPanel = CreateUiObject(TabListName, body);
-            Anchor(tabsPanel, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(230f, 0f));
+            Anchor(tabsPanel, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(MinisterListWidth, 0f));
             tabsPanel.gameObject.AddComponent<UguiImage>().color = new Color(1f, 1f, 1f, 0.035f);
 
             var tabsScrollRoot = CreateUiObject("minister-report-tabs-scroll", tabsPanel);
@@ -1173,7 +1275,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _tabsScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
             var conversation = CreateUiObject("minister-report-conversation", body);
-            Anchor(conversation, new Vector2(0f, 0f), Vector2.one, new Vector2(254f, 0f), Vector2.zero);
+            Anchor(conversation, new Vector2(0f, 0f), Vector2.one, new Vector2(ConversationLeftInset, 0f), Vector2.zero);
             conversation.gameObject.AddComponent<UguiImage>().color = ConversationColor;
 
             CreateChatScroll(conversation);
@@ -1555,6 +1657,153 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 objectName.StartsWith("RecipeSynthesis", StringComparison.Ordinal) ||
                 objectName.StartsWith("PolicyFocus", StringComparison.Ordinal) ||
                 objectName.StartsWith("NationalLedger", StringComparison.Ordinal);
+        }
+
+        private sealed class MinisterAttributeTooltip : IDisposable
+        {
+            private const float MaxWidth = 320f;
+            private static readonly Vector2 Padding = new(12f, 9f);
+            private static readonly Vector2 CursorOffset = new(14f, -18f);
+
+            private Canvas _canvas;
+            private RectTransform _canvasRect;
+            private RectTransform _root;
+            private TMP_Text _text;
+
+            public void Show(Graphic owner, string content, Vector2 screenPosition)
+            {
+                Ensure(owner);
+                if (_root == null || _text == null)
+                {
+                    return;
+                }
+
+                _text.text = content ?? string.Empty;
+                _text.ForceMeshUpdate();
+                var preferred = _text.GetPreferredValues(_text.text, MaxWidth, 0f);
+                _root.sizeDelta = new Vector2(
+                    Mathf.Min(MaxWidth, preferred.x) + Padding.x * 2f,
+                    preferred.y + Padding.y * 2f);
+                _root.gameObject.SetActive(true);
+                _root.SetAsLastSibling();
+                Move(screenPosition);
+            }
+
+            public void Move(Vector2 screenPosition)
+            {
+                if (_root == null || _canvasRect == null)
+                {
+                    return;
+                }
+
+                var camera = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                    ? _canvas.worldCamera
+                    : null;
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                        _canvasRect,
+                        screenPosition,
+                        camera,
+                        out var localPosition))
+                {
+                    return;
+                }
+
+                localPosition += CursorOffset;
+                var canvasBounds = _canvasRect.rect;
+                var size = _root.sizeDelta;
+                localPosition.x = Mathf.Clamp(localPosition.x, canvasBounds.xMin + 4f, canvasBounds.xMax - size.x - 4f);
+                localPosition.y = Mathf.Clamp(localPosition.y, canvasBounds.yMin + size.y + 4f, canvasBounds.yMax - 4f);
+                _root.anchoredPosition = localPosition;
+            }
+
+            public void Hide()
+            {
+                if (_root != null)
+                {
+                    _root.gameObject.SetActive(false);
+                }
+            }
+
+            public void Dispose()
+            {
+                if (_root == null)
+                {
+                    return;
+                }
+
+                var target = _root.gameObject;
+                if (Application.isPlaying)
+                {
+                    UnityEngine.Object.Destroy(target);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(target);
+                }
+
+                _root = null;
+                _text = null;
+                _canvas = null;
+                _canvasRect = null;
+            }
+
+            private void Ensure(Graphic owner)
+            {
+                var canvas = owner != null ? owner.GetComponentInParent<Canvas>() : null;
+                if (canvas == null)
+                {
+                    return;
+                }
+
+                if (_root != null && ReferenceEquals(_canvas, canvas))
+                {
+                    return;
+                }
+
+                Dispose();
+                _canvas = canvas;
+                _canvasRect = canvas.transform as RectTransform;
+                if (_canvasRect == null)
+                {
+                    return;
+                }
+
+                var rootObject = new GameObject(
+                    "MinisterAttributeTooltip",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(UnityEngine.UI.Image),
+                    typeof(CanvasGroup));
+                rootObject.transform.SetParent(canvas.transform, false);
+                _root = rootObject.GetComponent<RectTransform>();
+                _root.anchorMin = new Vector2(0.5f, 0.5f);
+                _root.anchorMax = new Vector2(0.5f, 0.5f);
+                _root.pivot = new Vector2(0f, 1f);
+
+                var background = rootObject.GetComponent<UguiImage>();
+                background.color = new Color(0.02f, 0.018f, 0.014f, 0.94f);
+                background.raycastTarget = false;
+
+                var group = rootObject.GetComponent<CanvasGroup>();
+                group.blocksRaycasts = false;
+                group.interactable = false;
+
+                var textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+                textObject.transform.SetParent(rootObject.transform, false);
+                var textRect = textObject.GetComponent<RectTransform>();
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = Padding;
+                textRect.offsetMax = -Padding;
+
+                _text = textObject.GetComponent<TMP_Text>();
+                _text.alignment = TextAlignmentOptions.TopLeft;
+                _text.color = new Color(0.98f, 0.93f, 0.82f, 1f);
+                _text.enableWordWrapping = true;
+                _text.fontSize = 15f;
+                _text.raycastTarget = false;
+                _root.gameObject.SetActive(false);
+            }
         }
     }
 }

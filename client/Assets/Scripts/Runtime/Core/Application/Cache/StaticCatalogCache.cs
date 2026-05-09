@@ -158,7 +158,7 @@ namespace Panoptes.Core.Application.Cache
             public string resource_key;
             public string point_key;
             public string modifier_type;
-            public int value;
+            public float value;
         }
 
         [Serializable]
