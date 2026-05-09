@@ -72,6 +72,11 @@ namespace Panoptes.Tests.EditMode.Presentation
             construct.Invoke(controller, new object[] { settlementStore, turnStore, intentService, null, null, null });
 
             gameObject.SetActive(true);
+            var onEnable = typeof(SettlementPlaybackController).GetMethod(
+                "OnEnable",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(onEnable, Is.Not.Null);
+            onEnable.Invoke(controller, null);
             return controller;
         }
 

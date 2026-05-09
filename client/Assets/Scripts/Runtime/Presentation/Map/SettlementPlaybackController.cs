@@ -90,6 +90,7 @@ namespace Panoptes.Presentation.Map
             }
             if (isActiveAndEnabled)
             {
+                SubscribeTurn();
                 SubscribeSettlement();
             }
         }

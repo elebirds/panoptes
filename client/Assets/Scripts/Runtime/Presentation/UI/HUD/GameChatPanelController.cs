@@ -45,8 +45,6 @@ namespace Panoptes.Presentation.UI.HUD
         private const string PlayerAvatarResourcePath = "Textures/Emotes/player_avatar";
 
         [SerializeField] private TextMeshProUGUI transcriptText;
-        [SerializeField] private int maxVisibleEntries = 8;
-        [SerializeField] private string emptyText = "Chat messages will appear here";
 
         private readonly Dictionary<string, AvatarSlotView> _avatarSlots = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<SeriesButtonView> _seriesButtons = new();
@@ -1022,7 +1020,7 @@ namespace Panoptes.Presentation.UI.HUD
             label.fontSize = size;
             label.fontStyle = style;
             label.alignment = alignment;
-            label.enableWordWrapping = true;
+            label.textWrappingMode = TextWrappingModes.Normal;
             label.overflowMode = TextOverflowModes.Ellipsis;
             label.raycastTarget = false;
             return label;
