@@ -52,7 +52,6 @@ namespace Panoptes.Presentation.UI.MainMenu
             }
 
             startButton?.onClick.AddListener(ShowLobbyEntry);
-            settingsButton?.onClick.AddListener(OpenSettings);
             quitButton?.onClick.AddListener(QuitGame);
             lobbyBackButton?.onClick.AddListener(OnBackToMainMenuClicked);
             settingsBackButton?.onClick.AddListener(OnBackToMainMenuClicked);
@@ -68,7 +67,6 @@ namespace Panoptes.Presentation.UI.MainMenu
         private void OnDestroy()
         {
             startButton?.onClick.RemoveListener(ShowLobbyEntry);
-            settingsButton?.onClick.RemoveListener(OpenSettings);
             quitButton?.onClick.RemoveListener(QuitGame);
             lobbyBackButton?.onClick.RemoveListener(OnBackToMainMenuClicked);
             settingsBackButton?.onClick.RemoveListener(OnBackToMainMenuClicked);

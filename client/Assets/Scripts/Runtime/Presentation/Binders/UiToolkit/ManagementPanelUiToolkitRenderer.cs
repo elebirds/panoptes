@@ -1802,7 +1802,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             for (var i = 0; i < allRows.Count; i++)
             {
                 var row = allRows[i];
-                var depth = ResolveTechDepth(row, byId, depthCache, new HashSet<string>(StringComparer.Ordinal));
+                var depth = row.Tier > 0
+                    ? row.Tier - 1
+                    : ResolveTechDepth(row, byId, depthCache, new HashSet<string>(StringComparer.Ordinal));
                 while (columns.Count <= depth)
                 {
                     columns.Add(new List<ManagementPanelRowState>());

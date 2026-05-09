@@ -6359,7 +6359,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bf10d0dd96acfe42a1a964258833db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.MainMenu.MainMenuMinisterRecruitmentPanel
-  previewOpenOnStart: 1
 --- !u!1 &810352580
 GameObject:
   m_ObjectHideFlags: 0

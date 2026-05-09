@@ -50,7 +50,8 @@ namespace Panoptes.Presentation.ViewModels
             IReadOnlyList<string> prerequisiteIds = null,
             IReadOnlyList<ManagementPanelAmountState> costs = null,
             IReadOnlyList<ManagementPanelAmountState> outputs = null,
-            string emptyCostsLabel = "")
+            string emptyCostsLabel = "",
+            int tier = 0)
         {
             ActionLabel = actionLabel ?? string.Empty;
             Costs = costs != null
@@ -68,6 +69,7 @@ namespace Panoptes.Presentation.ViewModels
                 : new List<string>();
             Status = status ?? string.Empty;
             Summary = summary ?? string.Empty;
+            Tier = tier;
             Title = string.IsNullOrWhiteSpace(title) ? Id : title.Trim();
         }
 
@@ -82,6 +84,7 @@ namespace Panoptes.Presentation.ViewModels
         public IReadOnlyList<string> PrerequisiteIds { get; }
         public string Status { get; }
         public string Summary { get; }
+        public int Tier { get; }
         public string Title { get; }
     }
 

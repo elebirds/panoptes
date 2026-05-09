@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "e725f0cdb20f579754b018a48ceaab6e3882702e06968a1274cbacc6032ba8cc",
+    "bundle_hash": "9cd81a3a51a0b52e624d61c4ad168ce4ad72e491aaafd0ebef127ef36601dd64",
     "required_sections": [
       "resources",
       "points",
@@ -35,7 +35,7 @@
       },
       {
         "section_name": "institutions",
-        "hash": "60ca9a668915603245512a10bf0e83f30e98485c272666442554bd9eb5fc6af4"
+        "hash": "eb3f3d5ad8525a5300b409a8f18dfa94edb5a546a62c44acbc87398d363de1c9"
       },
       {
         "section_name": "maps",
@@ -47,7 +47,7 @@
       },
       {
         "section_name": "ministers",
-        "hash": "26b9bad655858612f400910f2e5ac214c3b71425abe7b89f31071532165be1db"
+        "hash": "821c376b3be966c31f51ad6a07ebf2257e383f511add2b2fb06e9d920f82904a"
       },
       {
         "section_name": "points",
@@ -71,7 +71,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "ba94f2498b9efea49f4f86e51b3fe0e6b1eb182ead488c2288ee55bc11a34b5d"
+        "hash": "1a4b7715d37a348d48a69ab928292039546aaf7141733d3577f186eab10dcbdc"
       },
       {
         "section_name": "terrains",
@@ -87,7 +87,7 @@
       },
       {
         "section_name": "ui_tech_tree_layout",
-        "hash": "0b17c21d79b3a8e595789a9e6499d6ce5f61711b45c2d08d80c2ff39f410333b"
+        "hash": "b00ee77ea080101f4a1eb8122e8ed35e3f276a69dcee04391aaf12f68a19deb9"
       },
       {
         "section_name": "units",
@@ -1166,7 +1166,7 @@
       "description": "解锁工坊与深层采矿配方",
       "icon_key": "tech_workshop_methods",
       "branch": "industry",
-      "tier": 2,
+      "tier": 4,
       "research_cost": 2,
       "prerequisites": [
         {
@@ -1200,12 +1200,12 @@
       "description": "解锁兵营与步兵训练",
       "icon_key": "tech_militia_mobilization",
       "branch": "military",
-      "tier": 3,
+      "tier": 2,
       "research_cost": 3,
       "prerequisites": [
         {
           "type": "technology_unlocked",
-          "target_id": "mining_survey"
+          "target_id": "organized_labor"
         }
       ],
       "explicit_effects": [
@@ -1360,7 +1360,7 @@
       "description": "解锁冶炼坊与冶造敕令",
       "icon_key": "tech_workshop_methods",
       "branch": "industry",
-      "tier": 3,
+      "tier": 4,
       "research_cost": 3,
       "prerequisites": [
         {
@@ -1440,16 +1440,12 @@
       "description": "解锁工程营、掠袭兵和攻城器械生产",
       "icon_key": "tech_fortifications",
       "branch": "military",
-      "tier": 5,
+      "tier": 2,
       "research_cost": 4,
       "prerequisites": [
         {
           "type": "technology_unlocked",
-          "target_id": "metallurgy"
-        },
-        {
-          "type": "technology_unlocked",
-          "target_id": "fortifications"
+          "target_id": "organized_labor"
         }
       ],
       "explicit_effects": [
@@ -4315,8 +4311,8 @@
         "technology_id": "workshop_methods",
         "title": "工坊法",
         "description": "解锁工坊与深层采矿",
-        "x": 460,
-        "y": 0,
+        "x": 1380,
+        "y": -520,
         "width": 360,
         "height": 104,
         "visible": true
@@ -4326,8 +4322,8 @@
         "technology_id": "militia_mobilization",
         "title": "民兵动员",
         "description": "解锁兵营与步兵训练",
-        "x": 920,
-        "y": 180,
+        "x": 460,
+        "y": -180,
         "width": 360,
         "height": 104,
         "visible": true
@@ -4370,8 +4366,8 @@
         "technology_id": "metallurgy",
         "title": "冶金术",
         "description": "解锁冶炼坊与冶造敕令",
-        "x": 920,
-        "y": 0,
+        "x": 1380,
+        "y": -320,
         "width": 360,
         "height": 104,
         "visible": true
@@ -4392,8 +4388,8 @@
         "technology_id": "siegecraft",
         "title": "攻城术",
         "description": "解锁工程营与攻城生产",
-        "x": 1840,
-        "y": 180,
+        "x": 460,
+        "y": -360,
         "width": 360,
         "height": 104,
         "visible": true
@@ -4484,16 +4480,16 @@
             "y": 180
           },
           {
-            "x": 300,
+            "x": 1220,
             "y": 180
           },
           {
-            "x": 300,
-            "y": 0
+            "x": 1220,
+            "y": -520
           },
           {
-            "x": 460,
-            "y": 0
+            "x": 1380,
+            "y": -520
           }
         ]
       },
@@ -4509,25 +4505,66 @@
             "y": 0
           },
           {
-            "x": 460,
+            "x": 1220,
             "y": 0
+          },
+          {
+            "x": 1220,
+            "y": -520
+          },
+          {
+            "x": 1380,
+            "y": -520
           }
         ]
       },
       {
-        "id": "edge_mining_survey_to_militia_mobilization",
-        "from": "node_mining_survey",
+        "id": "edge_organized_labor_to_militia_mobilization",
+        "from": "node_organized_labor",
         "to": "node_militia_mobilization",
         "show_arrow": true,
         "thickness": 3,
         "points": [
           {
-            "x": 640,
+            "x": 180,
             "y": 180
           },
           {
-            "x": 920,
+            "x": 320,
             "y": 180
+          },
+          {
+            "x": 320,
+            "y": -180
+          },
+          {
+            "x": 460,
+            "y": -180
+          }
+        ]
+      },
+      {
+        "id": "edge_organized_labor_to_siegecraft",
+        "from": "node_organized_labor",
+        "to": "node_siegecraft",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 180
+          },
+          {
+            "x": 340,
+            "y": 180
+          },
+          {
+            "x": 340,
+            "y": -360
+          },
+          {
+            "x": 460,
+            "y": -360
           }
         ]
       },
@@ -4539,12 +4576,12 @@
         "thickness": 3,
         "points": [
           {
-            "x": 1100,
-            "y": 180
+            "x": 640,
+            "y": -180
           },
           {
             "x": 1220,
-            "y": 180
+            "y": -180
           },
           {
             "x": 1220,
@@ -4564,12 +4601,12 @@
         "thickness": 3,
         "points": [
           {
-            "x": 1100,
-            "y": 180
+            "x": 640,
+            "y": -180
           },
           {
             "x": 1220,
-            "y": 180
+            "y": -180
           },
           {
             "x": 1220,
@@ -4643,16 +4680,16 @@
             "y": 180
           },
           {
-            "x": 760,
+            "x": 1220,
             "y": 180
           },
           {
-            "x": 760,
-            "y": 0
+            "x": 1220,
+            "y": -320
           },
           {
-            "x": 920,
-            "y": 0
+            "x": 1380,
+            "y": -320
           }
         ]
       },
@@ -4664,12 +4701,12 @@
         "thickness": 3,
         "points": [
           {
-            "x": 640,
-            "y": 0
+            "x": 1560,
+            "y": -520
           },
           {
-            "x": 920,
-            "y": 0
+            "x": 1560,
+            "y": -320
           }
         ]
       },
@@ -4681,12 +4718,12 @@
         "thickness": 3,
         "points": [
           {
-            "x": 1100,
-            "y": 180
+            "x": 640,
+            "y": -180
           },
           {
             "x": 1220,
-            "y": 180
+            "y": -180
           },
           {
             "x": 1220,
@@ -4720,56 +4757,6 @@
           {
             "x": 1380,
             "y": -120
-          }
-        ]
-      },
-      {
-        "id": "edge_metallurgy_to_siegecraft",
-        "from": "node_metallurgy",
-        "to": "node_siegecraft",
-        "show_arrow": true,
-        "thickness": 3,
-        "points": [
-          {
-            "x": 1100,
-            "y": 0
-          },
-          {
-            "x": 1600,
-            "y": 0
-          },
-          {
-            "x": 1600,
-            "y": 180
-          },
-          {
-            "x": 1840,
-            "y": 180
-          }
-        ]
-      },
-      {
-        "id": "edge_fortifications_to_siegecraft",
-        "from": "node_fortifications",
-        "to": "node_siegecraft",
-        "show_arrow": true,
-        "thickness": 3,
-        "points": [
-          {
-            "x": 1560,
-            "y": 280
-          },
-          {
-            "x": 1700,
-            "y": 280
-          },
-          {
-            "x": 1700,
-            "y": 180
-          },
-          {
-            "x": 1840,
-            "y": 180
           }
         ]
       },
@@ -4931,12 +4918,12 @@
         "thickness": 3,
         "points": [
           {
-            "x": 1100,
-            "y": 180
+            "x": 640,
+            "y": -180
           },
           {
             "x": 1220,
-            "y": 180
+            "y": -180
           },
           {
             "x": 1220,

@@ -81,7 +81,8 @@ namespace Panoptes.Presentation.ViewModels
                         pendingActivationTechIds),
                     "研究",
                     technology.IconKey,
-                    ResolvePrerequisiteIds(technology)));
+                    ResolvePrerequisiteIds(technology),
+                    tier: technology.Tier));
             }
 
             return new ManagementPanelState("科技树", BuildGroups(groups));

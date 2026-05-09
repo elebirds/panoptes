@@ -75,7 +75,7 @@
     {
       "id": "workshop_methods",
       "branch": "industry",
-      "tier": 2,
+      "tier": 4,
       "research_cost": 2,
       "prerequisites": [
         { "type": "technology_unlocked", "target_id": "organized_labor" },
@@ -90,10 +90,10 @@
     {
       "id": "militia_mobilization",
       "branch": "military",
-      "tier": 3,
+      "tier": 2,
       "research_cost": 3,
       "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "mining_survey" }
+        { "type": "technology_unlocked", "target_id": "organized_labor" }
       ],
       "explicit_effects": [
         { "type": "unlock_building", "target_id": "barracks" },
@@ -170,7 +170,7 @@
     {
       "id": "metallurgy",
       "branch": "industry",
-      "tier": 3,
+      "tier": 4,
       "research_cost": 3,
       "prerequisites": [
         { "type": "technology_unlocked", "target_id": "mining_survey" },
@@ -208,11 +208,10 @@
     {
       "id": "siegecraft",
       "branch": "military",
-      "tier": 5,
+      "tier": 2,
       "research_cost": 4,
       "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "metallurgy" },
-        { "type": "technology_unlocked", "target_id": "fortifications" }
+        { "type": "technology_unlocked", "target_id": "organized_labor" }
       ],
       "explicit_effects": [
         { "type": "unlock_building", "target_id": "engineer_camp" },

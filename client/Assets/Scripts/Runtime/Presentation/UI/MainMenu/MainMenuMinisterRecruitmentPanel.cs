@@ -19,8 +19,6 @@ namespace Panoptes.Presentation.UI.MainMenu
         private static readonly Color Ink = new(0.025f, 0.028f, 0.035f, 1f);
         private static readonly Color DeepJade = new(0.03f, 0.22f, 0.20f, 0.96f);
 
-        [SerializeField] private bool previewOpenOnStart;
-
         private RectTransform _entryRoot;
         private RectTransform _panelRoot;
         private RectTransform _characterRoot;
@@ -44,14 +42,6 @@ namespace Panoptes.Presentation.UI.MainMenu
         {
             EnsureBuilt();
             RefreshEntryVisibility();
-        }
-
-        private void Start()
-        {
-            if (previewOpenOnStart)
-            {
-                OpenPanel();
-            }
         }
 
         public void UseAudioService(PresentationAudioService audioService)
