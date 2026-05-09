@@ -105,6 +105,11 @@ func TestRecoveryPolicyBuffsRecipeOutputSameTurn(t *testing.T) {
 
 	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "farm_food",
+		RequiredTurns:    1,
+	})
 	state.Players["player-1"].Policy = domain.PolicyRecovery
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
@@ -176,6 +181,11 @@ func TestWarPreparednessCompletesArcherRecipeInOneTurn(t *testing.T) {
 
 	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "archery", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "archery_archer",
+		RequiredTurns:    2,
+	})
 	state.Players["player-1"].Policy = domain.PolicyWarPreparedness
 	state.Players["player-1"].Resources.Set(domain.ResourceFood, 1)
 	state.Players["player-1"].Resources.Set(domain.ResourceWood, 1)
@@ -269,6 +279,15 @@ func TestExpansionPolicyCompletesSettlerRecipeInOneTurn(t *testing.T) {
 	}))
 
 	world, state, _ := newOwnedNodeState()
+	cityEntry, ok := state.GetNode("C1")
+	if !ok {
+		t.Fatalf("missing city core node C1")
+	}
+	cityEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(cityEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "city_core_settler",
+		RequiredTurns:    2,
+	})
 	state.Players["player-1"].Policy = domain.PolicyExpansion
 	state.Players["player-1"].Resources.Set(domain.ResourceFood, 2)
 	state.Players["player-1"].Resources.Set(domain.ResourceWood, 1)

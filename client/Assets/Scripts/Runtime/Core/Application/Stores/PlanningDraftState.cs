@@ -10,6 +10,7 @@ namespace Panoptes.Core.Application.Stores
             string snapshotPhase = "",
             IReadOnlyList<QueuedUnitOrderDto> unitOrders = null,
             IReadOnlyList<QueuedBuildOrderDto> buildOrders = null,
+            IReadOnlyList<QueuedDemolishOrderDto> demolishOrders = null,
             IReadOnlyList<QueuedRecipeSelectionDto> recipeSelections = null,
             IReadOnlyList<QueuedWarZoneDirectiveDto> warZoneDirectives = null,
             IReadOnlyList<PlanningWarZoneDto> warZones = null,
@@ -22,6 +23,7 @@ namespace Panoptes.Core.Application.Stores
             IReadOnlyList<string> plannedInstitutionIds = null)
         {
             BuildOrders = StoreSnapshotCloner.CloneBuildOrders(buildOrders);
+            DemolishOrders = StoreSnapshotCloner.CloneDemolishOrders(demolishOrders);
             CurrentBuildPreview = StoreSnapshotCloner.CloneBuildPreview(currentBuildPreview);
             CurrentPreview = StoreSnapshotCloner.ClonePathPreview(currentPreview);
             CurrentRecipePreview = StoreSnapshotCloner.CloneRecipePreview(currentRecipePreview);
@@ -38,6 +40,7 @@ namespace Panoptes.Core.Application.Stores
         }
 
         public IReadOnlyList<QueuedBuildOrderDto> BuildOrders { get; }
+        public IReadOnlyList<QueuedDemolishOrderDto> DemolishOrders { get; }
         public BuildPreviewDto CurrentBuildPreview { get; }
         public PathPreviewDto CurrentPreview { get; }
         public RecipePreviewDto CurrentRecipePreview { get; }
@@ -59,6 +62,7 @@ namespace Panoptes.Core.Application.Stores
                 SnapshotPhase,
                 UnitOrders,
                 BuildOrders,
+                DemolishOrders,
                 RecipeSelections,
                 WarZoneDirectives,
                 WarZones,

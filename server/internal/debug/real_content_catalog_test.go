@@ -285,6 +285,11 @@ func TestRealContentCityCoreProvidesStartupFoodAndGovernance(t *testing.T) {
 	state.Players["player-1"].CapitalCityID = "C1"
 
 	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
+	cityEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(cityEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "city_core_provisions",
+		RequiredTurns:    1,
+	})
 
 	if got := state.EffectiveResearchOutput("player-1"); got != 2 {
 		t.Fatalf("research output with one city_core = %d, want 2", got)

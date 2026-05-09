@@ -22,10 +22,18 @@ message MsgSetBuildingRecipe {
   string recipe_id = 2;
 }
 
+message MsgCancelBuildingRecipe {
+  string node_id = 1;
+}
+
 message MsgBuildStructure {
   string node_id = 1;
   string building_type_id = 2;
   string city_id = 3;
+}
+
+message MsgDemolishBuilding {
+  string node_id = 1;
 }
 
 message MsgRevealNode {
@@ -91,6 +99,8 @@ message CommandEnvelope {
     MsgIssueUnitOrder issue_unit_order = 19;
     MsgCancelUnitOrder cancel_unit_order = 20;
     MsgSubmitTurn submit_turn = 21;
+    MsgDemolishBuilding demolish_building = 22;
+    MsgCancelBuildingRecipe cancel_building_recipe = 23;
   }
 }
 

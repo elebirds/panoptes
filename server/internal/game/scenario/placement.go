@@ -11,6 +11,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -24,6 +25,30 @@ func placeBuildingAtNode(state *domain.GameState, buildingType string, playerID 
 	}
 	ecs.CreateBuilding(state.World, buildingType, playerID, cityID, nodeEntry)
 	return nodeEntry, nil
+}
+
+func setBuildingRecipeAtNode(state *domain.GameState, nodeID string, recipeID string) error {
+	if state == nil {
+		return fmt.Errorf("state is nil")
+	}
+	nodeEntry, ok := state.GetNode(nodeID)
+	if !ok {
+		return fmt.Errorf("missing node %s", nodeID)
+	}
+	recipe, ok := staticdata.Default().GetRecipe(recipeID)
+	if !ok {
+		return fmt.Errorf("missing recipe %s", recipeID)
+	}
+	if !nodeEntry.HasComponent(ecs.BuildingOperationC) {
+		nodeEntry.AddComponent(ecs.BuildingOperationC)
+	}
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID:  recipeID,
+		RequiredTurns:     recipe.WorkAmount,
+		ConsumedResources: domain.NewResourceBag(),
+		ConsumedPoints:    domain.NewPointBag(),
+	})
+	return nil
 }
 
 func placeUnitWithID(state *domain.GameState, unitType string, playerID string, position domain.Position, unitID string) *donburi.Entry {

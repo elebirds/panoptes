@@ -104,6 +104,8 @@ type PlanningHandler interface {
 	SetInstitutionLoadout(ctx InboundContext, cmd *pb.MsgSetInstitutionLoadout) error
 	BuildStructurePreview(ctx InboundContext, cmd *pb.MsgBuildStructurePreviewRequest) error
 	SetBuildingRecipePreview(ctx InboundContext, cmd *pb.MsgSetBuildingRecipePreviewRequest) error
+	CancelBuildingRecipe(ctx InboundContext, cmd *pb.MsgCancelBuildingRecipe) error
+	DemolishBuilding(ctx InboundContext, cmd *pb.MsgDemolishBuilding) error
 }
 
 func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handler PlanningHandler) error {
@@ -145,6 +147,10 @@ func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handle
 		return handler.BuildStructurePreview(ctx, body.BuildStructurePreview)
 	case *pb.PlanningCommand_SetBuildingRecipePreview:
 		return handler.SetBuildingRecipePreview(ctx, body.SetBuildingRecipePreview)
+	case *pb.PlanningCommand_CancelBuildingRecipe:
+		return handler.CancelBuildingRecipe(ctx, body.CancelBuildingRecipe)
+	case *pb.PlanningCommand_DemolishBuilding:
+		return handler.DemolishBuilding(ctx, body.DemolishBuilding)
 	default:
 		return transportproblem.UnsupportedCommand("unsupported planning command")
 	}
@@ -155,6 +161,7 @@ type GameHandler interface {
 	StaticCatalogSyncRequest(ctx InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error
 	Chat(ctx InboundContext, cmd *pb.ChatCommand) error
 	CommandBatch(ctx InboundContext, cmd *pb.MsgGameCommandBatch) error
+	AcknowledgeTurnReport(ctx InboundContext, cmd *pb.MsgAcknowledgeTurnReport) error
 }
 
 func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHandler) error {
@@ -174,6 +181,8 @@ func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHa
 		return handler.Chat(ctx, body.Chat)
 	case *pb.GameCommand_CommandBatch:
 		return handler.CommandBatch(ctx, body.CommandBatch)
+	case *pb.GameCommand_AcknowledgeTurnReport:
+		return handler.AcknowledgeTurnReport(ctx, body.AcknowledgeTurnReport)
 	default:
 		return transportproblem.UnsupportedCommand("unsupported game command")
 	}

@@ -11,6 +11,7 @@ type TurnPhase string
 const (
 	PhasePlanning  TurnPhase = "planning"
 	PhaseResolving TurnPhase = "resolving"
+	PhaseTurnReport TurnPhase = "turn_report"
 )
 
 func (p TurnPhase) String() string {

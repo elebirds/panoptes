@@ -1,0 +1,12 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend layering and routing rules for planning, engine, and event changes."}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend package ownership and file placement for planning, query, engine, and transport work."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Stable transport error codes and feedback conventions for new demolition validation."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend compile and test standards for cross-layer protocol changes."}
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend architecture boundaries for Core, Presentation, and generated protocol usage."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Client file ownership for Core stores, Presentation UI, and generated protocol files."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Unity prefab-facing facade and helper patterns used by the building action UI."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Client store/view-model flow for planning draft and game state hydration."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Client compile and presentation boundary rules for UI changes."}
+{"file":".trellis/spec/guides/index.md","reason":"Shared cross-layer and reuse thinking for a feature spanning proto, server, and client."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Data flow across proto, server planning, settlement, and client UI."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Reuse existing build-flow patterns instead of duplicating planning or UI plumbing."}

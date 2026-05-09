@@ -9,6 +9,7 @@ func (r *TurnRuntime) ClearPostResolutionScratch() {
 	}
 	clear(r.Resolving.UnitOrders)
 	r.Planning.BuildOrders = r.Planning.BuildOrders[:0]
+	r.Planning.DemolishOrders = r.Planning.DemolishOrders[:0]
 	r.Planning.RecipeSelections = r.Planning.RecipeSelections[:0]
 	r.Planning.MinisterBuilds = r.Planning.MinisterBuilds[:0]
 	r.Planning.MinisterMoves = r.Planning.MinisterMoves[:0]

@@ -21,7 +21,7 @@ func NewCaptureTransport() *CaptureTransport {
 func (t *CaptureTransport) Send(_ context.Context, playerID string, msg proto.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.sent[playerID] = append(t.sent[playerID], msg)
+	t.sent[playerID] = append(t.sent[playerID], proto.Clone(msg))
 	return nil
 }
 
@@ -40,6 +40,8 @@ func (t *CaptureTransport) Snapshot(playerID string) []proto.Message {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	out := make([]proto.Message, len(t.sent[playerID]))
-	copy(out, t.sent[playerID])
+	for i, msg := range t.sent[playerID] {
+		out[i] = proto.Clone(msg)
+	}
 	return out
 }

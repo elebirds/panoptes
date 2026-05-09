@@ -18,8 +18,11 @@ namespace Panoptes.Core.Infrastructure.Mapper
 
             return new MinisterProfileDto
             {
+                MinisterId = view.MinisterId ?? string.Empty,
                 Role = view.Role ?? string.Empty,
                 Name = view.Name ?? string.Empty,
+                IconKey = view.IconKey ?? string.Empty,
+                PersonalityDesc = view.PersonalityDesc ?? string.Empty,
                 Ability = view.Ability,
                 Personality = view.Personality ?? string.Empty,
                 Loyalty = view.Loyalty,
@@ -27,7 +30,34 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Cautiousness = view.Cautiousness,
                 Decisiveness = view.Decisiveness,
                 LoyaltyTendency = view.LoyaltyTendency,
-                AmbitionStyle = view.AmbitionStyle
+                AmbitionStyle = view.AmbitionStyle,
+                IsVacant = view.Vacant
+            };
+        }
+
+        public static MinisterProfileDto ToProfileDto(MinisterCandidateView view)
+        {
+            if (view == null)
+            {
+                return null;
+            }
+
+            return new MinisterProfileDto
+            {
+                MinisterId = view.MinisterId ?? string.Empty,
+                Role = view.Role ?? string.Empty,
+                Name = view.Name ?? string.Empty,
+                IconKey = view.IconKey ?? string.Empty,
+                PersonalityDesc = view.PersonalityDesc ?? string.Empty,
+                Ability = view.Ability,
+                Personality = view.Personality ?? string.Empty,
+                Loyalty = view.Loyalty,
+                Ambition = view.Ambition,
+                Cautiousness = view.Cautiousness,
+                Decisiveness = view.Decisiveness,
+                LoyaltyTendency = view.LoyaltyTendency,
+                AmbitionStyle = view.AmbitionStyle,
+                IsCandidate = true
             };
         }
 

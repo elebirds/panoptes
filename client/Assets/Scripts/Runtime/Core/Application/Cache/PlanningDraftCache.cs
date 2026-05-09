@@ -22,6 +22,7 @@ namespace Panoptes.Core.Application.Cache
 
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<QueuedBuildOrderDto> _buildOrders = new();
+        private readonly List<QueuedDemolishOrderDto> _demolishOrders = new();
         private readonly List<QueuedRecipeSelectionDto> _recipeSelections = new();
         private readonly List<QueuedWarZoneDirectiveDto> _warZoneDirectives = new();
         private readonly List<PlanningWarZoneDto> _warZones = new();
@@ -41,6 +42,7 @@ namespace Panoptes.Core.Application.Cache
 
         public IReadOnlyDictionary<string, QueuedUnitOrderDto> OrdersByUnitId => _ordersByUnitId;
         public IReadOnlyList<QueuedBuildOrderDto> BuildOrders => _buildOrders;
+        public IReadOnlyList<QueuedDemolishOrderDto> DemolishOrders => _demolishOrders;
         public IReadOnlyList<QueuedRecipeSelectionDto> RecipeSelections => _recipeSelections;
         public IReadOnlyList<QueuedWarZoneDirectiveDto> WarZoneDirectives => _warZoneDirectives;
         public IReadOnlyList<PlanningWarZoneDto> WarZones => _warZones;
@@ -186,6 +188,7 @@ namespace Panoptes.Core.Application.Cache
             _plannedInstitutionIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
+            _demolishOrders.Clear();
             _recipeSelections.Clear();
             _warZoneDirectives.Clear();
             _warZones.Clear();
@@ -219,6 +222,23 @@ namespace Panoptes.Core.Application.Cache
                         NodeId = order.NodeId,
                         BuildingTypeId = order.BuildingTypeId,
                         CityId = order.CityId
+                    });
+                }
+            }
+            if (msg != null && msg.DemolishOrders != null)
+            {
+                for (var i = 0; i < msg.DemolishOrders.Count; i++)
+                {
+                    var order = msg.DemolishOrders[i];
+                    if (order == null || string.IsNullOrWhiteSpace(order.NodeId))
+                    {
+                        continue;
+                    }
+
+                    _demolishOrders.Add(new QueuedDemolishOrderDto
+                    {
+                        NodeId = order.NodeId,
+                        BuildingTypeId = order.BuildingTypeId
                     });
                 }
             }
@@ -442,6 +462,7 @@ namespace Panoptes.Core.Application.Cache
             _plannedInstitutionIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
+            _demolishOrders.Clear();
             _recipeSelections.Clear();
             _warZoneDirectives.Clear();
             _warZones.Clear();

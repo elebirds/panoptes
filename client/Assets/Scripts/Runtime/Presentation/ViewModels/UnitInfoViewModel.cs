@@ -385,12 +385,35 @@ namespace Panoptes.Presentation.ViewModels
 
         private static string ResolvePlanningSummary(PlanningDraftState planning, string unitId)
         {
-            if (planning?.UnitOrders == null || string.IsNullOrWhiteSpace(unitId))
+            if (string.IsNullOrWhiteSpace(unitId))
             {
                 return string.Empty;
             }
 
             var normalizedUnitId = NormalizeToken(unitId);
+            if (planning?.DemolishOrders != null)
+            {
+                for (var i = 0; i < planning.DemolishOrders.Count; i++)
+                {
+                    var order = planning.DemolishOrders[i];
+                    if (order == null ||
+                        !string.Equals(NormalizeToken(order.NodeId), normalizedUnitId, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var target = !string.IsNullOrWhiteSpace(order.BuildingTypeId)
+                        ? order.BuildingTypeId.Trim()
+                        : unitId.Trim();
+                    return string.IsNullOrWhiteSpace(target) ? "已规划：拆除" : $"已规划：拆除 -> {target}";
+                }
+            }
+
+            if (planning?.UnitOrders == null)
+            {
+                return string.Empty;
+            }
+
             for (var i = 0; i < planning.UnitOrders.Count; i++)
             {
                 var order = planning.UnitOrders[i];
@@ -430,6 +453,7 @@ namespace Panoptes.Presentation.ViewModels
                 "hold" => "待命",
                 "charge" => "冲锋",
                 "build" => "建造",
+                "demolish" => "拆除",
                 "" => "指令",
                 _ => action?.Trim() ?? "指令"
             };

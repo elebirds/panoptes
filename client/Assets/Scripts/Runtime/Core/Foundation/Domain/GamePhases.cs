@@ -4,6 +4,7 @@ namespace Panoptes.Core.Domain
     {
         public const string Planning = "planning";
         public const string Resolving = "resolving";
+        public const string TurnReport = "turn_report";
 
         public static bool IsPlanning(string phase)
         {
@@ -21,6 +22,7 @@ namespace Panoptes.Core.Domain
             {
                 Planning => "回合规划",
                 Resolving => "回合结算中",
+                TurnReport => "战报整理中",
                 _ => string.IsNullOrWhiteSpace(phase) ? "未知阶段" : phase
             };
         }

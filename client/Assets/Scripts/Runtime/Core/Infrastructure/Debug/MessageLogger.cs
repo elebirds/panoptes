@@ -262,6 +262,8 @@ namespace Panoptes.DebugTools
                     return $"success={institution.Success} institutions={institution.InstitutionIds.Count} error={institution.ErrorCode}";
                 case MsgSetBuildingRecipeResult recipe:
                     return $"success={recipe.Success} node={recipe.NodeId} recipe={recipe.RecipeId}";
+                case MsgDemolishBuildingResult demolish:
+                    return $"success={demolish.Success} node={demolish.NodeId} building={demolish.BuildingTypeId} error={demolish.ErrorCode}";
                 case MsgMinisterReportChunk reportChunk:
                     var chunkLen = reportChunk.Chunk == null ? 0 : reportChunk.Chunk.Length;
                     return $"role={reportChunk.MinisterRole} chunk_len={chunkLen} final={reportChunk.IsFinal}";
@@ -288,7 +290,10 @@ namespace Panoptes.DebugTools
                 MsgSetInstitutionLoadout institutionLoadout => $"institutions={institutionLoadout.InstitutionIds.Count}",
                 MsgBuildStructure buildStructure =>
                     $"node={buildStructure.NodeId} building={buildStructure.BuildingTypeId}",
+                MsgDemolishBuilding demolishBuilding => $"node={demolishBuilding.NodeId}",
                 MsgRevealNode revealNode => $"node={revealNode.NodeId}",
+                MsgSetBuildingRecipe setBuildingRecipe => $"node={setBuildingRecipe.NodeId} recipe={setBuildingRecipe.RecipeId}",
+                MsgCancelBuildingRecipe cancelBuildingRecipe => $"node={cancelBuildingRecipe.NodeId}",
                 MsgSetWarZone setWarZone => $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}",
                 MsgWarZoneDirective warZoneDirective =>
                     $"zone={warZoneDirective.ZoneId} directive={warZoneDirective.Directive}",

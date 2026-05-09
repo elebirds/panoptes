@@ -98,6 +98,7 @@ func newLogisticsRecipeState(connected bool) (donburi.World, *domain.GameState, 
 	ecs.CreateBuilding(world, "city_core", "player-1", "D1", world.Entry(cityEntity))
 	workshopEntry := world.Entry(workshopEntity)
 	ecs.CreateBuilding(world, "workshop", "player-1", "D1", workshopEntry)
+	workshopEntry.AddComponent(ecs.BuildingOperationC)
 	ecs.BuildingOperationC.SetValue(workshopEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "ration",
 		RequiredTurns:    4,

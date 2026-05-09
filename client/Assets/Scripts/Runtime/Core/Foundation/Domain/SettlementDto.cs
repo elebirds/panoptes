@@ -66,6 +66,12 @@ namespace Panoptes.Core.Domain
         public string CityId;
     }
 
+    public sealed class QueuedDemolishOrderDto
+    {
+        public string NodeId;
+        public string BuildingTypeId;
+    }
+
     public sealed class QueuedRecipeSelectionDto
     {
         public string NodeId;

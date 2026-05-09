@@ -66,6 +66,7 @@ func (r *Runtime) InitializePrepared(state *domain.GameState) error {
 	r.state = state
 	r.resetObservations()
 	r.normalizePreparedState()
+	r.state.InitializeMinisterRoster()
 	r.state.RefreshStructuredModel()
 	r.grantDevStartingResources()
 	r.initializeCityStates()

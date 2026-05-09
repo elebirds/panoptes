@@ -30,6 +30,7 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	t.Setenv("MINISTER_LLM_API_KEY", "test-llm-key")
 	t.Setenv("MINISTER_LLM_MODEL", "qwen-plus")
 	t.Setenv("MINISTER_LLM_TIMEOUT_MS", "4200")
+	t.Setenv("TURN_REPORT_TIMEOUT_MS", "9000")
 	t.Setenv("MINISTER_LLM_ENABLED_ROLES", "domestic,military")
 	t.Setenv("MINISTER_LLM_PARTICIPATION_MODE", "strong")
 
@@ -58,6 +59,9 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	}
 	if cfg.MinisterLLMTimeoutMs != 4200 {
 		t.Fatalf("MinisterLLMTimeoutMs = %d", cfg.MinisterLLMTimeoutMs)
+	}
+	if cfg.TurnReportTimeoutMs != 9000 {
+		t.Fatalf("TurnReportTimeoutMs = %d", cfg.TurnReportTimeoutMs)
 	}
 	if cfg.MinisterLLMRoles != "domestic,military" {
 		t.Fatalf("MinisterLLMRoles = %q", cfg.MinisterLLMRoles)

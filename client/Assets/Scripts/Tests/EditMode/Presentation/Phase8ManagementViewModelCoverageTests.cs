@@ -35,7 +35,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(viewModel.Current.Groups[0].Id, Is.EqualTo("mill"));
             Assert.That(viewModel.Current.Groups[0].Rows, Has.Count.EqualTo(1));
             Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已选择"));
-            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("选择"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("取消选择"));
             Assert.That(viewModel.Current.Groups[0].Rows[0].EmptyCostsLabel, Is.EqualTo("无消耗"));
         }
 
@@ -59,6 +59,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             contextStore.SetContext(" n1 ", " mill ", "player-1");
 
             Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已选择"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("选择"));
         }
 
         [Test]

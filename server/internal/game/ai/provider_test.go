@@ -574,6 +574,56 @@ func TestRuleBotProviderBuildsFrontierOfficeWhenExpansionNeedsSettlerSource(t *t
 	}
 }
 
+func TestRuleBotProviderSelectsRecipeForNewBuildingWithoutDefaultOperation(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", Name: "Barracks", Description: "Military barracks", PlacementKind: "city_territory", BuildingScope: "in_city", RecipeIDs: []string{"barracks_infantry"}, DefaultRecipeID: "barracks_infantry", MaxHP: 90, TakeoverMode: "city_capture"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "barracks_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1, Outputs: staticdata.RecipeOutputs{Units: []string{"infantry"}}},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, observation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		ecs.CreateBuilding(world, "city_core", "bot-1", "N0", world.Entry(mapData.NodeIndex["N0"]))
+		state.Players["bot-1"].Research.UnlockBuilding("barracks")
+		state.Players["bot-1"].Research.UnlockRecipe("barracks_infantry")
+		ecs.CreateBuilding(world, "barracks", "bot-1", "N0", world.Entry(mapData.NodeIndex["N1"]))
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: observation,
+		RNG:         rand.New(rand.NewSource(7)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	recipeIntent := findIntent[planning.SetBuildingRecipeIntent](intents)
+	if recipeIntent == nil {
+		t.Fatalf("expected recipe intent, got %#v", intents)
+	}
+	if recipeIntent.NodeID != "N1" || recipeIntent.RecipeID != "barracks_infantry" {
+		t.Fatalf("recipe intent = %#v, want barracks_infantry at N1", *recipeIntent)
+	}
+}
+
 func buildRuleBotState(t *testing.T, mutate func(world donburi.World, mapData *domain.MapData, state *domain.GameState)) (*domain.GameState, *gamequery.ObservationSnapshot) {
 	t.Helper()
 

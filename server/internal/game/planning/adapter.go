@@ -67,8 +67,12 @@ func planningCommandFromCommandEnvelope(envelope *pb.CommandEnvelope) *pb.Planni
 		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetResearchTarget{SetResearchTarget: body.SetResearchTarget}}
 	case *pb.CommandEnvelope_SetBuildingRecipe:
 		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetBuildingRecipe{SetBuildingRecipe: body.SetBuildingRecipe}}
+	case *pb.CommandEnvelope_CancelBuildingRecipe:
+		return &pb.PlanningCommand{Body: &pb.PlanningCommand_CancelBuildingRecipe{CancelBuildingRecipe: body.CancelBuildingRecipe}}
 	case *pb.CommandEnvelope_BuildStructure:
 		return &pb.PlanningCommand{Body: &pb.PlanningCommand_BuildStructure{BuildStructure: body.BuildStructure}}
+	case *pb.CommandEnvelope_DemolishBuilding:
+		return &pb.PlanningCommand{Body: &pb.PlanningCommand_DemolishBuilding{DemolishBuilding: body.DemolishBuilding}}
 	case *pb.CommandEnvelope_RevealNode:
 		return &pb.PlanningCommand{Body: &pb.PlanningCommand_RevealNode{RevealNode: body.RevealNode}}
 	case *pb.CommandEnvelope_SetWarZone:
@@ -110,6 +114,10 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 			BuildingTypeID: strings.TrimSpace(body.BuildStructure.GetBuildingTypeId()),
 			CityID:         strings.TrimSpace(body.BuildStructure.GetCityId()),
 		}
+	case *pb.PlanningCommand_DemolishBuilding:
+		envelope.Intent = DemolishBuildingIntent{
+			NodeID: strings.TrimSpace(body.DemolishBuilding.GetNodeId()),
+		}
 	case *pb.PlanningCommand_RevealNode:
 		envelope.Intent = RevealNodeIntent{NodeID: strings.TrimSpace(body.RevealNode.GetNodeId())}
 	case *pb.PlanningCommand_SetResearchTarget:
@@ -118,6 +126,10 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 		envelope.Intent = SetBuildingRecipeIntent{
 			NodeID:   strings.TrimSpace(body.SetBuildingRecipe.GetNodeId()),
 			RecipeID: strings.TrimSpace(body.SetBuildingRecipe.GetRecipeId()),
+		}
+	case *pb.PlanningCommand_CancelBuildingRecipe:
+		envelope.Intent = CancelBuildingRecipeIntent{
+			NodeID: strings.TrimSpace(body.CancelBuildingRecipe.GetNodeId()),
 		}
 	case *pb.PlanningCommand_SetMinisterDirective:
 		intent, err := ministerDirectiveIntent(body.SetMinisterDirective)
@@ -169,6 +181,7 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 		DirectiveType string `json:"directive_type"`
 		DraftID       string `json:"draft_id"`
 		SkillCardID   string `json:"skill_card_id"`
+		CandidateID   string `json:"candidate_id"`
 	}
 	if err := json.Unmarshal([]byte(msg.GetContent()), &payload); err != nil {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "invalid minister directive payload")
@@ -176,8 +189,9 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
 	payload.SkillCardID = strings.TrimSpace(payload.SkillCardID)
+	payload.CandidateID = strings.TrimSpace(payload.CandidateID)
 	switch payload.DirectiveType {
-	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command", "activate_skill":
+	case "accept", "reject", "accept_role", "reject_role", "mandate_override", "direct_command", "activate_skill", "hire", "fire", "replace", "refresh_candidates":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}
@@ -187,10 +201,14 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	if payload.DirectiveType == "activate_skill" && payload.SkillCardID == "" {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "skill_card_id is required")
 	}
+	if (payload.DirectiveType == "hire" || payload.DirectiveType == "replace") && payload.CandidateID == "" {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "candidate_id is required")
+	}
 	return SetMinisterDirectiveIntent{
 		MinisterRole:  role,
 		DirectiveType: payload.DirectiveType,
 		DraftID:       payload.DraftID,
 		SkillCardID:   payload.SkillCardID,
+		CandidateID:   payload.CandidateID,
 	}, nil
 }

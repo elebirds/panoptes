@@ -147,6 +147,17 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 	ecs.CreateBuilding(world, "barracks", "player-1", "C1", barracksEntry)
 	ecs.CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
+	cityEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(cityEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "train_settler",
+		RequiredTurns:    2,
+	})
+	barracksEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(barracksEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "train_infantry",
+		RequiredTurns:    3,
+	})
+	farmEntry.AddComponent(ecs.BuildingOperationC)
 	ecs.BuildingOperationC.SetValue(farmEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "grow_food",
 		ProgressTurns:    1,

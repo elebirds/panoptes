@@ -32,10 +32,13 @@ type PlanningRefreshStage struct{}
 
 type MinisterSkillExpiryStage struct{}
 
+type MinisterRosterRefreshStage struct{}
+
 func NewPlanningStartRunner() *PlanningStartRunner {
 	return &PlanningStartRunner{
 		stages: []planningStartStage{
 			MinisterSkillExpiryStage{},
+			MinisterRosterRefreshStage{},
 			TechnologyActivationStage{},
 			InstitutionPromotionStage{},
 			PlanningRefreshStage{},
@@ -101,4 +104,11 @@ func (MinisterSkillExpiryStage) Run(ctx *planningStartContext) {
 		return
 	}
 	domain.ExpireMinisterSkillEffects(ctx.state)
+}
+
+func (MinisterRosterRefreshStage) Run(ctx *planningStartContext) {
+	if ctx == nil || ctx.state == nil {
+		return
+	}
+	ctx.state.RefreshMinisterCandidates()
 }

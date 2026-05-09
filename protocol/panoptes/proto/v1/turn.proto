@@ -54,6 +54,11 @@ message QueuedBuildOrder {
   string city_id = 3;
 }
 
+message QueuedDemolishOrder {
+  string node_id = 1;
+  string building_type_id = 2;
+}
+
 message QueuedRecipeSelection {
   string node_id = 1;
   string recipe_id = 2;
@@ -77,6 +82,8 @@ message MsgPlanningSnapshot {
   repeated QueuedRecipeSelection recipe_selections = 9;
   repeated QueuedWarZoneDirective war_zone_directives = 10;
   repeated string planned_institution_ids = 11;
+  repeated QueuedDemolishOrder demolish_orders = 12;
+  PlayerView my_player = 13;
 }
 
 message MsgPlanningPathPreviewResponse {
@@ -189,6 +196,15 @@ message MsgBuildStructureResult {
   repeated FeedbackDetail feedback_details = 7;
 }
 
+message MsgDemolishBuildingResult {
+  bool success = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string error_code = 4;
+  string feedback_message = 5;
+  repeated FeedbackDetail feedback_details = 6;
+}
+
 message MsgIssueUnitOrderResult {
   bool success = 1;
   string unit_id = 2;
@@ -201,6 +217,13 @@ message MsgIssueUnitOrderResult {
 message MsgTurnReport {
   int32 turn = 1;
   string summary = 2;
+  int32 timeout_seconds = 3;
+  string phase = 4;
+  string next_phase = 5;
+}
+
+message MsgAcknowledgeTurnReport {
+  int32 turn = 1;
 }
 
 message MinisterProposalView {

@@ -25,6 +25,7 @@ type Host interface {
 	chat.Session
 	planning.Session
 	RunTurnResolution()
+	BroadcastTurnReport()
 	ShouldStopAfterResolution() bool
 	HandleDraw()
 	CheckGameOver()
@@ -82,6 +83,12 @@ func (c *Coordinator) Start() {
 			break
 		}
 
+		c.runtime.BeginTurnReport(c.runtime.State().Turn)
+		c.runtime.GenerateMinisterReports(ctx)
+		c.host.BroadcastTurnReport()
+		c.runtime.WaitTurnReport(ctx, c.runtime.TurnReportTimeout())
+		c.runtime.FinishTurnReport(c.runtime.State().Turn)
+
 		if rules.MaxTurns > 0 && c.runtime.State().Turn >= rules.MaxTurns {
 			c.host.HandleDraw()
 			break
@@ -102,7 +109,6 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 			}
 		}
 	}
-	c.runtime.GenerateMinisterReports(ctx)
 
 	submitter := coordinatorIntentSubmitter{coordinator: c}
 	for _, currentParticipant := range c.runtime.Participants() {

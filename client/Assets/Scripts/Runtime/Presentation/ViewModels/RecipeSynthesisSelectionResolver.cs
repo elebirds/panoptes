@@ -1,0 +1,70 @@
+using System;
+using Panoptes.Core.Application.Stores;
+
+namespace Panoptes.Presentation.ViewModels
+{
+    internal static class RecipeSynthesisSelectionResolver
+    {
+        public static string ResolveSelectedRecipeId(PlanningDraftState draft, GameStateStoreState game, string contextNodeId)
+        {
+            var plannedRecipeId = ResolvePlannedRecipeId(draft, contextNodeId);
+            return !string.IsNullOrEmpty(plannedRecipeId)
+                ? plannedRecipeId
+                : ResolveActiveRecipeId(game, contextNodeId);
+        }
+
+        public static string ResolvePlannedRecipeId(PlanningDraftState draft, string contextNodeId)
+        {
+            var selections = draft?.RecipeSelections;
+            if (selections == null || string.IsNullOrWhiteSpace(contextNodeId))
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < selections.Count; i++)
+            {
+                if (!string.Equals(Normalize(selections[i]?.NodeId), contextNodeId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var recipeId = Normalize(selections[i]?.RecipeId);
+                if (!string.IsNullOrEmpty(recipeId))
+                {
+                    return recipeId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public static string ResolveActiveRecipeId(GameStateStoreState game, string contextNodeId)
+        {
+            var nodes = game?.Nodes;
+            if (nodes == null || string.IsNullOrEmpty(contextNodeId))
+            {
+                return string.Empty;
+            }
+
+            if (nodes.TryGetValue(contextNodeId, out var node))
+            {
+                return Normalize(node?.OperationSelectedRecipeId);
+            }
+
+            foreach (var candidate in nodes.Values)
+            {
+                if (string.Equals(Normalize(candidate?.Id), contextNodeId, StringComparison.Ordinal))
+                {
+                    return Normalize(candidate?.OperationSelectedRecipeId);
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string Normalize(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+        }
+    }
+}

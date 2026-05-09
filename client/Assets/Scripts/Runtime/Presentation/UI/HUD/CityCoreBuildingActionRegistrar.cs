@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
@@ -12,11 +14,13 @@ namespace Panoptes.Presentation.UI.HUD
     {
         [Header("Action IDs")]
         [SerializeField] private string buildActionId = "action_3";
+        [SerializeField] private string demolishActionId = "action_4";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
         [SerializeField] private string policyActionId = "open_policy_focus";
 
         [Header("Labels")]
         [SerializeField] private string buildActionLabel = "Build";
+        [SerializeField] private string demolishActionLabel = "Demolish";
         [SerializeField] private string recipeActionLabel = "Synthesis";
         [SerializeField] private string policyActionLabel = "Policy";
 
@@ -34,8 +38,10 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private AnimationCurve rightGroupShiftCurve = null;
 
         private BuildCatalogContextStore _buildCatalogContextStore;
+        private GameStateStore _gameStateStore;
         private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
         private RecipeSynthesisContextStore _recipeSynthesisContextStore;
+        private PlanningIntentService _planningIntentService;
         private CityCoreBuildingActionResolver _resolver;
         private bool _nextStageBasePositionReady;
         private Vector2 _nextStageBaseAnchoredPos;
@@ -56,13 +62,16 @@ namespace Panoptes.Presentation.UI.HUD
             ManagementPanelVisibilityStore managementPanelVisibilityStore,
             BuildCatalogContextStore buildCatalogContextStore,
             RecipeSynthesisContextStore recipeSynthesisContextStore,
+            PlanningIntentService planningIntentService,
             MapPlanningInputController injectedMapPlanningInputController,
             UnitInfoPanelController injectedUnitInfoPanelController)
         {
+            _gameStateStore = gameStateStore;
             _resolver = new CityCoreBuildingActionResolver(gameStateStore, staticCatalogStore);
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
             _buildCatalogContextStore = buildCatalogContextStore;
             _recipeSynthesisContextStore = recipeSynthesisContextStore;
+            _planningIntentService = planningIntentService;
             if (mapPlanningInputController == null)
             {
                 mapPlanningInputController = injectedMapPlanningInputController;
@@ -90,6 +99,16 @@ namespace Panoptes.Presentation.UI.HUD
                     ? "建造"
                     : buildActionLabel,
                 unit => _resolver != null && _resolver.IsOwnedCityCoreBuildingProxy(unit));
+
+            registry.RegisterAction(
+                demolishActionId,
+                OnDemolishActionClicked,
+                string.IsNullOrWhiteSpace(demolishActionLabel) || string.Equals(demolishActionLabel, "Demolish", StringComparison.Ordinal)
+                    ? "拆除"
+                    : demolishActionLabel,
+                unit => _resolver != null &&
+                        _resolver.IsOwnedDemolishableBuildingProxy(unit) &&
+                        GamePhases.IsPlanning(_gameStateStore?.Snapshot?.Phase));
 
             registry.RegisterAction(
                 recipeActionId,
@@ -392,6 +411,24 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             OpenRecipePanelForBuilding(context.NodeId, context.BuildingTypeId, context.OwnerId);
+        }
+
+        private void OnDemolishActionClicked(UnitView unit)
+        {
+            if (!GamePhases.IsPlanning(_gameStateStore?.Snapshot?.Phase) ||
+                _resolver == null ||
+                !_resolver.TryResolveDemolishableBuildingNodeId(unit, out var nodeId))
+            {
+                return;
+            }
+
+            if (_planningIntentService == null)
+            {
+                PanoptesLog.Warning("[CityCoreBuildingActionRegistrar] PlanningIntentService missing, cannot send demolish request.");
+                return;
+            }
+
+            _planningIntentService.DemolishBuilding(nodeId);
         }
 
         private void OnPolicyActionClicked(UnitView unit)

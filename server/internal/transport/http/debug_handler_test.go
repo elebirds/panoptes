@@ -198,7 +198,10 @@ func TestDebugHandlerStepTurnReturnsLatestGameSync(t *testing.T) {
 	if gameSync.GetTurn() != 1 {
 		t.Fatalf("game sync = %#v", &gameSync)
 	}
-	if body.State.Turn != 2 || body.State.Phase != domain.PhasePlanning.String() {
+	if gameSync.GetPhase() != domain.PhaseResolving.String() || gameSync.GetNextPhase() != domain.PhaseTurnReport.String() {
+		t.Fatalf("game sync phase=%q next_phase=%q, want resolving -> turn_report", gameSync.GetPhase(), gameSync.GetNextPhase())
+	}
+	if body.State.Turn != 1 || body.State.Phase != domain.PhaseResolving.String() {
 		t.Fatalf("state summary = %#v", body.State)
 	}
 }

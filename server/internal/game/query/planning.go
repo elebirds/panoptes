@@ -32,6 +32,7 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	msg.PlannedNationalPolicyId = string(state.TurnRuntime.Planning.PendingPolicy(playerID))
 	msg.PlannedInstitutionIds = state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
 	msg.MinisterDrafts = BuildMinisterDraftViews(state, playerID)
+	msg.MyPlayer = BuildPlayerView(state, playerID)
 
 	ordersByUnit := make(map[string]*pb.QueuedUnitOrder)
 	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
@@ -89,6 +90,25 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 			NodeId:         order.NodeID,
 			BuildingTypeId: order.BuildingType,
 			CityId:         order.CityID,
+		})
+	}
+
+	demolishOrders := make([]domain.DemolishOrder, 0)
+	for _, order := range state.TurnRuntime.Planning.DemolishOrders {
+		if order.PlayerID == playerID {
+			demolishOrders = append(demolishOrders, order)
+		}
+	}
+	sort.Slice(demolishOrders, func(i, j int) bool {
+		if demolishOrders[i].NodeID == demolishOrders[j].NodeID {
+			return demolishOrders[i].BuildingType < demolishOrders[j].BuildingType
+		}
+		return demolishOrders[i].NodeID < demolishOrders[j].NodeID
+	})
+	for _, order := range demolishOrders {
+		msg.DemolishOrders = append(msg.DemolishOrders, &pb.QueuedDemolishOrder{
+			NodeId:         order.NodeID,
+			BuildingTypeId: order.BuildingType,
 		})
 	}
 

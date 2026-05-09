@@ -11,6 +11,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
@@ -170,9 +171,21 @@ func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
 	}
 }
 
+func (r *GameRoom) QueueDemolishOrder(order domain.DemolishOrder) {
+	if state := r.State(); state != nil {
+		state.TurnRuntime.Planning.UpsertDemolishOrder(order)
+	}
+}
+
 func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	if state := r.State(); state != nil {
 		state.TurnRuntime.Planning.UpsertRecipeSelection(order)
+	}
+}
+
+func (r *GameRoom) CancelRecipeSelection(playerID string, nodeID string) {
+	if state := r.State(); state != nil {
+		state.TurnRuntime.Planning.RemoveRecipeSelection(playerID, nodeID)
 	}
 }
 
@@ -306,7 +319,7 @@ func (r *GameRoom) broadcastGameSync(collector *gameresolution.Collector) {
 		return
 	}
 
-	nextPhase := domain.PhasePlanning.String()
+	nextPhase := domain.PhaseTurnReport.String()
 	if state.IsOver || r.shouldStopAfterResolution() {
 		nextPhase = ""
 	}
@@ -324,6 +337,19 @@ func (r *GameRoom) broadcastGameSync(collector *gameresolution.Collector) {
 		if hooks := currentDebugHooks(); hooks.RecordGameSync != nil {
 			hooks.RecordGameSync(r.ID, participantID, syncMsg)
 		}
+	}
+}
+
+func (r *GameRoom) BroadcastTurnReport() {
+	state := r.State()
+	if state == nil || state.IsOver || r.runtime == nil {
+		return
+	}
+
+	timeoutSeconds := int32((r.runtime.TurnReportTimeout() + time.Second - 1) / time.Second)
+	report := gameprojection.ProjectTurnReport(int32(state.Turn), timeoutSeconds, domain.PhasePlanning.String())
+	for _, participantID := range r.HumanParticipantIDs() {
+		_ = r.SendToPlayer(context.Background(), participantID, report)
 	}
 }
 

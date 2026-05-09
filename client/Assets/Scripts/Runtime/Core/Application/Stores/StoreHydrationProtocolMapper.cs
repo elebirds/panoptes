@@ -188,6 +188,30 @@ namespace Panoptes.Core.Application.Stores
                 researchState: previous.ResearchState);
         }
 
+        public static GameStateStoreState MergeTurnReport(GameStateStoreState current, MsgTurnReport msg)
+        {
+            var previous = current ?? new GameStateStoreState();
+            if (msg == null)
+            {
+                return previous.Clone();
+            }
+
+            return new GameStateStoreState(
+                previous.GameId,
+                previous.ActiveGameSessionId,
+                previous.MyPlayerId,
+                msg.Turn > 0 ? msg.Turn : previous.Turn,
+                string.IsNullOrWhiteSpace(msg.Phase) ? GamePhases.TurnReport : msg.Phase,
+                previous.MapWidth,
+                previous.MapHeight,
+                previous.IsGameOver,
+                previous.TokensLeft,
+                previous.Nodes,
+                previous.Units,
+                previous.MyResources,
+                previous.ResearchState);
+        }
+
         public static PlanningDraftState ToPlanningDraft(MsgPlanningSnapshot msg)
         {
             if (msg == null)
@@ -200,6 +224,7 @@ namespace Panoptes.Core.Application.Stores
                 snapshotPhase: msg.Phase,
                 unitOrders: MapUnitOrders(msg.UnitOrders),
                 buildOrders: MapBuildOrders(msg.BuildOrders),
+                demolishOrders: MapDemolishOrders(msg.DemolishOrders),
                 recipeSelections: MapRecipeSelections(msg.RecipeSelections),
                 warZoneDirectives: MapWarZoneDirectives(msg.WarZoneDirectives),
                 warZones: MapWarZones(msg.WarZones),
@@ -217,6 +242,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.SnapshotPhase,
                 previous.UnitOrders,
                 previous.BuildOrders,
+                previous.DemolishOrders,
                 previous.RecipeSelections,
                 previous.WarZoneDirectives,
                 previous.WarZones,
@@ -237,6 +263,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.SnapshotPhase,
                 previous.UnitOrders,
                 previous.BuildOrders,
+                previous.DemolishOrders,
                 previous.RecipeSelections,
                 previous.WarZoneDirectives,
                 previous.WarZones,
@@ -257,6 +284,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.SnapshotPhase,
                 previous.UnitOrders,
                 previous.BuildOrders,
+                previous.DemolishOrders,
                 previous.RecipeSelections,
                 previous.WarZoneDirectives,
                 previous.WarZones,
@@ -316,6 +344,7 @@ namespace Panoptes.Core.Application.Stores
                 previous.SnapshotPhase,
                 previous.UnitOrders,
                 previous.BuildOrders,
+                previous.DemolishOrders,
                 previous.RecipeSelections,
                 previous.WarZoneDirectives,
                 previous.WarZones,
@@ -425,6 +454,25 @@ namespace Panoptes.Core.Application.Stores
                 timeoutSeconds,
                 msg.NextPhase,
                 isInteractive);
+        }
+
+        public static TurnState MergeTurn(TurnState current, MsgTurnReport msg)
+        {
+            var previous = current ?? new TurnState();
+            if (msg == null)
+            {
+                return previous.Clone();
+            }
+
+            return new TurnState(
+                msg.Turn > 0 ? msg.Turn : previous.Turn,
+                string.IsNullOrWhiteSpace(msg.Phase) ? GamePhases.TurnReport : msg.Phase,
+                previous.TokensLeft,
+                previous.PlanningStartEvents,
+                previous.IsGameOver,
+                msg.TimeoutSeconds,
+                string.IsNullOrWhiteSpace(msg.NextPhase) ? previous.NextPhase : msg.NextPhase,
+                false);
         }
 
         private static string ResolveGameSyncPhase(MsgGameSync msg)
@@ -783,6 +831,20 @@ namespace Panoptes.Core.Application.Stores
                         NodeId = order.NodeId,
                         BuildingTypeId = order.BuildingTypeId,
                         CityId = order.CityId
+                    })
+                    .ToList();
+        }
+
+        private static List<QueuedDemolishOrderDto> MapDemolishOrders(IEnumerable<QueuedDemolishOrder> orders)
+        {
+            return orders == null
+                ? new List<QueuedDemolishOrderDto>()
+                : orders
+                    .Where(order => order != null && !string.IsNullOrWhiteSpace(order.NodeId))
+                    .Select(order => new QueuedDemolishOrderDto
+                    {
+                        NodeId = order.NodeId,
+                        BuildingTypeId = order.BuildingTypeId
                     })
                     .ToList();
         }

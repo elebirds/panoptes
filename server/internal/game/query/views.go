@@ -60,6 +60,8 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 			CandidateInstitutionIds: playerState.Institutions.CandidateIDs(),
 			ActiveInstitutionIds:    append([]string(nil), playerState.Institutions.ActiveInstitutionIDs...),
 		},
+		Ministers:         BuildMinisterRosterViewsForPlayer(state, playerID),
+		MinisterCandidates: BuildMinisterCandidateViewsForPlayer(state, playerID),
 	}
 }
 

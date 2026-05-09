@@ -141,13 +141,6 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 		}
 		BuildingC.SetValue(nodeEntry, comp)
 		attachBuildingComponents(nodeEntry, cfg, cityID)
-		if cfg.DefaultRecipeID != "" {
-			requiredTurns := 0
-			if recipe, ok := staticdata.Default().GetRecipe(cfg.DefaultRecipeID); ok {
-				requiredTurns = recipe.WorkAmount
-			}
-			building.AttachDefaultOperation(nodeEntry, cfg.DefaultRecipeID, requiredTurns)
-		}
 		node := NodeC.Get(nodeEntry)
 		node.Owner = owner
 		return nodeEntry.Entity()

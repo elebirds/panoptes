@@ -59,12 +59,12 @@ func NormalizeMinisters(pool []staticdata.Minister) []staticdata.Minister {
 			out = append(out, minister)
 			continue
 		}
-		out = append(out, defaultMinister(role))
+		out = append(out, DefaultMinister(role))
 	}
 	return out
 }
 
-func defaultMinister(role string) staticdata.Minister {
+func DefaultMinister(role string) staticdata.Minister {
 	switch Canonical(role) {
 	case Domestic:
 		return staticdata.Minister{

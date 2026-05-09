@@ -119,12 +119,16 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 		result, err = s.handleInstitutionLoadout(delivery, room, playerID, playerState, intent.InstitutionIDs)
 	case BuildStructureIntent:
 		result, err = s.handleBuildRequest(delivery, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
+	case DemolishBuildingIntent:
+		result, err = s.handleDemolishBuilding(delivery, room, playerID, intent.NodeID)
 	case RevealNodeIntent:
 		result, err = s.handleRevealNode(delivery, room, playerID, playerState, intent.NodeID)
 	case SetResearchTargetIntent:
 		result, err = s.handleResearchRequest(delivery, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
 	case SetBuildingRecipeIntent:
 		result, err = s.handleSetBuildingRecipe(delivery, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
+	case CancelBuildingRecipeIntent:
+		result, err = s.handleCancelBuildingRecipe(delivery, room, playerID, strings.TrimSpace(intent.NodeID))
 	case SetMinisterDirectiveIntent:
 		result, err = s.handleMinisterDirective(delivery, room, playerID, intent)
 	case IssueUnitOrderIntent:

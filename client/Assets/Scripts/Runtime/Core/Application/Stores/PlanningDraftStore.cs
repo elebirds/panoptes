@@ -30,6 +30,7 @@ namespace Panoptes.Core.Application.Stores
                 current.SnapshotPhase,
                 StoreSnapshotCloner.CloneUnitOrders(unitOrders),
                 current.BuildOrders,
+                current.DemolishOrders,
                 current.RecipeSelections,
                 current.WarZoneDirectives,
                 current.WarZones,
@@ -66,6 +67,7 @@ namespace Panoptes.Core.Application.Stores
                    StringListEquals(left.PlannedInstitutionIds, right.PlannedInstitutionIds) &&
                    UnitOrdersEqual(left.UnitOrders, right.UnitOrders) &&
                    BuildOrdersEqual(left.BuildOrders, right.BuildOrders) &&
+                   DemolishOrdersEqual(left.DemolishOrders, right.DemolishOrders) &&
                    RecipeSelectionsEqual(left.RecipeSelections, right.RecipeSelections) &&
                    WarZoneDirectivesEqual(left.WarZoneDirectives, right.WarZoneDirectives) &&
                    WarZonesEqual(left.WarZones, right.WarZones) &&
@@ -136,6 +138,36 @@ namespace Panoptes.Core.Application.Stores
                 if (!string.Equals(a.NodeId, b.NodeId, StringComparison.Ordinal) ||
                     !string.Equals(a.BuildingTypeId, b.BuildingTypeId, StringComparison.Ordinal) ||
                     !string.Equals(a.CityId, b.CityId, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool DemolishOrdersEqual(IReadOnlyList<QueuedDemolishOrderDto> left, IReadOnlyList<QueuedDemolishOrderDto> right)
+        {
+            if (!SameCount(left, right))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < (left?.Count ?? 0); i++)
+            {
+                var a = left[i];
+                var b = right[i];
+                if (a == null || b == null)
+                {
+                    if (!ReferenceEquals(a, b))
+                    {
+                        return false;
+                    }
+                    continue;
+                }
+
+                if (!string.Equals(a.NodeId, b.NodeId, StringComparison.Ordinal) ||
+                    !string.Equals(a.BuildingTypeId, b.BuildingTypeId, StringComparison.Ordinal))
                 {
                     return false;
                 }

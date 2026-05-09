@@ -48,7 +48,8 @@ namespace Panoptes.Presentation.ViewModels
             var contextBuildingTypeId = Normalize(context.BuildingTypeId);
             var draft = _planningDraftStore.Snapshot;
             var game = _gameStateStore.Snapshot;
-            var selectedRecipeId = ResolveSelectedRecipeId(draft, game, contextNodeId);
+            var plannedRecipeId = RecipeSynthesisSelectionResolver.ResolvePlannedRecipeId(draft, contextNodeId);
+            var selectedRecipeId = RecipeSynthesisSelectionResolver.ResolveSelectedRecipeId(draft, game, contextNodeId);
             var preview = ResolvePreview(draft, contextNodeId);
             var activeTechnologyIds = BuildIdSet(game?.ResearchState?.ActiveTechnologyIds);
             var recipes = new List<CatalogRecipeDto>(catalog.Recipes.Values);
@@ -83,7 +84,7 @@ namespace Panoptes.Presentation.ViewModels
                     ResolveRecipeSummary(recipe),
                     recipe.Description,
                     locked ? "科技未解锁" : ResolveStatus(recipeId, selectedRecipeId, preview),
-                    locked ? string.Empty : "选择",
+                    locked ? string.Empty : ResolveActionLabel(recipeId, plannedRecipeId),
                     recipe.IconKey,
                     prerequisiteIds: null,
                     costs: BuildRecipeCosts(recipe, catalog),
@@ -168,64 +169,14 @@ namespace Panoptes.Presentation.ViewModels
             return preview;
         }
 
-        private static string ResolveSelectedRecipeId(
-            PlanningDraftState draft,
-            GameStateStoreState game,
-            string contextNodeId)
+        private static string ResolveActionLabel(string recipeId, string plannedRecipeId)
         {
-            var draftSelection = ResolveDraftSelectedRecipeId(draft, contextNodeId);
-            return !string.IsNullOrEmpty(draftSelection)
-                ? draftSelection
-                : ResolveOperationSelectedRecipeId(game, contextNodeId);
-        }
-
-        private static string ResolveDraftSelectedRecipeId(PlanningDraftState draft, string contextNodeId)
-        {
-            var selections = draft?.RecipeSelections;
-            if (selections == null)
+            if (string.Equals(recipeId, plannedRecipeId, StringComparison.Ordinal))
             {
-                return string.Empty;
+                return "取消选择";
             }
 
-            for (var i = 0; i < selections.Count; i++)
-            {
-                if (!string.Equals(Normalize(selections[i]?.NodeId), contextNodeId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                var recipeId = Normalize(selections[i]?.RecipeId);
-                if (!string.IsNullOrEmpty(recipeId))
-                {
-                    return recipeId;
-                }
-            }
-
-            return string.Empty;
-        }
-
-        private static string ResolveOperationSelectedRecipeId(GameStateStoreState game, string contextNodeId)
-        {
-            var nodes = game?.Nodes;
-            if (nodes == null || string.IsNullOrEmpty(contextNodeId))
-            {
-                return string.Empty;
-            }
-
-            if (nodes.TryGetValue(contextNodeId, out var node))
-            {
-                return Normalize(node?.OperationSelectedRecipeId);
-            }
-
-            foreach (var candidate in nodes.Values)
-            {
-                if (string.Equals(Normalize(candidate?.Id), contextNodeId, StringComparison.Ordinal))
-                {
-                    return Normalize(candidate?.OperationSelectedRecipeId);
-                }
-            }
-
-            return string.Empty;
+            return "选择";
         }
 
         private static string ResolveStatus(string recipeId, string selectedRecipeId, RecipePreviewDto preview)

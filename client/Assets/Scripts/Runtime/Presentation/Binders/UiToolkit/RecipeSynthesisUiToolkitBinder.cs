@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.ViewModels;
 using VContainer;
 
@@ -8,6 +9,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     public sealed class RecipeSynthesisUiToolkitBinder : ManagementPanelUiToolkitBinderBase<RecipeSynthesisViewModel>
     {
         private RecipeSynthesisContextStore _contextStore;
+        private PlanningDraftStore _planningDraftStore;
         private PlanningIntentService _planningIntentService;
         private bool _rowActionBound;
 
@@ -20,10 +22,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void ConstructRecipeFlow(
             PlanningIntentService planningIntentService,
             ManagementPanelVisibilityStore visibilityStore,
-            RecipeSynthesisContextStore contextStore)
+            RecipeSynthesisContextStore contextStore,
+            PlanningDraftStore planningDraftStore)
         {
             _planningIntentService = planningIntentService;
             _contextStore = contextStore;
+            _planningDraftStore = planningDraftStore;
             BindVisibility(visibilityStore, ManagementPanelId.RecipeSynthesis);
             BindRowAction();
         }
@@ -37,6 +41,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             RecipeSelectionRequested?.Invoke(nodeId, recipeId);
+            var plannedRecipeId = RecipeSynthesisSelectionResolver.ResolvePlannedRecipeId(_planningDraftStore?.Snapshot, nodeId);
+            if (string.Equals(recipeId.Trim(), plannedRecipeId, StringComparison.Ordinal))
+            {
+                _planningIntentService?.CancelBuildingRecipe(nodeId);
+                return;
+            }
+
             _planningIntentService?.SetBuildingRecipe(nodeId, recipeId);
         }
 

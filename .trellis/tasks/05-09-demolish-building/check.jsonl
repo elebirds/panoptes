@@ -1,0 +1,8 @@
+{"file":".trellis/spec/backend/index.md","reason":"Review backend layer boundaries and package ownership after demolition changes."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Confirm stable error codes and validation feedback remain aligned."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Verify backend compile and test expectations for protocol and planning changes."}
+{"file":".trellis/spec/frontend/index.md","reason":"Review client architecture boundaries for the new demolition UI path."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Check planning draft hydration and view-model flow on the client side."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Validate presentation boundary and generated protocol usage in the client."}
+{"file":".trellis/spec/guides/index.md","reason":"Shared cross-layer thinking for a feature that crosses proto, server, and frontend."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Confirm data flow and authority boundaries across layers."}

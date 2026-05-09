@@ -23,6 +23,8 @@ type ResearchProgressStage struct{}
 
 type ResearchCompletionStage struct{}
 
+type DemolishStage struct{}
+
 type BuildStage struct{}
 
 type RecipeSelectionStage struct{}
@@ -36,6 +38,8 @@ func NewRunner() *Runner {
 			// 科研分成“推进”和“完成判定”两段，便于把 technology_completed 与后续 activation 解耦。
 			ResearchProgressStage{},
 			ResearchCompletionStage{},
+			// 拆除先于建造，确保同一回合内先清场再让后续经济阶段读取最新结构。
+			DemolishStage{},
 			// 建造先于配方，保证新建筑不会在落地当回合立刻投入生产。
 			BuildStage{},
 			// 配方切换和配方推进分成两段，确保切配方后的重置状态会先 Apply，再参与本回合推进。
@@ -106,6 +110,12 @@ func (ResearchCompletionStage) Name() string { return "research_completion" }
 
 func (ResearchCompletionStage) Run(world donburi.World, state *domain.GameState) []event.Event {
 	return (&ResearchSystem{}).Run(world, state)
+}
+
+func (DemolishStage) Name() string { return "demolish" }
+
+func (DemolishStage) Run(world donburi.World, state *domain.GameState) []event.Event {
+	return (&DemolishSystem{}).Run(world, state)
 }
 
 func (BuildStage) Name() string { return "build" }

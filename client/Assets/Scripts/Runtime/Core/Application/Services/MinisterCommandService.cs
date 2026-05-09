@@ -13,6 +13,7 @@ namespace Panoptes.Core.Application.Services
             public string directive_type;
             public string draft_id;
             public string skill_card_id;
+            public string candidate_id;
         }
 
         private readonly IClientMessageSender _sender;
@@ -57,12 +58,37 @@ namespace Panoptes.Core.Application.Services
             return SendDirective("activate_skill", string.Empty, ministerRole, skillCardId);
         }
 
+        public bool RefreshCandidates(string ministerRole)
+        {
+            return SendDirective("refresh_candidates", string.Empty, ministerRole);
+        }
+
+        public bool FireMinister(string ministerRole)
+        {
+            return SendDirective("fire", string.Empty, ministerRole);
+        }
+
+        public bool HireMinister(string ministerRole, string candidateId)
+        {
+            return SendDirective("hire", string.Empty, ministerRole, string.Empty, candidateId);
+        }
+
+        public bool ReplaceMinister(string ministerRole, string candidateId)
+        {
+            return SendDirective("replace", string.Empty, ministerRole, string.Empty, candidateId);
+        }
+
         private bool SendDirective(string directiveType, string draftId, string ministerRole)
         {
-            return SendDirective(directiveType, draftId, ministerRole, string.Empty);
+            return SendDirective(directiveType, draftId, ministerRole, string.Empty, string.Empty);
         }
 
         private bool SendDirective(string directiveType, string draftId, string ministerRole, string skillCardId)
+        {
+            return SendDirective(directiveType, draftId, ministerRole, skillCardId, string.Empty);
+        }
+
+        private bool SendDirective(string directiveType, string draftId, string ministerRole, string skillCardId, string candidateId)
         {
             if (ActionLock.IsLocked)
             {
@@ -72,17 +98,18 @@ namespace Panoptes.Core.Application.Services
             return _sender.Send(new MsgSetMinisterDirective
             {
                 MinisterRole = ministerRole ?? string.Empty,
-                Content = BuildMinisterDirectiveContent(directiveType, draftId, skillCardId)
+                Content = BuildMinisterDirectiveContent(directiveType, draftId, skillCardId, candidateId)
             });
         }
 
-        private static string BuildMinisterDirectiveContent(string directiveType, string draftId, string skillCardId)
+        private static string BuildMinisterDirectiveContent(string directiveType, string draftId, string skillCardId, string candidateId)
         {
             var payload = new MinisterDirectivePayload
             {
                 directive_type = directiveType,
                 draft_id = draftId ?? string.Empty,
-                skill_card_id = skillCardId ?? string.Empty
+                skill_card_id = skillCardId ?? string.Empty,
+                candidate_id = candidateId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
         }

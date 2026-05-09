@@ -35,6 +35,32 @@ func (p *PlanningInputs) EnsureDraftMaps() {
 	}
 }
 
+func (p *PlanningInputs) HasDemolishOrder(playerID string, nodeID string) bool {
+	if p == nil {
+		return false
+	}
+	for _, order := range p.DemolishOrders {
+		if order.PlayerID == playerID && order.NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *PlanningInputs) UpsertDemolishOrder(order DemolishOrder) bool {
+	if p == nil {
+		return false
+	}
+	for idx, existing := range p.DemolishOrders {
+		if existing.PlayerID == order.PlayerID && existing.NodeID == order.NodeID {
+			p.DemolishOrders[idx] = order
+			return true
+		}
+	}
+	p.DemolishOrders = append(p.DemolishOrders, order)
+	return false
+}
+
 func (p *PlanningInputs) SetPendingPolicy(playerID string, policyID Policy) {
 	p.EnsureDraftMaps()
 	p.PendingPolicies[playerID] = policyID
@@ -121,6 +147,35 @@ func (p *PlanningInputs) UpsertRecipeSelection(order RecipeSelectionOrder) bool 
 	}
 	p.RecipeSelections = append(p.RecipeSelections, order)
 	return false
+}
+
+func (p *PlanningInputs) HasRecipeSelection(playerID string, nodeID string) bool {
+	if p == nil {
+		return false
+	}
+	for _, selection := range p.RecipeSelections {
+		if selection.PlayerID == playerID && selection.NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *PlanningInputs) RemoveRecipeSelection(playerID string, nodeID string) bool {
+	if p == nil {
+		return false
+	}
+	removed := false
+	filtered := p.RecipeSelections[:0]
+	for _, selection := range p.RecipeSelections {
+		if selection.PlayerID == playerID && selection.NodeID == nodeID {
+			removed = true
+			continue
+		}
+		filtered = append(filtered, selection)
+	}
+	p.RecipeSelections = filtered
+	return removed
 }
 
 func (p *PlanningInputs) UpsertWarDirective(playerID string, directive WarZoneDirective) bool {

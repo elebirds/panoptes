@@ -125,6 +125,18 @@ func TestAdaptCommandEnvelopeMapsEveryBatchBody(t *testing.T) {
 			},
 		},
 		{
+			name: "cancel building recipe",
+			envelope: &pb.CommandEnvelope{Body: &pb.CommandEnvelope_CancelBuildingRecipe{
+				CancelBuildingRecipe: &pb.MsgCancelBuildingRecipe{NodeId: "A1"},
+			}},
+			assert: func(t *testing.T, cmd *pb.PlanningCommand) {
+				t.Helper()
+				if got := cmd.GetCancelBuildingRecipe().GetNodeId(); got != "A1" {
+					t.Fatalf("node id = %q, want A1", got)
+				}
+			},
+		},
+		{
 			name: "build structure",
 			envelope: &pb.CommandEnvelope{Body: &pb.CommandEnvelope_BuildStructure{
 				BuildStructure: &pb.MsgBuildStructure{NodeId: "A1", BuildingTypeId: "farm", CityId: "city-1"},

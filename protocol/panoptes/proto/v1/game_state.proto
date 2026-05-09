@@ -59,6 +59,8 @@ message PlayerView {
   repeated WarZone war_zones = 9;
   ResearchStateView research = 10;
   InstitutionStateView institutions = 11;
+  repeated MinisterView ministers = 12;
+  repeated MinisterCandidateView minister_candidates = 13;
 }
 
 message ResearchStateView {
@@ -101,16 +103,36 @@ message WarZone {
 }
 
 message MinisterView {
-  string role = 1;
-  string name = 2;
-  int32 ability = 3;
-  string personality = 4;
-  int32 loyalty = 5;
-  int32 ambition = 6;
-  int32 cautiousness = 7;
-  int32 decisiveness = 8;
-  int32 loyalty_tendency = 9;
-  int32 ambition_style = 10;
+  string minister_id = 1;
+  string role = 2;
+  string name = 3;
+  string icon_key = 4;
+  string personality = 5;
+  string personality_desc = 6;
+  int32 ability = 7;
+  int32 loyalty = 8;
+  int32 ambition = 9;
+  int32 cautiousness = 10;
+  int32 decisiveness = 11;
+  int32 loyalty_tendency = 12;
+  int32 ambition_style = 13;
+  bool vacant = 14;
+}
+
+message MinisterCandidateView {
+  string minister_id = 1;
+  string role = 2;
+  string name = 3;
+  string icon_key = 4;
+  string personality = 5;
+  string personality_desc = 6;
+  int32 ability = 7;
+  int32 loyalty = 8;
+  int32 ambition = 9;
+  int32 cautiousness = 10;
+  int32 decisiveness = 11;
+  int32 loyalty_tendency = 12;
+  int32 ambition_style = 13;
 }
 
 message InformationReportView {

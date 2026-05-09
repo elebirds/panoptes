@@ -31,6 +31,12 @@ type BuildStructureIntent struct {
 
 func (BuildStructureIntent) isPlanningIntent() {}
 
+type DemolishBuildingIntent struct {
+	NodeID string
+}
+
+func (DemolishBuildingIntent) isPlanningIntent() {}
+
 type RevealNodeIntent struct {
 	NodeID string
 }
@@ -50,11 +56,18 @@ type SetBuildingRecipeIntent struct {
 
 func (SetBuildingRecipeIntent) isPlanningIntent() {}
 
+type CancelBuildingRecipeIntent struct {
+	NodeID string
+}
+
+func (CancelBuildingRecipeIntent) isPlanningIntent() {}
+
 type SetMinisterDirectiveIntent struct {
 	MinisterRole  string
 	DirectiveType string
 	DraftID       string
 	SkillCardID   string
+	CandidateID   string
 }
 
 func (SetMinisterDirectiveIntent) isPlanningIntent() {}
