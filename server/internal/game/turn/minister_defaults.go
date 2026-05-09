@@ -2,7 +2,7 @@
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
 // Updated: 2026-05-01 00:00:00 +0800
-// Description: Applies rule-based minister defaults at planning start.
+// Description: Applies rule-based minister defaults after the planning window if the player did not override them.
 
 package turn
 

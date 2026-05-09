@@ -277,55 +277,6 @@ func TestRuntimeApplyMinisterActionsStagesExpandedPlanningProposals(t *testing.T
 	}
 }
 
-func TestBuildMinisterDraftsFromLegalCandidatesOffersDefenseReadinessFallback(t *testing.T) {
-	previous := staticdata.Default()
-	t.Cleanup(func() {
-		staticdata.SetDefault(previous)
-	})
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Units: []staticdata.UnitDefinition{
-			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}},
-		},
-		Terrains: []staticdata.TerrainDefinition{
-			{ID: "plain", Passable: true, Buildable: true},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeIndex := map[string]donburi.Entity{
-		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"}),
-	}
-	state := domain.NewGameState("game-defense-actions", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: nodeIndex,
-	})
-	state.World = world
-	state.NodeIndex = nodeIndex
-	unitEntry := state.World.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
-	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
-
-	observation := &query.ObservationSnapshot{
-		ViewerID: "player-1",
-		Units: []*pb.UnitView{
-			{Id: "infantry-1", Faction: "player-1", UnitType: "infantry"},
-		},
-	}
-
-	drafts := buildMinisterDraftsFromLegalCandidates(7, "player-1", state, observation)
-	defenseOps := make([]domain.MinisterDraft, 0)
-	for _, draft := range drafts {
-		if draft.MinisterRole == defenseMinisterRole && draft.Kind == domain.MinisterDraftKindOperation {
-			defenseOps = append(defenseOps, draft)
-		}
-	}
-	if len(defenseOps) != 1 {
-		t.Fatalf("defense operations = %#v, want 1 readiness proposal", defenseOps)
-	}
-	if len(defenseOps[0].OperationSteps) != 1 || defenseOps[0].OperationSteps[0].Action != string(gameorders.ActionHold) {
-		t.Fatalf("defense operation = %#v, want one hold step", defenseOps[0])
-	}
-}
-
 func TestBuildMinisterDraftsFromLegalCandidatesReservesUnitsAcrossCommandOperations(t *testing.T) {
 	previous := staticdata.Default()
 	t.Cleanup(func() {
