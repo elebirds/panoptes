@@ -28,7 +28,12 @@ namespace Panoptes.Tests.EditMode.Core
                 {
                     ["u1"] = new UnitDto { Id = "u1", MaxHp = 6 }
                 },
-                myResources: new ResourceDto { Food = 2 });
+                myResources: new ResourceDto { Food = 2 },
+                roomPlayers: new[]
+                {
+                    new RoomPlayerDto { PlayerId = "player-1", Username = "alice" },
+                    new RoomPlayerDto { PlayerId = "player-2", Username = "bob", IsBot = true }
+                });
 
             var mapped = StoreHydrationProtocolMapper.MergeGameSync(current, new MsgGameSync
             {
@@ -97,6 +102,37 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.ResearchState.PendingActivationTechnologyIds, Is.EqualTo(new[] { "metallurgy" }));
             Assert.That(mapped.Nodes["n1"].BuildingMaxHp, Is.EqualTo(12));
             Assert.That(mapped.Units["u1"].MaxHp, Is.EqualTo(6));
+            Assert.That(mapped.RoomPlayers, Has.Count.EqualTo(2));
+            Assert.That(mapped.RoomPlayers[1].PlayerId, Is.EqualTo("player-2"));
+        }
+
+        [Test]
+        public void ToGameState_ShouldMapRoomPlayersFromGameInit()
+        {
+            var mapped = StoreHydrationProtocolMapper.ToGameState(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                RoomPlayers =
+                {
+                    new RoomPlayer
+                    {
+                        PlayerId = "player-1",
+                        Username = "alice",
+                        IsHost = true
+                    },
+                    new RoomPlayer
+                    {
+                        PlayerId = "player-2",
+                        Username = "bob",
+                        IsBot = true
+                    }
+                }
+            });
+
+            Assert.That(mapped.RoomPlayers, Has.Count.EqualTo(2));
+            Assert.That(mapped.RoomPlayers[0].IsHost, Is.True);
+            Assert.That(mapped.RoomPlayers[1].IsBot, Is.True);
         }
 
         [Test]

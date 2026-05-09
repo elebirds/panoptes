@@ -159,6 +159,11 @@ namespace Panoptes.Core.Application.Stores
             return CloneList(source, CloneGameChatEntry);
         }
 
+        public static List<RoomPlayerDto> CloneRoomPlayers(IEnumerable<RoomPlayerDto> source)
+        {
+            return CloneList(source, CloneRoomPlayer);
+        }
+
         public static List<string> CloneStrings(IEnumerable<string> source)
         {
             return source == null ? new List<string>() : source.Where(value => value != null).ToList();
@@ -370,6 +375,23 @@ namespace Panoptes.Core.Application.Stores
                 SenderPlayerId = source.SenderPlayerId,
                 Sequence = source.Sequence,
                 Turn = source.Turn
+            };
+        }
+
+        private static RoomPlayerDto CloneRoomPlayer(RoomPlayerDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new RoomPlayerDto
+            {
+                PlayerId = source.PlayerId,
+                Username = source.Username,
+                IsHost = source.IsHost,
+                IsReady = source.IsReady,
+                IsBot = source.IsBot
             };
         }
 

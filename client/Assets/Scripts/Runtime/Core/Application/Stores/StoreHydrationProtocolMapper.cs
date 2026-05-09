@@ -32,7 +32,8 @@ namespace Panoptes.Core.Application.Stores
                 nodes: MapNodes(msg.Nodes),
                 units: MapUnits(msg.Units),
                 myResources: MapResources(msg.MyPlayer),
-                researchState: MapResearch(msg.MyPlayer?.Research));
+                researchState: MapResearch(msg.MyPlayer?.Research),
+                roomPlayers: MapRoomPlayers(msg.RoomPlayers));
         }
 
         public static GameStateStoreState ToGameState(GameStateCache cache)
@@ -60,7 +61,8 @@ namespace Panoptes.Core.Application.Stores
                 nodes: cache.Nodes,
                 units: cache.Units,
                 myResources: MapResources(cache.MyPlayer),
-                researchState: cache.GetCurrentResearchState());
+                researchState: cache.GetCurrentResearchState(),
+                roomPlayers: cache.RoomPlayers);
         }
 
         public static GameStateStoreState MergePlanningStart(GameStateStoreState current, MsgPlanningStart msg)
@@ -84,7 +86,8 @@ namespace Panoptes.Core.Application.Stores
                 nodes: msg.Nodes != null && msg.Nodes.Count > 0 ? MapNodes(msg.Nodes, previous.Nodes) : previous.Nodes,
                 units: msg.Units != null && msg.Units.Count > 0 ? MapUnits(msg.Units, previous.Units) : previous.Units,
                 myResources: msg.MyPlayer != null ? MapResources(msg.MyPlayer) : previous.MyResources,
-                researchState: msg.MyPlayer != null ? MapResearch(msg.MyPlayer.Research) : previous.ResearchState);
+                researchState: msg.MyPlayer != null ? MapResearch(msg.MyPlayer.Research) : previous.ResearchState,
+                roomPlayers: previous.RoomPlayers);
         }
 
         public static GameStateStoreState MergeGameSync(GameStateStoreState current, MsgGameSync msg)
@@ -109,7 +112,8 @@ namespace Panoptes.Core.Application.Stores
                 nodes: msg.Nodes != null && msg.Nodes.Count > 0 ? MapNodes(msg.Nodes, previous.Nodes) : previous.Nodes,
                 units: msg.Units != null && msg.Units.Count > 0 ? MapUnits(msg.Units, previous.Units) : previous.Units,
                 myResources: msg.MyPlayer != null ? MapResources(msg.MyPlayer) : previous.MyResources,
-                researchState: msg.MyPlayer != null ? MapResearch(msg.MyPlayer.Research) : previous.ResearchState);
+                researchState: msg.MyPlayer != null ? MapResearch(msg.MyPlayer.Research) : previous.ResearchState,
+                roomPlayers: previous.RoomPlayers);
         }
 
         public static GameStateStoreState MergeTokenResult(GameStateStoreState current, MsgTokenResult msg)
@@ -166,7 +170,8 @@ namespace Panoptes.Core.Application.Stores
                 nextNodes,
                 previous.Units,
                 previous.MyResources,
-                previous.ResearchState);
+                previous.ResearchState,
+                previous.RoomPlayers);
         }
 
         public static GameStateStoreState MergeGameOver(GameStateStoreState current)
@@ -185,7 +190,8 @@ namespace Panoptes.Core.Application.Stores
                 nodes: previous.Nodes,
                 units: previous.Units,
                 myResources: previous.MyResources,
-                researchState: previous.ResearchState);
+                researchState: previous.ResearchState,
+                roomPlayers: previous.RoomPlayers);
         }
 
         public static GameStateStoreState MergeTurnReport(GameStateStoreState current, MsgTurnReport msg)
@@ -209,7 +215,8 @@ namespace Panoptes.Core.Application.Stores
                 previous.Nodes,
                 previous.Units,
                 previous.MyResources,
-                previous.ResearchState);
+                previous.ResearchState,
+                previous.RoomPlayers);
         }
 
         public static PlanningDraftState ToPlanningDraft(MsgPlanningSnapshot msg)
@@ -562,7 +569,8 @@ namespace Panoptes.Core.Application.Stores
                 previous.Nodes,
                 previous.Units,
                 previous.MyResources,
-                previous.ResearchState);
+                previous.ResearchState,
+                previous.RoomPlayers);
         }
 
         private static Dictionary<string, NodeDto> MapNodes(IEnumerable<NodeView> views, IReadOnlyDictionary<string, NodeDto> existing = null)
@@ -681,6 +689,34 @@ namespace Panoptes.Core.Application.Stores
             };
             ApplyFixedResourceFields(resources);
             return resources;
+        }
+
+        private static List<RoomPlayerDto> MapRoomPlayers(IEnumerable<RoomPlayer> players)
+        {
+            var result = new List<RoomPlayerDto>();
+            if (players == null)
+            {
+                return result;
+            }
+
+            foreach (var player in players)
+            {
+                if (player == null || string.IsNullOrWhiteSpace(player.PlayerId))
+                {
+                    continue;
+                }
+
+                result.Add(new RoomPlayerDto
+                {
+                    PlayerId = player.PlayerId.Trim(),
+                    Username = player.Username ?? string.Empty,
+                    IsHost = player.IsHost,
+                    IsReady = player.IsReady,
+                    IsBot = player.IsBot
+                });
+            }
+
+            return result;
         }
 
         private static TechnologyDto MapResearch(ResearchStateView research)

@@ -4,6 +4,7 @@ package panoptes.proto.v1;
 
 import "panoptes/proto/v1/common.proto";
 import "panoptes/proto/v1/data_types.proto";
+import "panoptes/proto/v1/lobby.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
@@ -162,6 +163,7 @@ message MsgGameInit {
   int32 map_width = 9;
   int32 map_height = 10;
   InformationReportView information_report = 11;
+  repeated RoomPlayer room_players = 12;
 }
 
 message MsgGameOver {

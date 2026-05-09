@@ -101,6 +101,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message MsgStaticCatalogSectionChunk")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message MsgStaticCatalogSyncComplete")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message PolicyCatalogEntry")
+	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message EmoteSeriesCatalogEntry")
+	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message EmoteCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message InstitutionCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message InstitutionCategoryCatalogEntry")
 	assertFileContains(t, filepath.Join(protocolDir, "data_catalog.proto"), "message TechnologyCatalogEntry")
@@ -397,7 +399,7 @@ func TestGenerateRejectsInvalidAuthoringSources(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Generate() error = nil, want validation failure")
 			}
-			if !strings.Contains(err.Error(), tc.wantPath) {
+			if !strings.Contains(filepath.ToSlash(err.Error()), tc.wantPath) {
 				t.Fatalf("Generate() error = %v, want path %q", err, tc.wantPath)
 			}
 			for _, want := range tc.wantContains {
@@ -451,7 +453,7 @@ func TestGenerateRejectsTechnologyTreeEdgeMismatch(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Generate() error = nil, want technology tree validation failure")
 	}
-	if !strings.Contains(err.Error(), "data/ui/layouts/technology_tree.json") {
+	if !strings.Contains(filepath.ToSlash(err.Error()), "data/ui/layouts/technology_tree.json") {
 		t.Fatalf("Generate() error = %v, want technology_tree path", err)
 	}
 	if !strings.Contains(err.Error(), "agrarian_foundations") || !strings.Contains(err.Error(), "organized_labor") {
@@ -996,6 +998,34 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
     { "id": "plain", "name": "平原", "description": "标准地块", "icon_key": "terrain_plain", "material_key": "M_Plain", "sort_order": 10, "tags": ["ground"] },
     { "id": "forest", "name": "森林", "description": "高防御地块", "icon_key": "terrain_forest", "material_key": "M_Forest", "sort_order": 20, "tags": ["ground"] },
     { "id": "river", "name": "河流", "description": "难以通行", "icon_key": "terrain_river", "material_key": "M_River", "sort_order": 30, "tags": ["ground"] }
+  ]
+}`,
+		"data/ui/catalogs/emotes.json": `{
+  "$schema": "../../schema/ui/emotes.schema.json",
+  "series": [
+    { "id": "general", "display_name": "General", "icon_key": "Textures/Emotes/General/general_01", "sort_order": 10 },
+    { "id": "tactics", "display_name": "Tactics", "icon_key": "", "sort_order": 20 },
+    { "id": "mood", "display_name": "Mood", "icon_key": "", "sort_order": 30 }
+  ],
+  "emotes": [
+    { "id": "general.thumbs_up", "series_id": "general", "display_name": "Thumbs Up", "asset_key": "Textures/Emotes/General/general_01", "sort_order": 10, "tags": [] },
+    { "id": "general.thinking", "series_id": "general", "display_name": "Thinking", "asset_key": "Textures/Emotes/General/general_02", "sort_order": 20, "tags": [] },
+    { "id": "general.laugh", "series_id": "general", "display_name": "Laugh", "asset_key": "Textures/Emotes/General/general_03", "sort_order": 30, "tags": [] },
+    { "id": "general.angry", "series_id": "general", "display_name": "Angry", "asset_key": "Textures/Emotes/General/general_04", "sort_order": 40, "tags": [] },
+    { "id": "general.warning", "series_id": "general", "display_name": "Warning", "asset_key": "Textures/Emotes/General/general_05", "sort_order": 50, "tags": [] },
+    { "id": "general.gg", "series_id": "general", "display_name": "GG", "asset_key": "Textures/Emotes/General/general_06", "sort_order": 60, "tags": [] },
+    { "id": "tactics.attack", "series_id": "tactics", "display_name": "Attack", "asset_key": "", "sort_order": 10, "tags": [] },
+    { "id": "tactics.defend", "series_id": "tactics", "display_name": "Defend", "asset_key": "", "sort_order": 20, "tags": [] },
+    { "id": "tactics.expand", "series_id": "tactics", "display_name": "Expand", "asset_key": "", "sort_order": 30, "tags": [] },
+    { "id": "tactics.wait", "series_id": "tactics", "display_name": "Wait", "asset_key": "", "sort_order": 40, "tags": [] },
+    { "id": "tactics.need_help", "series_id": "tactics", "display_name": "Need Help", "asset_key": "", "sort_order": 50, "tags": [] },
+    { "id": "tactics.ready", "series_id": "tactics", "display_name": "Ready", "asset_key": "", "sort_order": 60, "tags": [] },
+    { "id": "mood.happy", "series_id": "mood", "display_name": "Happy", "asset_key": "", "sort_order": 10, "tags": [] },
+    { "id": "mood.surprised", "series_id": "mood", "display_name": "Surprised", "asset_key": "", "sort_order": 20, "tags": [] },
+    { "id": "mood.sad", "series_id": "mood", "display_name": "Sad", "asset_key": "", "sort_order": 30, "tags": [] },
+    { "id": "mood.confused", "series_id": "mood", "display_name": "Confused", "asset_key": "", "sort_order": 40, "tags": [] },
+    { "id": "mood.proud", "series_id": "mood", "display_name": "Proud", "asset_key": "", "sort_order": 50, "tags": [] },
+    { "id": "mood.panic", "series_id": "mood", "display_name": "Panic", "asset_key": "", "sort_order": 60, "tags": [] }
   ]
 }`,
 		"data/ui/catalogs/maps/default.json": `{

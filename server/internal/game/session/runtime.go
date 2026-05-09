@@ -494,6 +494,7 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 		Nodes:             observation.Nodes,
 		Units:             observation.Units,
 		InformationReport: gamequery.BuildInformationReport(observation),
+		RoomPlayers:       r.roomPlayerSnapshot(),
 	}
 	_ = r.SendToParticipant(context.Background(), p.ID, msg)
 }

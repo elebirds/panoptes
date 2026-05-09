@@ -208,6 +208,12 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if len(gameInit.GetMinisters()) != 5 {
 		t.Fatalf("game init ministers = %#v, want normalized five-role roster", gameInit.GetMinisters())
 	}
+	if len(gameInit.GetRoomPlayers()) != 1 {
+		t.Fatalf("game init room players = %#v, want 1", gameInit.GetRoomPlayers())
+	}
+	if got := gameInit.GetRoomPlayers()[0].GetPlayerId(); got != "player-1" {
+		t.Fatalf("game init room player id = %q, want player-1", got)
+	}
 	wantRoles := map[string]bool{"domestic": false, "works": false, "defense": false, "command": false, "frontier": false}
 	for _, minister := range gameInit.GetMinisters() {
 		wantRoles[minister.GetRole()] = true

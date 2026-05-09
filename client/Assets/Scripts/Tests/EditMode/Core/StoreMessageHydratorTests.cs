@@ -55,7 +55,20 @@ namespace Panoptes.Tests.EditMode.Core
                 Turn = 2,
                 Phase = "planning",
                 MapWidth = 3,
-                MapHeight = 4
+                MapHeight = 4,
+                RoomPlayers =
+                {
+                    new RoomPlayer
+                    {
+                        PlayerId = "player-1",
+                        Username = "alice"
+                    },
+                    new RoomPlayer
+                    {
+                        PlayerId = "player-2",
+                        Username = "bob"
+                    }
+                }
             });
             _hydrator.HandlePlanningStart(new MsgPlanningStart
             {
@@ -96,6 +109,8 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(gameStore.Snapshot.TokensLeft, Is.EqualTo(5));
             Assert.That(gameStore.Snapshot.MyResources.Wood, Is.EqualTo(7));
             Assert.That(gameStore.Snapshot.Nodes["n1"].Owner, Is.EqualTo("player-1"));
+            Assert.That(gameStore.Snapshot.RoomPlayers, Has.Count.EqualTo(2));
+            Assert.That(gameStore.Snapshot.RoomPlayers[1].Username, Is.EqualTo("bob"));
             Assert.That(draftStore.Snapshot.BuildOrders[0].BuildingTypeId, Is.EqualTo("farm"));
             Assert.That(turnStore.Snapshot.Turn, Is.EqualTo(3));
             Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(5));

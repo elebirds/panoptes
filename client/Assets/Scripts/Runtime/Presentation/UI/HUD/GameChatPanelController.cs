@@ -671,7 +671,23 @@ namespace Panoptes.Presentation.UI.HUD
         {
             var result = new List<RosterPlayer>();
             var myPlayerId = ResolveMyPlayerId();
-            if (_roomCache?.Players != null)
+            var rosterPlayers = ResolveSnapshotRosterPlayers();
+            if (rosterPlayers.Count > 0)
+            {
+                foreach (var player in rosterPlayers)
+                {
+                    if (player == null || string.IsNullOrWhiteSpace(player.PlayerId))
+                    {
+                        continue;
+                    }
+
+                    result.Add(new RosterPlayer(
+                        player.PlayerId,
+                        string.IsNullOrWhiteSpace(player.Username) ? player.PlayerId : player.Username,
+                        IsSelf(player.PlayerId)));
+                }
+            }
+            else if (_roomCache?.Players != null)
             {
                 foreach (var player in _roomCache.Players)
                 {
@@ -697,6 +713,17 @@ namespace Panoptes.Presentation.UI.HUD
 
         private string ResolvePlayerDisplayName(string playerId)
         {
+            var rosterPlayers = ResolveSnapshotRosterPlayers();
+            foreach (var player in rosterPlayers)
+            {
+                if (player != null &&
+                    string.Equals(player.PlayerId, playerId, StringComparison.Ordinal) &&
+                    !string.IsNullOrWhiteSpace(player.Username))
+                {
+                    return player.Username;
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(playerId) && _roomCache?.Players != null)
             {
                 foreach (var player in _roomCache.Players)
@@ -711,6 +738,11 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return IsSelf(playerId) ? "You" : (string.IsNullOrWhiteSpace(playerId) ? "Unknown" : playerId);
+        }
+
+        private IReadOnlyList<RoomPlayerDto> ResolveSnapshotRosterPlayers()
+        {
+            return _gameStateStore?.Snapshot?.RoomPlayers ?? Array.Empty<RoomPlayerDto>();
         }
 
         private bool IsSelf(string playerId)
