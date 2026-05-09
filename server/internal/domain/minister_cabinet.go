@@ -213,6 +213,9 @@ func buildMinisterCandidateForRole(pool []staticdata.Minister, current staticdat
 	minister := mutateMinisterCandidate(chosen, role, rng)
 	minister.ID = candidateMinisterID(gameID, playerID, role, turn, cycle, chosen.ID)
 	minister.Role = role
+	if strings.TrimSpace(current.Name) != "" && strings.EqualFold(strings.TrimSpace(minister.Name), strings.TrimSpace(current.Name)) {
+		minister.Name = generatedMinisterCandidateName(minister.ID, role)
+	}
 	if strings.TrimSpace(minister.IconKey) == "" {
 		minister.IconKey = role
 	}
@@ -265,6 +268,15 @@ func candidateMinisterID(gameID string, playerID string, role string, turn int, 
 		cleanSourceID = "generated"
 	}
 	return fmt.Sprintf("cand:%s:%s:%s:%d:%d:%s", sanitizeMinisterIDPart(gameID), sanitizeMinisterIDPart(playerID), ministerroles.Canonical(role), turn, cycle, sanitizeMinisterIDPart(cleanSourceID))
+}
+
+func generatedMinisterCandidateName(candidateID string, role string) string {
+	surnames := []string{"顾", "陆", "崔", "裴", "薛", "郑", "卢", "范", "谢", "姚"}
+	givenNames := []string{"承远", "景行", "仲明", "怀谨", "子衡", "元修", "敬初", "伯昭", "廷肃", "文澜"}
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(strings.TrimSpace(candidateID) + "|" + ministerroles.Canonical(role)))
+	hash := h.Sum32()
+	return surnames[int(hash%uint32(len(surnames)))] + givenNames[int((hash/uint32(len(surnames)))%uint32(len(givenNames)))]
 }
 
 func ministerCandidateSeed(gameID string, playerID string, turn int, cycle int) int64 {

@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
@@ -41,7 +42,7 @@ namespace Panoptes.Presentation.UI.Game
         [SerializeField] private TextMeshProUGUI loserIdText;
         [SerializeField] private TextMeshProUGUI narrativeText;
         [SerializeField] private Button backToBuildRoomButton;
-        [SerializeField] private string buildRoomSceneName = "Lobby";
+        [SerializeField] private string buildRoomSceneName = "MainMenu";
 #if UNITY_EDITOR
         [SerializeField] private bool autoRebuildInEditorWhenEmpty = true;
         private bool _editorRebuilding;
@@ -204,7 +205,8 @@ namespace Panoptes.Presentation.UI.Game
             panelBackground.type = Image.Type.Simple;
             panelBackground.raycastTarget = true;
 
-            var swordsRect = EnsureRect("TitleSwords", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(520f, 220f), new Vector2(0f, -104f));
+            var swordsRect = EnsureRect("TitleSwords", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(520f, 220f), new Vector2(0f, -72f));
+            swordsRect.SetAsFirstSibling();
             titleSwordsImage ??= EnsureImage(swordsRect.gameObject, Color.white);
             titleSwordsImage.sprite = BattleResultArt.CrossedSwordsSprite;
             titleSwordsImage.preserveAspect = true;
@@ -218,7 +220,7 @@ namespace Panoptes.Presentation.UI.Game
             narrativeText ??= EnsureText("Narrative", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -382f), new Vector2(760f, 40f), 20f, FontStyles.Normal, TextAlignmentOptions.Center);
             narrativeText.gameObject.SetActive(false);
 
-            backToBuildRoomButton ??= EnsureButton("BackToBuildRoomButton", panelRoot, "返回建造房间", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 54f), new Vector2(320f, 58f));
+            backToBuildRoomButton ??= EnsureButton("BackToBuildRoomButton", panelRoot, "返回游戏主菜单", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 54f), new Vector2(320f, 58f));
         }
 
         private void BindBackButton()
@@ -235,8 +237,14 @@ namespace Panoptes.Presentation.UI.Game
 
         private void OnBackToBuildRoomClicked()
         {
-            var sceneName = string.IsNullOrWhiteSpace(buildRoomSceneName) ? "Lobby" : buildRoomSceneName.Trim();
+            var sceneName = string.IsNullOrWhiteSpace(buildRoomSceneName) ? "MainMenu" : buildRoomSceneName.Trim();
             _resetService?.ResetLocalGameSession();
+
+            if (AppManager.Instance != null && string.Equals(sceneName, "MainMenu", StringComparison.OrdinalIgnoreCase))
+            {
+                AppManager.Instance.TransitionTo(AppState.Lobby);
+                return;
+            }
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {

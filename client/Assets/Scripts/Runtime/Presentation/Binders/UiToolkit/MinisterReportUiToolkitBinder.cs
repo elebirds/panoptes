@@ -73,6 +73,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private RectTransform _hoveredAttributeItem;
         private bool _skillsPanelVisible;
         private bool _runtimeRefreshInProgress;
+        private bool _wasVisible;
 
         [Inject]
         private void Construct(
@@ -203,7 +204,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private UguiButton CreateMinisterCardInternal(MinisterTabState minister, bool isCandidate)
         {
-            var cardHeight = isCandidate ? 214f : 200f;
+            var cardHeight = isCandidate ? 236f : 220f;
             var rect = CreateUiObject("minister-card-" + SafeName(minister.Role) + (isCandidate ? "-candidate" : string.Empty), _tabsContent);
             rect.sizeDelta = new Vector2(0f, cardHeight);
             var layout = rect.gameObject.AddComponent<LayoutElement>();
@@ -221,7 +222,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             button.onClick.AddListener(() => _viewModel?.SelectMinister(minister.Role));
 
             var avatarRect = CreateUiObject("Avatar", rect);
-            AnchorFixed(avatarRect, new Vector2(0f, 1f), new Vector2(12f, -12f), new Vector2(62f, 62f));
+            AnchorFixed(avatarRect, new Vector2(0f, 1f), new Vector2(56f, -56f), new Vector2(84f, 84f));
             var avatarImage = avatarRect.gameObject.AddComponent<UguiImage>();
             avatarImage.color = new Color(0.26f, 0.28f, 0.32f, 1f);
             var sprite = LoadAvatarSprite(minister.IconResource, minister.Role);
@@ -232,26 +233,34 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 avatarImage.preserveAspect = true;
             }
 
-            var avatarLabel = CreateText(avatarRect, "AvatarText", minister.AvatarText, 24f, FontStyles.Bold, TextAlignmentOptions.Center);
+            var avatarLabel = CreateText(avatarRect, "AvatarText", minister.AvatarText, 28f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(avatarLabel.rectTransform, Vector2.zero, Vector2.zero);
             avatarLabel.gameObject.SetActive(sprite == null);
 
-            var title = CreateText(rect, "Title", minister.Title, 17f, FontStyles.Bold, TextAlignmentOptions.Left);
-            title.color = new Color(0.98f, 0.9f, 0.68f, 1f);
-            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -14f), new Vector2(-12f, -38f));
-
-            var name = CreateText(rect, "Name", minister.Name, 14f, FontStyles.Normal, TextAlignmentOptions.Left);
-            name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
-            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -39f), new Vector2(-12f, -60f));
+            var identity = CreateText(
+                rect,
+                "Identity",
+                "职位：" + minister.Title + "\n姓名：" + minister.Name,
+                15f,
+                FontStyles.Bold,
+                TextAlignmentOptions.Left);
+            identity.color = new Color(0.96f, 0.9f, 0.72f, 1f);
+            identity.textWrappingMode = TextWrappingModes.NoWrap;
+            identity.overflowMode = TextOverflowModes.Ellipsis;
+            identity.lineSpacing = 8f;
+            identity.enableAutoSizing = true;
+            identity.fontSizeMin = 11f;
+            identity.fontSizeMax = 15f;
+            Anchor(identity.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(110f, -80f), new Vector2(-12f, -18f));
 
             var status = CreateText(rect, "Status", minister.IsVacant ? "空缺" : (isCandidate ? (minister.RoleVacant ? "当前：空缺" : "当前：在职") : "在职"), 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             status.color = new Color(0.74f, 0.79f, 0.84f, 1f);
-            Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -61f), new Vector2(-12f, -80f));
+            Anchor(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(110f, -100f), new Vector2(-12f, -80f));
 
             var personality = CreateText(rect, "Personality", BuildPersonalityLine(minister), 11.5f, FontStyles.Normal, TextAlignmentOptions.Left);
             personality.color = new Color(0.82f, 0.74f, 0.96f, 1f);
             personality.overflowMode = TextOverflowModes.Ellipsis;
-            Anchor(personality.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(86f, -82f), new Vector2(-12f, -101f));
+            Anchor(personality.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(110f, -124f), new Vector2(-12f, -104f));
             personality.gameObject.SetActive(!string.IsNullOrWhiteSpace(personality.text));
 
             CreateAttributeGrid(rect, minister, isCandidate);
@@ -1377,6 +1386,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             EnsureCanvas();
             var isVisible = _visibilityStore != null && _visibilityStore.IsVisible(ManagementPanelId.MinisterReport);
+            var becameVisible = isVisible && !_wasVisible;
+            _wasVisible = isVisible;
             _canvas.enabled = isVisible;
             if (_panelRoot != null)
             {
@@ -1385,6 +1396,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             if (isVisible)
             {
+                if (becameVisible)
+                {
+                    _lastMessagesSignature = null;
+                    _lastOptionsSignature = null;
+                    _lastSkillsSignature = null;
+                }
+
                 if (!_runtimeRefreshInProgress)
                 {
                     try
@@ -1400,7 +1418,36 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 }
 
                 HideOtherManagementDocuments();
+                ForceVisibleLayoutRefresh();
                 PanoptesLog.Log($"[MinisterReportUGUI] visible ministers={_viewModel?.Current?.Ministers.Count ?? 0} messages={_viewModel?.Current?.Messages.Count ?? 0} options={_viewModel?.Current?.Options.Count ?? 0}");
+            }
+        }
+
+        private void ForceVisibleLayoutRefresh()
+        {
+            if (_canvas == null || !_canvas.enabled || _panelRoot == null || !_panelRoot.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            ForceRebuild(_tabsContent);
+            ForceRebuild(_chatContent);
+            ForceRebuild(_optionsRoot);
+            ForceRebuild(_skillPanelRoot);
+            ForceRebuild(_panelRoot);
+            Canvas.ForceUpdateCanvases();
+            if (_scrollRect != null)
+            {
+                _scrollRect.verticalNormalizedPosition = 0f;
+            }
+        }
+
+        private static void ForceRebuild(RectTransform rect)
+        {
+            if (rect != null && rect.gameObject.activeInHierarchy)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
             }
         }
 

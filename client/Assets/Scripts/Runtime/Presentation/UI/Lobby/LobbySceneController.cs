@@ -1,6 +1,7 @@
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using VContainer;
 
 namespace Panoptes.Presentation.UI.Lobby
@@ -32,6 +33,12 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void Start()
         {
+            if (SceneManager.GetActiveScene().name == "MainMenu")
+            {
+                HidePanels();
+                return;
+            }
+
             SyncPanelVisibility();
         }
 

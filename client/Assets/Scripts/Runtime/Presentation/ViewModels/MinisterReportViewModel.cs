@@ -561,13 +561,14 @@ namespace Panoptes.Presentation.ViewModels
                     roster.TryGetValue(role, out var currentMinister);
                     var source = MinisterTabSource.FromProfile(role, candidate, IconResourceFor(candidate.IconKey, role));
                     var roleVacant = currentMinister == null || currentMinister.IsVacant;
+                    var displayName = DistinctCandidateName(source.Name, source.MinisterId, role, currentMinister);
                     return new MinisterTabState(
                         role,
                         source.MinisterId,
-                        source.Name,
+                        displayName,
                         source.Title,
                         source.IconResource,
-                        AvatarText(source.Name, role),
+                        AvatarText(displayName, role),
                         false,
                         false,
                         roleVacant,
@@ -578,6 +579,48 @@ namespace Panoptes.Presentation.ViewModels
                         source.PersonalityText);
                 })
                 .ToList();
+        }
+
+        private static string DistinctCandidateName(string candidateName, string candidateId, string role, MinisterProfileDto currentMinister)
+        {
+            candidateName = Clean(candidateName, string.Empty);
+            if (currentMinister == null ||
+                currentMinister.IsVacant ||
+                !string.Equals(candidateName, Clean(currentMinister.Name, string.Empty), StringComparison.OrdinalIgnoreCase))
+            {
+                return candidateName;
+            }
+
+            return GeneratedCandidateName(candidateId, role);
+        }
+
+        private static string GeneratedCandidateName(string candidateId, string role)
+        {
+            var surnames = new[] { "顾", "陆", "崔", "裴", "薛", "郑", "卢", "范", "谢", "姚" };
+            var givenNames = new[] { "承远", "景行", "仲明", "怀谨", "子衡", "元修", "敬初", "伯昭", "廷肃", "文澜" };
+            var hash = StableHash((candidateId ?? string.Empty) + "|" + NormalizeRole(role));
+            var surnameIndex = (int)(hash % (uint)surnames.Length);
+            var givenNameIndex = (int)((hash / (uint)surnames.Length) % (uint)givenNames.Length);
+            return surnames[surnameIndex] + givenNames[givenNameIndex];
+        }
+
+        private static uint StableHash(string value)
+        {
+            const uint offset = 2166136261u;
+            const uint prime = 16777619u;
+            var hash = offset;
+            if (value == null)
+            {
+                return hash;
+            }
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                hash ^= value[i];
+                hash *= prime;
+            }
+
+            return hash;
         }
 
         private string ResolveActiveRole(IReadOnlyList<MinisterTabState> tabs)

@@ -22,6 +22,7 @@ namespace Panoptes.Presentation.ViewModels
         public static bool TryResolvePlannedRecipeId(PlanningDraftState draft, string contextNodeId, out string recipeId)
         {
             var selections = draft?.RecipeSelections;
+            contextNodeId = Normalize(contextNodeId);
             if (selections == null || string.IsNullOrWhiteSpace(contextNodeId))
             {
                 recipeId = string.Empty;
@@ -46,12 +47,14 @@ namespace Panoptes.Presentation.ViewModels
         public static string ResolveActiveRecipeId(GameStateStoreState game, string contextNodeId)
         {
             var nodes = game?.Nodes;
+            contextNodeId = Normalize(contextNodeId);
             if (nodes == null || string.IsNullOrEmpty(contextNodeId))
             {
                 return string.Empty;
             }
 
-            if (nodes.TryGetValue(contextNodeId, out var node))
+            if (nodes.TryGetValue(contextNodeId, out var node) ||
+                nodes.TryGetValue(contextNodeId.ToUpperInvariant(), out node))
             {
                 return Normalize(node?.OperationSelectedRecipeId);
             }

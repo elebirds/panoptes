@@ -575,6 +575,40 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void RecipeSynthesisBinder_ShouldCancelOptimisticSelectionOnSecondClickWithUppercaseNodeId()
+        {
+            ActionLock.Release();
+            _root = new GameObject("RecipeSynthesisDoubleClickCancelTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            var draftStore = new PlanningDraftStore();
+            var gameStateStore = new GameStateStore();
+            gameStateStore.Replace(new GameStateStoreState(phase: GamePhases.Planning));
+            contextStore.SetContext("B1", "mill", "player-1");
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore, draftStore, gameStateStore);
+
+            RequestRecipeSelection(binder, "grain");
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetBuildingRecipe>());
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.EqualTo("grain"));
+
+            RequestRecipeSelection(binder, "grain");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgCancelBuildingRecipe>());
+            var message = (MsgCancelBuildingRecipe)sender.LastMessage;
+            Assert.That(message.NodeId, Is.EqualTo("B1"));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Has.Count.EqualTo(1));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].NodeId, Is.EqualTo("b1"));
+            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.Empty);
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+            draftStore.Dispose();
+            gameStateStore.Dispose();
+        }
+
+        [Test]
         public void RecipeSynthesisBinder_ShouldCancelActiveRecipeWhenClickingCurrentSelection()
         {
             ActionLock.Release();
