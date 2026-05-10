@@ -109,7 +109,7 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 
 	rules := catalog.Rules()
-	if rules.CityCoreMaxHP != 100 || rules.BaseIndustryOutputPerTurn != 2 || rules.BaseResearchOutputPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
+	if rules.CityCoreMaxHP != 100 || rules.BaseIndustryOutputPerTurn != 2 || rules.BaseResearchOutputPerTurn != 1 || rules.TurnTimeLimitPlanning != 150 {
 		t.Fatalf("rules = %#v", rules)
 	}
 
@@ -329,7 +329,7 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
 }`,
 		"data/content/rules/rules.json": `{
   "$schema": "../../schema/content/rules.schema.json",
-  "turn_time_limit_planning": 35,
+  "turn_time_limit_planning": 150,
   "tokens_per_turn": 3,
   "bonus_tokens_per_turn": 1,
   "max_turns": 30,

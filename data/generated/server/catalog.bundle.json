@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "916dabb9199cdecb7e30020d197bc5099cdca90637dc05095682257662de8e8f",
+    "bundle_hash": "771b31557d3bef6c2509fa656164b2f3bc1dda65ad0d309b08c62cd8ea0867a6",
     "required_sections": [
       "resources",
       "points",
@@ -67,7 +67,7 @@
       },
       {
         "section_name": "rules",
-        "hash": "effc1e3b359f6170453e79d5524add3f77e0f0823b16d4daa39c7471e12f6359"
+        "hash": "689ce989426df999534e855961c7fc2181ba3c0d44c48a239d81aaab4a3167cd"
       },
       {
         "section_name": "technologies",
@@ -4087,7 +4087,7 @@
     }
   ],
   "rules": {
-    "turn_time_limit_planning": 35,
+    "turn_time_limit_planning": 150,
     "tokens_per_turn": 3,
     "bonus_tokens_per_turn": 1,
     "max_turns": 100,
